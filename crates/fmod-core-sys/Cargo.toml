@@ -1,0 +1,14 @@
+[package]
+name = "fmod-core-sys"
+version = "0.0.0"
+edition = "2021"
+links = "fmod"
+license-file = "LICENSE.txt"
+
+publish = false
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.59.2"
+build-rs = "0.1.2"

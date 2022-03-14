@@ -1,0 +1,15 @@
+[package]
+name = "fmod-studio-sys"
+version = "0.0.0"
+edition = "2021"
+links = "fmodstudio"
+license-file = "LICENSE.txt"
+
+publish = false
+
+[dependencies]
+fmod-core-sys = { version = "0.0.0", path = "../fmod-core-sys" }
+
+[build-dependencies]
+bindgen = "0.59.2"
+build-rs = "0.1.2"
