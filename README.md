@@ -60,20 +60,19 @@ The currently vendored headers are for FMOD Engine 2.02.05.
 
 [^1]: FMOD is thread safe by default. Currently, FMOD.rs is `!Send` and `!Sync`,
 as a minimally correct default. For specifics on FMOD thread safety, see the
-[white paper](https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-threads.html).
-For our purposes, FMOD _is_ threadsafe, _unless_ `FMOD_INIT_THREAD_UNSAFE` or
-`FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE` are used. `FMOD_INIT_THREAD_UNSAFE` can be
-used safely if and only if: 1) only FMOD Studio is used, and no Core API calls;
-2) FMOD Studio is not used, and Core API calls all happen on a single thread; or
-3) FMOD Studio is initialized with `FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE` and all
-FMOD API calls are done in a single thread. FMOD Studio synchronous updats can
-be safely if and only if all Studio API calls happen on a single thread.<p>Thus,
-there are two ways to make the FMOD.rs wrapper thread-safe: forbid the use of
-the thread-unsafe flags, or encode thread safety into the type system. The
-former is trivial, but the latter is potentially desirable for users who are
-using FMOD Studio with their own asynchronous command queue. See the Studio API
-[white paper](https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-studio-threads.html)
-for more information on FMOD Studio threading. Syncrhonous Update is very much a
+[Threads and Thread Safety white paper]. For our purposes, FMOD _is_ threadsafe,
+_unless_ `FMOD_INIT_THREAD_UNSAFE` or `FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE` are
+used. `FMOD_INIT_THREAD_UNSAFE` can be used safely if and only if: 1) only FMOD
+Studio is used, and the Core API is never used; 2) FMOD Studio is not used, and
+Core API calls all happen on a single thread; or 3) FMOD Studio is initialized
+with `FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE` and all FMOD API calls are done in a
+single thread. `FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE` can be safely if and only
+if all Studio API calls happen on a single thread.<p>Thus, there are two ways to
+make the FMOD.rs wrapper thread-safe: forbid the use of the thread-unsafe flags,
+or encode thread safety into the type system. The former is trivial, but the
+latter is potentially desirable for users who are using FMOD Studio with their
+own asynchronous command queue. See the [Studio API Threads white paper] for
+more information on FMOD Studio threading. Syncrhonous Update is very much a
 power-user feature and needs to be encapsulated in a thread-safe worker queue to
 be used properly, though, so it is acceptable if the thread-unsafe API is salty.
 <p>You might be tempted to thus just make `System` construction `unsafe` and
@@ -87,3 +86,6 @@ construction would need to be audited to fail in a thread-safe manner.<p>Thus,
 exposing the thread-unsafe usage of FMOD is a high-effort endeavor with minimal
 payoff; FMOD _permits_ thread-unsafe usage but _recommends_ using the inbuilt
 thread-safe command batching.
+
+[Studio API Threads white paper]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-studio-threads.html
+[Threads and Thread Safety white paper]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-threads.html
