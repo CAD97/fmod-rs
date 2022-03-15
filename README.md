@@ -14,9 +14,9 @@ FMOD provides a [Free Indie License](https://www.fmod.com/sales#indie-note).
 The Rust code in this repository is licensed under MIT OR Apache-2.0, but this
 does not remove the requirement to comply with the FMOD license.
 
-The examples in the [examples] folder are direct ports from the distributed
-FMOD examples, and are thus under the FMOD license. Similarly, the [media]
-folder is also under the FMOD license and not fit for redistribution.
+The examples in the [examples](examples) folder are direct ports from the
+distributed FMOD examples, and are thus under the FMOD license. Similarly,
+the [media](media) folder is also under the FMOD license.
 
 ## Providing the FMOD runtime
 
