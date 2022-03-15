@@ -2,20 +2,20 @@
 
 use fmod_example_framework::*;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     init()?;
 
     {
         let system = fmod::System::new()?;
         system.init(32, fmod::InitFlags::Normal)?;
-        let sound1 = system.create_sound(media_path("drumloop.wav"), fmod::Mode::Default)?;
+        let sound1 = system.create_sound(media!("drumloop.wav"), fmod::Mode::Default)?;
 
         // drumloop.wav has embedded loop points which automatically makes looping turn on,
         // so turn it off here.  We could have also just put FMOD_LOOP_OFF in the above CreateSound call.
         sound1.set_mode(fmod::Mode::LoopOff)?;
 
-        let sound2 = system.create_sound(media_path("jaguar.wav"), fmod::Mode::Default)?;
-        let sound3 = system.create_sound(media_path("swish.wav"), fmod::Mode::Default)?;
+        let sound2 = system.create_sound(media!("jaguar.wav"), fmod::Mode::Default)?;
+        let sound3 = system.create_sound(media!("swish.wav"), fmod::Mode::Default)?;
 
         let mut channel = None;
         while !btn_press(Buttons::Quit) {
@@ -64,17 +64,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let channelsplaying = system.get_channels_playing()?;
 
-            draw(format_args!(
-                "=================================================="
-            ));
-            draw(format_args!("Play Sound Example."));
-            draw(format_args!(
-                "Copyright (c) Firelight Technologies 2004-2021."
-            ));
-            draw(format_args!(
-                "=================================================="
-            ));
-            draw(format_args!(""));
+            draw("==================================================");
+            draw("Play Sound Example.");
+            draw("Copyright (c) Firelight Technologies 2004-2021.");
+            draw("==================================================");
+            draw("");
             draw(format_args!(
                 "Press {} to play a mono sound (drumloop)",
                 btn_str(Buttons::Action1),
@@ -88,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 btn_str(Buttons::Action3),
             ));
             draw(format_args!("Press {} to quit", btn_str(Buttons::Quit),));
-            draw(format_args!(""));
+            draw("");
             draw(format_args!(
                 "Time {:02}:{:02}:{:02}/{:02}:{:02}:{:02} : {}",
                 ms / 1000 / 60,

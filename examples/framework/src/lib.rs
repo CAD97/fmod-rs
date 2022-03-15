@@ -10,13 +10,10 @@ use {
         event::{self, Event, KeyCode},
         execute, style, terminal,
     },
-    fmod::raw::*,
     once_cell::sync::Lazy,
     std::{
-        ffi::{CStr, CString},
         fmt,
         io::stdout,
-        path::{Path, PathBuf},
         sync::{
             atomic::{AtomicBool, AtomicU16, Ordering},
             Mutex,
@@ -114,10 +111,6 @@ pub fn sleep(ms: u64) {
     std::thread::sleep(Duration::from_millis(ms));
 }
 
-pub fn exit(return_code: i32) -> ! {
-    std::process::exit(return_code)
-}
-
 pub fn draw_text(text: &str) {
     if YPOS.fetch_add(1, Ordering::SeqCst) < NUM_ROWS {
         use std::fmt::Write;
@@ -155,42 +148,15 @@ pub fn btn_str(btn: Buttons) -> &'static str {
     }
 }
 
-pub fn media_path(filename: &str) -> PathBuf {
-    const MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
-    Path::new(MANIFEST_DIR).join("../../media").join(filename)
-}
-
 #[macro_export]
-macro_rules! errcheck {
-    ($result:expr) => {{
-        $crate::errcheck($result, file!(), line!())
-    }};
+macro_rules! media {
+    ($fname:expr) => {
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../../media/", $fname)
+    };
 }
 
-pub fn errcheck(result: FMOD_RESULT, file: &'static str, line: u32) {
-    if result != FMOD_OK {
-        fatal(format_args!(
-            "{file}({line}) FMOD error {} - {result}",
-            unsafe { CStr::from_ptr(FMOD_ErrorString(result)) }.to_string_lossy()
-        ));
-    }
-}
-
-pub fn fatal(error: fmt::Arguments<'_>) {
-    while !btn_press(Buttons::Quit) {
-        draw(format_args!("A fatal error has occurred..."));
-        draw(format_args!(""));
-        draw(format_args!("{error:.1023}"));
-        draw(format_args!(""));
-        draw(format_args!("Press {} to quit", btn_str(Buttons::Quit)));
-        update().unwrap();
-        sleep(50);
-    }
-    exit(0);
-}
-
-pub fn draw(format: fmt::Arguments<'_>) {
-    let string = format.to_string();
+pub fn draw(text: impl fmt::Display) {
+    let string = text.to_string();
     let mut string = &*string;
 
     loop {
