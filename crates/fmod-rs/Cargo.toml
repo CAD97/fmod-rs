@@ -5,4 +5,15 @@ edition = "2021"
 
 publish = false
 
+[lib]
+name = "fmod"
+
+[features]
+default = ["raw"]
+
+raw = []
+studio = ["dep:fmod-studio-sys"]
+
 [dependencies]
+fmod-core-sys = { version = "0.0.0", path = "../fmod-core-sys" }
+fmod-studio-sys = { version = "0.0.0", path = "../fmod-studio-sys", optional = true }

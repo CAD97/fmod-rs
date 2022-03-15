@@ -15,7 +15,7 @@ fn main() {
 
     bindgen::builder()
         .header("inc/fmod_studio.h")
-        .generate_inline_functions(true)
+        .prepend_enum_name(false)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         // blocklist types from fmod-core-sys
         .blocklist_file("inc/fmod.h")

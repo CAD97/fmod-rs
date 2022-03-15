@@ -1,0 +1,9 @@
+[package]
+name = "fmod-example-play-sound"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+fmod-example-framework = { version = "0.0.0", path = "../framework" }
+fmod-rs = { version = "0.0.0", path = "../../crates/fmod-rs" }

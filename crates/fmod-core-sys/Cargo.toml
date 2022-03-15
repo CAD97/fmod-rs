@@ -8,6 +8,7 @@ license-file = "LICENSE.txt"
 publish = false
 
 [dependencies]
+cstr = "0.2.10"
 
 [build-dependencies]
 bindgen = "0.59.2"

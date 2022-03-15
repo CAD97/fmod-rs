@@ -1,0 +1,2 @@
+/media filter=lfs diff=lfs merge=lfs -text
+/media linguist-vendored

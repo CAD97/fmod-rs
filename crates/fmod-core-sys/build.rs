@@ -15,7 +15,9 @@ fn main() {
 
     bindgen::builder()
         .header("inc/fmod.h")
-        .generate_inline_functions(true)
+        .header("inc/fmod_errors.h")
+        .header("inc/fmod_dsp.h")
+        .prepend_enum_name(false)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
         .expect("unable to generate bindings")
