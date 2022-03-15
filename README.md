@@ -74,18 +74,18 @@ latter is potentially desirable for users who are using FMOD Studio with their
 own asynchronous command queue. See the [Studio API Threads white paper] for
 more information on FMOD Studio threading. Syncrhonous Update is very much a
 power-user feature and needs to be encapsulated in a thread-safe worker queue to
-be used properly, though, so it is acceptable if the thread-unsafe API is salty.
-<p>You might be tempted to thus just make `System` construction `unsafe` and
-call that enough; let the user deal with it. However, a) that goes against the
-Rust philosophy for typed correctness, as any "leakage" of FMOD.rs types to code
-not aware of the giant caveat would then be unsound; and b) would potentially
-still be unsound anyway if FMOD.rs API calls are still made from safe code
-without knowledge that the thread-unsafe version has been initialized — every
-entry point to the API that doesn't take a type that's witness to the unsafe
-construction would need to be audited to fail in a thread-safe manner.<p>Thus,
-exposing the thread-unsafe usage of FMOD is a high-effort endeavor with minimal
-payoff; FMOD _permits_ thread-unsafe usage but _recommends_ using the inbuilt
-thread-safe command batching.
+be used properly, though, so it is acceptable if the thread-unsafe API is not
+the most ergonomic to use.<p>You might be tempted to thus just make `System`
+construction `unsafe` and call that enough; let the user deal with it. However,
+a) that goes against the Rust philosophy for typed correctness, as any "leakage"
+of FMOD.rs types to code not aware of the giant caveat would then be unsound;
+and b) would potentially still be unsound anyway if FMOD.rs API calls are still
+made from safe code without knowledge that the thread-unsafe version has been
+initialized — every entry point to the API that doesn't take a type that is
+witness to the unsafe construction would need to be audited to fail in a
+thread-safe manner.<p>Thus, exposing the thread-unsafe usage of FMOD is a
+high-effort endeavor with minimal payoff; FMOD _permits_ thread-unsafe usage but
+_recommends_ using the inbuilt thread-safe command batching.
 
 [Studio API Threads white paper]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-studio-threads.html
 [Threads and Thread Safety white paper]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-threads.html
