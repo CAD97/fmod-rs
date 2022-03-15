@@ -17,3 +17,4 @@ studio = ["dep:fmod-studio-sys"]
 [dependencies]
 fmod-core-sys = { version = "0.0.0", path = "../fmod-core-sys" }
 fmod-studio-sys = { version = "0.0.0", path = "../fmod-studio-sys", optional = true }
+static_assertions = "1.1.0"

@@ -16,7 +16,7 @@ use {
         ffi::{CStr, CString},
         fmt,
         io::stdout,
-        path::Path,
+        path::{Path, PathBuf},
         sync::{
             atomic::{AtomicBool, AtomicU16, Ordering},
             Mutex,
@@ -155,16 +155,9 @@ pub fn btn_str(btn: Buttons) -> &'static str {
     }
 }
 
-pub fn media_path(filename: &str) -> *const std::os::raw::c_char {
-    // FIXME: put the leaks in a global list like FMOD does
+pub fn media_path(filename: &str) -> PathBuf {
     const MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
-    let path = Path::new(MANIFEST_DIR).join("../../media").join(filename);
-    Box::leak(
-        CString::new(path.into_os_string().into_string().unwrap())
-            .unwrap()
-            .into_boxed_c_str(),
-    )
-    .as_ptr()
+    Path::new(MANIFEST_DIR).join("../../media").join(filename)
 }
 
 #[macro_export]

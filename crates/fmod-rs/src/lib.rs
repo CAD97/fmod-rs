@@ -1,10 +1,35 @@
-#[cfg(feature = "raw")]
-pub use __shenanigans::raw;
-#[cfg(not(feature = "raw"))]
-#[allow(unused)]
-use __shenanigans::raw;
+macro_rules! opaque {
+    ($($(#[$meta:meta])* class $Name:ident;)*) => {$(
+        #[repr(C)]
+        $(#[$meta])*
+        pub struct $Name {
+            _data: std::cell::Cell<[u8; 0]>,
+            _marker: std::marker::PhantomData<(*mut u8, std::marker::PhantomPinned)>,
+        }
+    )*};
+}
 
-mod __shenanigans {
+#[cfg(feature = "raw")]
+macro_rules! raw {
+    ($(#[$meta:meta])* pub $($tt:tt)*) => {
+        $(#[$meta])* pub $($tt)*
+    };
+}
+
+#[cfg(not(feature = "raw"))]
+macro_rules! raw {
+    (pub $($tt:tt)*) => {
+        pub(crate) $($tt)*
+    };
+}
+
+mod common;
+mod core;
+mod error;
+
+pub use self::{common::*, core::*, error::*};
+
+raw! {
     pub mod raw {
         #[doc(inline)]
         pub use fmod_core_sys::*;
