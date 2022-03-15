@@ -2,7 +2,7 @@
 
 Bindings to the [FMOD adaptive audio solution](https://fmod.com/).
 
-![What is Adaptive Audio?](https://youtu.be/p-FLWabby4Y)
+[What is Adaptive Audio? (video)](https://youtu.be/p-FLWabby4Y)
 
 ## Licensing
 
