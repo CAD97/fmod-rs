@@ -22,10 +22,12 @@ impl Sound {
 unsafe impl FmodResource for Sound {
     type Raw = FMOD_SOUND;
 
-    unsafe fn release(this: *mut Self) {
+    unsafe fn release(this: *mut Self) -> Result<()> {
         let result = FMOD_Sound_Release(this as *mut _);
         if let Some(error) = Error::from_raw(result) {
-            panic!("FMOD error releasing Sound: {error}");
+            Err(error)
+        } else {
+            Ok(())
         }
     }
 }

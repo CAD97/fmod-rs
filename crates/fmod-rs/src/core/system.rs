@@ -1,20 +1,45 @@
-use crate::{
-    raw::*, Channel, ChannelGroup, Dsp, Error, FmodResource, Handle, InitFlags, Mode, Result, Sound,
+use {
+    crate::{
+        raw::*, Channel, ChannelGroup, Dsp, Error, FmodResource, Handle, InitFlags, Mode, Result,
+        Sound,
+    },
+    std::{ffi::CString, path::Path, ptr, sync::atomic::Ordering},
 };
-use std::{ffi::CString, path::Path, ptr};
 
 opaque! {
     class System;
 }
 
 impl System {
+    /// Creates an instance of the FMOD system.
+    ///
+    /// # FMOD.rs implementation note
+    ///
+    /// To maintain thread safety, only one `System` or `studio::System` may be
+    /// initialized. Attempts to create a second `System` will fail with
+    /// [`Error::Initialized`] before calling into FMOD.
     pub fn new() -> Result<Handle<Self>> {
+        if crate::CREATE_ONCE.fetch_or(true, Ordering::AcqRel) {
+            Err(Error::Initialized)
+        } else {
+            unsafe { Self::new_unsafe() }
+        }
+    }
+
+    /// Creates an instance of the FMOD system.
+    ///
+    /// # Safety
+    ///
+    /// This function is not thread safe. In fact, _releasing_ a `System` is not
+    /// thread safe! If [`System::new_unsafe`] or [`System::release`] (called by
+    /// [`Handle`]'s drop implementation)
+    pub unsafe fn new_unsafe() -> Result<Handle<Self>> {
         let mut raw = ptr::null_mut();
-        let result = unsafe { FMOD_System_Create(&mut raw, FMOD_VERSION) };
+        let result = FMOD_System_Create(&mut raw, FMOD_VERSION);
         if let Some(error) = Error::from_raw(result) {
             Err(error)
         } else {
-            Ok(unsafe { Handle::from_raw(raw) })
+            Ok(Handle::from_raw(raw))
         }
     }
 
@@ -33,10 +58,12 @@ impl System {
 unsafe impl FmodResource for System {
     type Raw = FMOD_SYSTEM;
 
-    unsafe fn release(this: *mut Self) {
+    unsafe fn release(this: *mut Self) -> Result<()> {
         let result = FMOD_System_Release(this as *mut _);
         if let Some(error) = Error::from_raw(result) {
-            panic!("FMOD error releasing System: {error}");
+            Err(error)
+        } else {
+            Ok(())
         }
     }
 }

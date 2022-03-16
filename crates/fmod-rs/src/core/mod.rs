@@ -1,6 +1,9 @@
-use std::{
-    mem::ManuallyDrop,
-    ops::{Deref, DerefMut},
+use {
+    crate::Result,
+    std::{
+        mem::ManuallyDrop,
+        ops::{Deref, DerefMut},
+    },
 };
 
 mod channel;
@@ -15,7 +18,7 @@ pub use self::{channel::*, channel_group::*, dsp::*, sound::*, system::*};
 pub unsafe trait FmodResource {
     type Raw;
     #[allow(clippy::missing_safety_doc)]
-    unsafe fn release(this: *mut Self);
+    unsafe fn release(this: *mut Self) -> Result<()>;
 }
 
 /// A handle to an FMOD managed resource.
@@ -74,6 +77,15 @@ impl<T: FmodResource> DerefMut for Handle<T> {
 
 impl<T: FmodResource> Drop for Handle<T> {
     fn drop(&mut self) {
-        unsafe { T::release(self.raw) }
+        unsafe { T::release(self.raw) }.unwrap_or_else(|error| {
+            #[cfg(feature = "tracing")]
+            tracing::error!(
+                parent: &*crate::SPAN,
+                error = error.into_raw(),
+                "FMOD error releasing {}({:p}): {error}",
+                std::any::type_name::<T>(),
+                &mut **self as *mut T,
+            );
+        });
     }
 }

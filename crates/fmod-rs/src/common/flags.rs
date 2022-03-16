@@ -213,3 +213,14 @@ flags! {
         Core15  = 1 << 15,
     }
 }
+
+impl ThreadAffinity {
+    #[allow(non_snake_case)]
+    pub const fn Core(n: u8) -> ThreadAffinity {
+        if n <= 62 {
+            unsafe { ThreadAffinity::from_raw(1 << n) }
+        } else {
+            panic!("thread affinity to core >62 given (nice CPU)")
+        }
+    }
+}

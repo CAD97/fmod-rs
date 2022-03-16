@@ -1,4 +1,4 @@
-use crate::{raw::*, Error, FmodResource};
+use crate::{raw::*, Error, FmodResource, Result};
 
 opaque! {
     class ChannelGroup;
@@ -20,10 +20,12 @@ impl ChannelGroup {
 unsafe impl FmodResource for ChannelGroup {
     type Raw = FMOD_CHANNELGROUP;
 
-    unsafe fn release(this: *mut Self) {
+    unsafe fn release(this: *mut Self) -> Result<()> {
         let result = FMOD_ChannelGroup_Release(this as *mut _);
         if let Some(error) = Error::from_raw(result) {
-            panic!("FMOD error releasing ChannelGroup: {error}");
+            Err(error)
+        } else {
+            Ok(())
         }
     }
 }

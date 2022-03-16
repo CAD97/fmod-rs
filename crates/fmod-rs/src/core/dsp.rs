@@ -1,4 +1,4 @@
-use crate::{raw::*, Error, FmodResource};
+use crate::{raw::*, Error, FmodResource, Result};
 
 opaque! {
     class Dsp;
@@ -20,10 +20,12 @@ impl Dsp {
 unsafe impl FmodResource for Dsp {
     type Raw = FMOD_DSP;
 
-    unsafe fn release(this: *mut Self) {
+    unsafe fn release(this: *mut Self) -> Result<()> {
         let result = FMOD_DSP_Release(this as *mut _);
         if let Some(error) = Error::from_raw(result) {
-            panic!("FMOD error releasing DSP: {error}");
+            Err(error)
+        } else {
+            Ok(())
         }
     }
 }

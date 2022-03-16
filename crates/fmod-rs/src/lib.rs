@@ -23,6 +23,8 @@ macro_rules! raw {
     };
 }
 
+use {once_cell::sync::Lazy, std::sync::atomic::AtomicBool};
+
 mod common;
 mod core;
 mod error;
@@ -39,3 +41,7 @@ raw! {
         pub use fmod_studio_sys::*;
     }
 }
+
+#[cfg(feature = "tracing")]
+static SPAN: Lazy<tracing::Span> = Lazy::new(|| tracing::info_span!(parent: None, "FMOD"));
+static CREATE_ONCE: AtomicBool = AtomicBool::new(false);
