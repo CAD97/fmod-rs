@@ -7,16 +7,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'fmod-example-play-sound'",
+            "name": "Debug example 'play_sound'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=fmod-example-play-sound",
-                    "--package=fmod-example-play-sound"
+                    "--example=play_sound",
+                    "--package=fmod-examples"
                 ],
                 "filter": {
-                    "name": "fmod-example-play-sound",
-                    "kind": "bin"
+                    "name": "play_sound",
+                    "kind": "example"
                 }
             },
             "args": [],

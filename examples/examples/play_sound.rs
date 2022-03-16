@@ -1,9 +1,9 @@
 #![allow(clippy::try_err)]
 
-use fmod_example_framework::*;
+use fmod_examples::{media, Buttons, Example};
 
 fn main() -> anyhow::Result<()> {
-    init()?;
+    let mut example = Example::init()?;
 
     {
         let system = fmod::System::new()?;
@@ -18,15 +18,15 @@ fn main() -> anyhow::Result<()> {
         let sound3 = system.create_sound(media!("swish.wav"), fmod::Mode::Default)?;
 
         let mut channel = None;
-        while !btn_press(Buttons::Quit) {
-            update()?;
-            if btn_press(Buttons::Action1) {
+        while !example.btn_press(Buttons::Quit) {
+            example.update()?;
+            if example.btn_press(Buttons::Action1) {
                 channel = Some(system.play_sound(&*sound1, None, false)?);
             }
-            if btn_press(Buttons::Action2) {
+            if example.btn_press(Buttons::Action2) {
                 channel = Some(system.play_sound(&*sound2, None, false)?);
             }
-            if btn_press(Buttons::Action3) {
+            if example.btn_press(Buttons::Action3) {
                 channel = Some(system.play_sound(&*sound3, None, false)?);
             }
             system.update()?;
@@ -64,26 +64,26 @@ fn main() -> anyhow::Result<()> {
 
             let channelsplaying = system.get_channels_playing()?;
 
-            draw("==================================================");
-            draw("Play Sound Example.");
-            draw("Copyright (c) Firelight Technologies 2004-2021.");
-            draw("==================================================");
-            draw("");
-            draw(format_args!(
+            example.draw("==================================================");
+            example.draw("Play Sound Example.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2021.");
+            example.draw("==================================================");
+            example.draw("");
+            example.draw(format_args!(
                 "Press {} to play a mono sound (drumloop)",
-                btn_str(Buttons::Action1),
+                Buttons::Action1.name(),
             ));
-            draw(format_args!(
+            example.draw(format_args!(
                 "Press {} to play a mono sound (jaguar)",
-                btn_str(Buttons::Action2),
+                Buttons::Action2.name(),
             ));
-            draw(format_args!(
+            example.draw(format_args!(
                 "Press {} to play a stereo sound (swish)",
-                btn_str(Buttons::Action3),
+                Buttons::Action3.name(),
             ));
-            draw(format_args!("Press {} to quit", btn_str(Buttons::Quit),));
-            draw("");
-            draw(format_args!(
+            example.draw(format_args!("Press {} to quit", Buttons::Quit.name()));
+            example.draw("");
+            example.draw(format_args!(
                 "Time {:02}:{:02}:{:02}/{:02}:{:02}:{:02} : {}",
                 ms / 1000 / 60,
                 ms / 1000 % 60,
@@ -99,13 +99,12 @@ fn main() -> anyhow::Result<()> {
                     "Stopped"
                 }
             ));
-            draw(format_args!("Channels Playing {channelsplaying}"));
+            example.draw(format_args!("Channels Playing {channelsplaying}"));
 
-            sleep(50);
+            example.sleep(50);
         }
     }
 
-    close()?;
-
+    example.close()?;
     Ok(())
 }
