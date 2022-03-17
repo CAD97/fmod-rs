@@ -276,6 +276,13 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
         tracing::{level_filters::STATIC_MAX_LEVEL, Level},
     };
 
+    // From my experience, FMOD_DEBUG_TYPE_MEMORY, _FILE, _CODEC are *very very*
+    // verbose, and are basically TRACE level detail. Also very interestingly,
+    // FMOD_DEBUG_TYPE_TRACE has yet to make a peep in any implemented example.
+    // As such, we map _TRACE to tracing Level::DEBUG and _MEMORY, _FILE, _CODEC
+    // to tracing Level::TRACE. This looks backwards on first glance, but seems
+    // to match their use in practice.
+
     fn on_fmod_debug(
         flags: DebugFlags,
         file: Option<&str>,
@@ -283,14 +290,14 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
         func: Option<&str>,
         message: Option<&str>,
     ) {
-        if flags.is_set(DebugFlags::TypeTrace) {
-            tracing::trace!(target: "fmod", parent: &crate::span(), file, line, func, message)
-        } else if flags.is_set(DebugFlags::TypeMemory) {
-            tracing::debug!(target: "fmod::memory", parent: &crate::memory_span(), file, line, func, message)
+        if flags.is_set(DebugFlags::TypeMemory) {
+            tracing::trace!(target: "fmod::memory", parent: &crate::memory_span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeFile) {
-            tracing::debug!(target: "fmod::file", parent: &crate::file_span(), file, line, func, message)
+            tracing::trace!(target: "fmod::file", parent: &crate::file_span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeCodec) {
-            tracing::debug!(target: "fmod::codec", parent: &crate::codec_span(), file, line, func, message)
+            tracing::trace!(target: "fmod::codec", parent: &crate::codec_span(), file, line, func, message)
+        } else if flags.is_set(DebugFlags::TypeTrace) {
+            tracing::debug!(target: "fmod", parent: &crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::LevelLog) {
             tracing::info!(target: "fmod", parent: &crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::LevelWarning) {
@@ -302,35 +309,31 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
         };
     }
 
-    #[allow(clippy::if_same_then_else)]
-    let mut debug_flags = if Level::TRACE < STATIC_MAX_LEVEL {
+    let debug_flags = if Level::TRACE <= STATIC_MAX_LEVEL {
+        let debug_flags = DebugFlags::LevelLog | DebugFlags::TypeTrace;
+        if Level::TRACE <= tracing::level_filters::LevelFilter::current() {
+            // Try to eagerly avoid turning on TypeMemory/File/Codec debug flags
+            // if they're statically allowed but dynamically filtered out. We'd
+            // like to check more granularly than just if TRACE is ever allowed,
+            // and Span::is_disabled *seems* like it'd be what we want, but I'm
+            // unsure if spans are appropriate for this, and unable to get the
+            // span to actually disable (without a custom subscriber layer)
+            // independantly from the global setting.
+            debug_flags | DebugFlags::TypeMemory | DebugFlags::TypeFile | DebugFlags::TypeCodec
+        } else {
+            debug_flags
+        }
+    } else if Level::DEBUG <= STATIC_MAX_LEVEL {
         DebugFlags::LevelLog | DebugFlags::TypeTrace
-    } else if Level::DEBUG < STATIC_MAX_LEVEL {
+    } else if Level::INFO <= STATIC_MAX_LEVEL {
         DebugFlags::LevelLog
-    } else if Level::INFO < STATIC_MAX_LEVEL {
-        DebugFlags::LevelLog
-    } else if Level::WARN < STATIC_MAX_LEVEL {
+    } else if Level::WARN <= STATIC_MAX_LEVEL {
         DebugFlags::LevelWarning
-    } else if Level::ERROR < STATIC_MAX_LEVEL {
+    } else if Level::ERROR <= STATIC_MAX_LEVEL {
         DebugFlags::LevelError
     } else {
         DebugFlags::LevelNone
     };
-
-    // Only tell FMOD to generate these debug messages if the spans have
-    // not been disabled by the subscriber. I don't know how disabled it
-    // has to actually be, but we're trying to be a good citizen here.
-    if Level::DEBUG < STATIC_MAX_LEVEL {
-        if !crate::memory_span().is_disabled() {
-            debug_flags |= DebugFlags::TypeMemory;
-        }
-        if !crate::file_span().is_disabled() {
-            debug_flags |= DebugFlags::TypeFile;
-        }
-        if !crate::codec_span().is_disabled() {
-            debug_flags |= DebugFlags::TypeCodec;
-        }
-    }
 
     let flags = DebugFlags::into_raw(debug_flags);
     let mode = DebugMode::into_raw(DebugMode::Callback);
@@ -365,11 +368,17 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
             Ok(()) => FMOD_OK,
             Err(e) => {
                 if let Some(e) = e.downcast_ref::<String>() {
-                    tracing::error!(parent: crate::span(), "FMOD.rs panicked in a callback: {e}");
+                    tracing::error!(
+                        parent: &crate::span(),
+                        "FMOD.rs panicked in a callback: {e}"
+                    );
                 } else if let Some(e) = e.downcast_ref::<&str>() {
-                    tracing::error!(parent: crate::span(), "FMOD.rs panicked in a callback: {e}");
+                    tracing::error!(
+                        parent: &crate::span(),
+                        "FMOD.rs panicked in a callback: {e}"
+                    );
                 } else {
-                    tracing::error!(parent: crate::span(), "FMOD.rs panicked in a callback");
+                    tracing::error!(parent: &crate::span(), "FMOD.rs panicked in a callback");
                 }
                 Error::into_raw(Error::InternalRs)
             }
@@ -380,7 +389,7 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
     if let Some(error) = Error::from_raw(result) {
         match error {
             Error::Unsupported => {
-                tracing::info!(parent: crate::span(), "FMOD logging disabled");
+                tracing::info!(parent: &crate::span(), "FMOD logging disabled");
                 Ok(())
             }
             error => Err(error),
