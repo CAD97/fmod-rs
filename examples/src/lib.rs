@@ -62,7 +62,10 @@ impl Example {
         std::fs::remove_file("example.log").ok();
         let file_log = tracing_appender::rolling::never(".", "example.log");
         let (writer, _guard) = tracing_appender::non_blocking(file_log);
-        tracing_subscriber::fmt().with_writer(writer).init();
+        tracing_subscriber::fmt()
+            .pretty()
+            .with_writer(writer)
+            .init();
 
         terminal::enable_raw_mode()?;
         execute!(

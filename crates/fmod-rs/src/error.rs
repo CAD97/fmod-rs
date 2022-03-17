@@ -356,10 +356,10 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
                 .map(|message| CStr::from_ptr(message.as_ptr()).to_string_lossy());
             on_fmod_debug(
                 flags,
-                file.as_deref(),
+                file.as_deref().map(str::trim_end),
                 line,
-                func.as_deref(),
-                message.as_deref(),
+                func.as_deref().map(str::trim_end),
+                message.as_deref().map(str::trim_end),
             )
         }) {
             Ok(()) => FMOD_OK,
