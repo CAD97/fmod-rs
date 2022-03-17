@@ -28,8 +28,6 @@ macro_rules! raw {
 
 extern crate self as fmod;
 
-use once_cell::sync::Lazy;
-
 mod common;
 mod core;
 mod error;
@@ -48,4 +46,21 @@ raw! {
 }
 
 #[cfg(feature = "tracing")]
-static SPAN: Lazy<tracing::Span> = Lazy::new(|| tracing::info_span!(parent: None, "FMOD"));
+fn span() -> tracing::Span {
+    tracing::info_span!(parent: None, "fmod")
+}
+
+#[cfg(feature = "tracing")]
+fn memory_span() -> tracing::Span {
+    tracing::debug_span!(parent: crate::span(), "memory")
+}
+
+#[cfg(feature = "tracing")]
+fn file_span() -> tracing::Span {
+    tracing::debug_span!(parent: crate::span(), "file")
+}
+
+#[cfg(feature = "tracing")]
+fn codec_span() -> tracing::Span {
+    tracing::debug_span!(parent: crate::span(), "codec")
+}

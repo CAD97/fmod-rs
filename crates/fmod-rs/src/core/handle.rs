@@ -23,7 +23,7 @@ enum BeatingHeart {
 
 cfg_if! {
     if #[cfg(feature = "unstable")] {
-        use std::lazy::Lazy;
+        use std::lazy::SyncLazy as Lazy;
     } else if #[cfg(feature = "once_cell")] {
         use once_cell::sync::Lazy;
     } else {
@@ -53,7 +53,7 @@ impl Drop for BeatingHeart {
                 .unwrap_or_else(|error| {
                     #[cfg(feature = "tracing")]
                     tracing::error!(
-                        parent: &*crate::SPAN,
+                        parent: crate::span(),
                         error = error.into_raw(),
                         "Error releasing System({:p}): {error}",
                         system,
@@ -89,7 +89,7 @@ impl<T: FmodResource> Drop for Handle<T> {
         unsafe { T::release(self.as_raw()) }.unwrap_or_else(|error| {
             #[cfg(feature = "tracing")]
             tracing::error!(
-                parent: &*crate::SPAN,
+                parent: crate::span(),
                 error = error.into_raw(),
                 "Error releasing {}({:p}): {error}",
                 std::any::type_name::<T>(),
@@ -122,7 +122,13 @@ impl<T: FmodResource> Handle<T> {
                     "`Handle::new_raw` should only be called when the FMOD System is alive"
                 );
                 #[cfg(not(debug_assertions))]
-                Err(fmod::Error::InternalRs)
+                {
+                    tracing::error!(
+                        parent: &crate::SPAN,
+                        "`Handle::new_raw` called improperly somehow",
+                    );
+                    Err(fmod::Error::InternalRs)
+                }
             }
         }
     }

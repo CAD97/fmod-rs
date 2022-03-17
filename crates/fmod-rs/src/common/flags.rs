@@ -55,7 +55,7 @@ macro_rules! flags {
         )*}
     )*} => {$(
         $(#[$meta])*
-        #[derive(Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         $vis struct $Name {
             raw: $Repr,
         }
@@ -66,12 +66,14 @@ macro_rules! flags {
                 pub const unsafe fn from_raw(raw: $Repr) -> Self {
                     Self { raw }
                 }
-            }
 
-            raw! {
                 pub const fn into_raw(this: Self) -> $Repr {
                     this.raw
                 }
+            }
+
+            pub fn is_set(self, variant: Self) -> bool {
+                self & variant == variant
             }
 
             $(

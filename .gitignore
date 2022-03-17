@@ -1,6 +1,8 @@
 /target
 /Cargo.lock
 
+/example.log
+
 # We can't ship the DLLs; see FMOD_LICENSE.txt
 # https://www.fmod.com/sales
 /lib

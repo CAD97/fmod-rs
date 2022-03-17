@@ -54,10 +54,16 @@ pub struct Example {
     paused: bool,
     buffer: String,
     ypos: usize,
+    _guard: tracing_appender::non_blocking::WorkerGuard,
 }
 
 impl Example {
     pub fn init() -> Result<Example> {
+        std::fs::remove_file("example.log").ok();
+        let file_log = tracing_appender::rolling::never(".", "example.log");
+        let (writer, _guard) = tracing_appender::non_blocking(file_log);
+        tracing_subscriber::fmt().with_writer(writer).init();
+
         terminal::enable_raw_mode()?;
         execute!(
             stdout(),
@@ -65,12 +71,16 @@ impl Example {
             cursor::Hide,
             terminal::SetTitle("FMOD Example"),
         )?;
+
+        tracing::info!("example initialized");
+
         Ok(Example {
             pressed: Buttons::empty(),
             down: Buttons::empty(),
             paused: false,
             buffer: String::with_capacity((NUM_COLUMNS * NUM_ROWS) as usize),
             ypos: 0,
+            _guard,
         })
     }
 

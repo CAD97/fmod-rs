@@ -1,7 +1,7 @@
 use {
     crate::{
-        raw::*, Channel, ChannelGroup, Dsp, Error, FmodResource, Handle, InitFlags, Mode, Result,
-        Sound,
+        fmod_debug_install_tracing, raw::*, Channel, ChannelGroup, Dsp, Error, FmodResource,
+        Handle, InitFlags, Mode, Result, Sound,
     },
     std::{ffi::CString, path::Path, ptr},
 };
@@ -36,6 +36,11 @@ impl System {
     }
 
     pub(super) unsafe fn raw_create() -> Result<*mut Self> {
+        // log setup
+        #[cfg(feature = "fmod_debug_is_tracing")]
+        fmod_debug_install_tracing()?;
+
+        // actual creation
         let mut raw = ptr::null_mut();
         let result = FMOD_System_Create(&mut raw, FMOD_VERSION);
         if let Some(error) = Error::from_raw(result) {

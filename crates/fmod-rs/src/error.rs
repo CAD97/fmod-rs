@@ -240,15 +240,15 @@ impl Error {
     /// The length provided exceeds the allowable limit.
     pub const TooManySamples: Self = cook!(FMOD_ERR_TOOMANYSAMPLES);
 
-    /// An error occurred in FMOD.rs that wasn't supposed to. Open an issue.
-    /// This should be a panic with debug_assertions enabled.
+    /// An error occurred in FMOD.rs that wasn't supposed to. Check the logs and
+    /// open an issue.
     pub const InternalRs: Self = cook!(-1);
 }
 
 impl std::error::Error for Error {
     fn description(&self) -> &str {
         if *self == Error::InternalRs {
-            return "An error occurred in FMOD.rs that wasn't supposed to. Open an issue. This should be a panic with debug_assertions enabled.";
+            return "An error occurred in FMOD.rs that wasn't supposed to. Check the logs and open an issue.";
         }
 
         // SAFETY: FMOD_ErrorString is a C `static` function which thus isn't
@@ -265,5 +265,127 @@ impl fmt::Display for Error {
     #[allow(deprecated)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.description())
+    }
+}
+
+#[cfg(feature = "fmod_debug_is_tracing")]
+pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
+    use {
+        crate::{DebugFlags, DebugMode},
+        std::ptr,
+        tracing::{level_filters::STATIC_MAX_LEVEL, Level},
+    };
+
+    fn on_fmod_debug(
+        flags: DebugFlags,
+        file: Option<&str>,
+        line: i32,
+        func: Option<&str>,
+        message: Option<&str>,
+    ) {
+        if flags.is_set(DebugFlags::TypeTrace) {
+            tracing::trace!(parent: crate::span(), file, line, func, message)
+        } else if flags.is_set(DebugFlags::TypeMemory) {
+            tracing::debug!(parent: crate::memory_span(), file, line, func, message)
+        } else if flags.is_set(DebugFlags::TypeFile) {
+            tracing::debug!(parent: crate::file_span(), file, line, func, message)
+        } else if flags.is_set(DebugFlags::TypeCodec) {
+            tracing::debug!(parent: crate::codec_span(), file, line, func, message)
+        } else if flags.is_set(DebugFlags::LevelLog) {
+            tracing::info!(parent: crate::span(), file, line, func, message)
+        } else if flags.is_set(DebugFlags::LevelWarning) {
+            tracing::warn!(parent: crate::span(), file, line, func, message)
+        } else if flags.is_set(DebugFlags::LevelError) {
+            tracing::error!(parent: crate::span(), file, line, func, message)
+        } else {
+            panic!("FMOD debug callback called without message level")
+        };
+    }
+
+    #[allow(clippy::if_same_then_else)]
+    let mut debug_flags = if Level::TRACE < STATIC_MAX_LEVEL {
+        DebugFlags::LevelLog | DebugFlags::TypeTrace
+    } else if Level::DEBUG < STATIC_MAX_LEVEL {
+        DebugFlags::LevelLog
+    } else if Level::INFO < STATIC_MAX_LEVEL {
+        DebugFlags::LevelLog
+    } else if Level::WARN < STATIC_MAX_LEVEL {
+        DebugFlags::LevelWarning
+    } else if Level::ERROR < STATIC_MAX_LEVEL {
+        DebugFlags::LevelError
+    } else {
+        DebugFlags::LevelNone
+    };
+
+    // Only tell FMOD to generate these debug messages if the spans have
+    // not been disabled by the subscriber. I don't know how disabled it
+    // has to actually be, but we're trying to be a good citizen here.
+    if Level::DEBUG < STATIC_MAX_LEVEL {
+        if !crate::memory_span().is_disabled() {
+            debug_flags |= DebugFlags::TypeMemory;
+        }
+        if !crate::file_span().is_disabled() {
+            debug_flags |= DebugFlags::TypeFile;
+        }
+        if !crate::codec_span().is_disabled() {
+            debug_flags |= DebugFlags::TypeCodec;
+        }
+    }
+
+    let flags = DebugFlags::into_raw(debug_flags);
+    let mode = DebugMode::into_raw(DebugMode::Callback);
+    unsafe extern "C" fn callback(
+        flags: FMOD_DEBUG_FLAGS,
+        file: *const std::os::raw::c_char,
+        line: std::os::raw::c_int,
+        func: *const std::os::raw::c_char,
+        message: *const std::os::raw::c_char,
+    ) -> FMOD_RESULT {
+        match std::panic::catch_unwind(|| {
+            // NB: FMOD claims to only deal in UTF-8, so this _should_
+            //     not make an owned String; to_string_lossy is only
+            //     there as a precaution, and logging is turned off
+            //     completely by FMOD in release builds, so this won't
+            //     impact release performance anyway. Peace of mind 😊
+            let flags = DebugFlags::from_raw(flags);
+            let file = ptr::NonNull::new(file as *mut _)
+                .map(|file| CStr::from_ptr(file.as_ptr()).to_string_lossy());
+            let func = ptr::NonNull::new(func as *mut _)
+                .map(|func| CStr::from_ptr(func.as_ptr()).to_string_lossy());
+            let message = ptr::NonNull::new(message as *mut _)
+                .map(|message| CStr::from_ptr(message.as_ptr()).to_string_lossy());
+            on_fmod_debug(
+                flags,
+                file.as_deref(),
+                line,
+                func.as_deref(),
+                message.as_deref(),
+            )
+        }) {
+            Ok(()) => FMOD_OK,
+            Err(e) => {
+                if let Some(e) = e.downcast_ref::<String>() {
+                    tracing::error!(parent: crate::span(), "FMOD.rs panicked in a callback: {e}");
+                } else if let Some(e) = e.downcast_ref::<&str>() {
+                    tracing::error!(parent: crate::span(), "FMOD.rs panicked in a callback: {e}");
+                } else {
+                    tracing::error!(parent: crate::span(), "FMOD.rs panicked in a callback");
+                }
+                Error::into_raw(Error::InternalRs)
+            }
+        }
+    }
+
+    let result = unsafe { FMOD_Debug_Initialize(flags, mode, Some(callback), ptr::null()) };
+    if let Some(error) = Error::from_raw(result) {
+        match error {
+            Error::Unsupported => {
+                tracing::info!(parent: crate::span(), "FMOD logging disabled");
+                Ok(())
+            }
+            error => Err(error),
+        }
+    } else {
+        Ok(())
     }
 }
