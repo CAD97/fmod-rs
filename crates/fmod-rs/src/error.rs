@@ -284,19 +284,19 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
         message: Option<&str>,
     ) {
         if flags.is_set(DebugFlags::TypeTrace) {
-            tracing::trace!(parent: crate::span(), file, line, func, message)
+            tracing::trace!(parent: &crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeMemory) {
-            tracing::debug!(parent: crate::memory_span(), file, line, func, message)
+            tracing::debug!(parent: &crate::memory_span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeFile) {
-            tracing::debug!(parent: crate::file_span(), file, line, func, message)
+            tracing::debug!(parent: &crate::file_span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeCodec) {
-            tracing::debug!(parent: crate::codec_span(), file, line, func, message)
+            tracing::debug!(parent: &crate::codec_span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::LevelLog) {
-            tracing::info!(parent: crate::span(), file, line, func, message)
+            tracing::info!(parent: &crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::LevelWarning) {
-            tracing::warn!(parent: crate::span(), file, line, func, message)
+            tracing::warn!(parent: &crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::LevelError) {
-            tracing::error!(parent: crate::span(), file, line, func, message)
+            tracing::error!(parent: &crate::span(), file, line, func, message)
         } else {
             panic!("FMOD debug callback called without message level")
         };

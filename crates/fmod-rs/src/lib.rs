@@ -52,15 +52,15 @@ fn span() -> tracing::Span {
 
 #[cfg(feature = "tracing")]
 fn memory_span() -> tracing::Span {
-    tracing::debug_span!(parent: crate::span(), "memory")
+    tracing::debug_span!(parent: &crate::span(), "memory")
 }
 
 #[cfg(feature = "tracing")]
 fn file_span() -> tracing::Span {
-    tracing::debug_span!(parent: crate::span(), "file")
+    tracing::debug_span!(parent: &crate::span(), "file")
 }
 
 #[cfg(feature = "tracing")]
 fn codec_span() -> tracing::Span {
-    tracing::debug_span!(parent: crate::span(), "codec")
+    tracing::debug_span!(parent: &crate::span(), "codec")
 }
