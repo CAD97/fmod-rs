@@ -1,3 +1,5 @@
+#[cfg_attr(feature = "unstable", feature(once_cell))]
+
 macro_rules! opaque {
     ($($(#[$meta:meta])* class $Name:ident;)*) => {$(
         #[repr(C)]
@@ -18,8 +20,9 @@ macro_rules! raw {
 
 #[cfg(not(feature = "raw"))]
 macro_rules! raw {
-    (pub $($tt:tt)*) => {
-        pub(crate) $($tt)*
+    ($(#[$meta:meta])* pub $($tt:tt)*) => {
+        #[allow(dead_code)]
+        $(#[$meta])* pub(crate) $($tt)*
     };
 }
 

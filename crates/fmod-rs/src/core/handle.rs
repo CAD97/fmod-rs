@@ -3,8 +3,7 @@
 //! static HEART: Weak<BeatingHeart>.
 
 use {
-    once_cell::sync::Lazy,
-    parking_lot::{RwLock, RwLockUpgradableReadGuard},
+    cfg_if::cfg_if,
     std::{
         ops::{Deref, DerefMut},
         ptr,
@@ -22,11 +21,31 @@ enum BeatingHeart {
     // Studio(ptr::NonNull<fmod::studio::System>),
 }
 
-static HEART: Lazy<RwLock<Weak<TrustMe<BeatingHeart>>>> = Lazy::new(|| RwLock::new(Weak::new()));
+cfg_if! {
+    if #[cfg(feature = "unstable")] {
+        use std::lazy::Lazy;
+    } else if #[cfg(feature = "once_cell")] {
+        use once_cell::sync::Lazy;
+    } else {
+        compile_error!("FMOD.rs requires either the `unstable` or `once_cell` feature to be enabled")
+    }
+}
+
+cfg_if! {
+    if #[cfg(feature = "parking_lot")] {
+        use parking_lot::{RwLock, RwLockUpgradableReadGuard};
+        static HEART: Lazy<RwLock<Weak<TrustMe<BeatingHeart>>>> =
+            Lazy::new(|| RwLock::new(Weak::new()));
+    } else {
+        use std::sync::RwLock;
+        static HEART: Lazy<RwLock<Weak<TrustMe<BeatingHeart>>>> =
+            Lazy::new(|| RwLock::new(Weak::new()));
+    }
+}
 
 impl Drop for BeatingHeart {
     fn drop(&mut self) {
-        debug_assert_eq!(HEART.read().strong_count(), 0);
+        debug_assert!(heart().is_none());
         // SAFETY: once BeatingHeart lies still, all FMOD resources have gone.
         //         we can now safely release the System without racing anything.
         match self {
@@ -80,9 +99,19 @@ impl<T: FmodResource> Drop for Handle<T> {
     }
 }
 
+fn heart() -> Option<Arc<TrustMe<BeatingHeart>>> {
+    cfg_if! {
+        if #[cfg(feature = "parking_lot")] {
+            HEART.read().upgrade()
+        } else {
+            HEART.read().unwrap().upgrade()
+        }
+    }
+}
+
 impl<T: FmodResource> Handle<T> {
     pub(super) unsafe fn new_raw(raw: *mut T::Raw) -> fmod::Result<Handle<T>> {
-        match HEART.read().upgrade() {
+        match heart() {
             Some(heart) => Ok(Handle {
                 raw: ptr::NonNull::new_unchecked(raw as *mut T),
                 _own: heart,
@@ -101,8 +130,17 @@ impl<T: FmodResource> Handle<T> {
 
 impl Handle<fmod::System> {
     pub(super) fn new_system() -> fmod::Result<Handle<fmod::System>> {
-        // check if we're already initialized; if so, clone
-        if let Some(heart) = HEART.read().upgrade() {
+        // aquire a read lock on the heart
+        cfg_if! {
+            if #[cfg(feature = "parking_lot")] {
+                let heart = HEART.read();
+            } else {
+                let heart = HEART.read().unwrap();
+            }
+        }
+
+        // if we already have an initialized system, clone it
+        if let Some(heart) = heart.upgrade() {
             return Ok(match heart.0 {
                 BeatingHeart::Core(system) => Handle {
                     raw: system,
@@ -111,9 +149,17 @@ impl Handle<fmod::System> {
             });
         }
 
-        // it looks like we're first, so get a read lock
-        let heart = HEART.upgradable_read();
-        // but if we were beat, don't make a new system
+        // it looks like we're first to the system, so get a write lock
+        drop(heart);
+        cfg_if! {
+            if #[cfg(feature = "parking_lot")] {
+                let heart = HEART.upgradable_read();
+            } else {
+                let mut heart = HEART.write().unwrap();
+            }
+        }
+
+        // but if we were beat to initialization, don't make a new system
         if let Some(heart) = heart.upgrade() {
             return Ok(match heart.0 {
                 BeatingHeart::Core(system) => Handle {
@@ -124,7 +170,11 @@ impl Handle<fmod::System> {
         }
 
         // otherwise, we're the first, so create the actual system
-        let mut heart = RwLockUpgradableReadGuard::upgrade(heart);
+        cfg_if! {
+            if #[cfg(feature = "parking_lot")] {
+                let mut heart = RwLockUpgradableReadGuard::upgrade(heart);
+            }
+        }
 
         // SAFETY: all of the above is to guarantee that this cannot possibly
         //         race any other FMOD API functions, and is thus safe to call.
@@ -132,8 +182,11 @@ impl Handle<fmod::System> {
             ptr::NonNull::new_unchecked(fmod::System::raw_create()? as *mut fmod::System)
         };
 
+        // register the global system heart
         let own = Arc::new(TrustMe(BeatingHeart::Core(raw)));
         *heart = Arc::downgrade(&own);
+
+        // and now we're initialized
         Ok(Handle { raw, _own: own })
     }
 }
