@@ -47,20 +47,20 @@ raw! {
 
 #[cfg(feature = "tracing")]
 fn span() -> tracing::Span {
-    tracing::info_span!(parent: None, "fmod")
+    tracing::error_span!(target: "fmod", parent: None, "fmod")
 }
 
 #[cfg(feature = "tracing")]
 fn memory_span() -> tracing::Span {
-    tracing::debug_span!(parent: &crate::span(), "memory")
+    tracing::debug_span!(target: "fmod", parent: &crate::span(), "memory")
 }
 
 #[cfg(feature = "tracing")]
 fn file_span() -> tracing::Span {
-    tracing::debug_span!(parent: &crate::span(), "file")
+    tracing::debug_span!(target: "fmod", parent: &crate::span(), "file")
 }
 
 #[cfg(feature = "tracing")]
 fn codec_span() -> tracing::Span {
-    tracing::debug_span!(parent: &crate::span(), "codec")
+    tracing::debug_span!(target: "fmod", parent: &crate::span(), "codec")
 }
