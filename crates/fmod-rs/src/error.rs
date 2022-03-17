@@ -4,7 +4,7 @@ use std::{error::Error as _, ffi::CStr, fmt, num::NonZeroI32};
 static_assertions::assert_type_eq_all!(i32, FMOD_RESULT);
 static_assertions::const_assert_eq!(FMOD_OK, 0i32);
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Error {
     raw: NonZeroI32,
 }
@@ -239,10 +239,18 @@ impl Error {
     pub const RecordDisconnected: Self = cook!(FMOD_ERR_RECORD_DISCONNECTED);
     /// The length provided exceeds the allowable limit.
     pub const TooManySamples: Self = cook!(FMOD_ERR_TOOMANYSAMPLES);
+
+    /// An error occurred in FMOD.rs that wasn't supposed to. Open an issue.
+    /// This should be a panic with debug_assertions enabled.
+    pub const InternalRs: Self = cook!(-1);
 }
 
 impl std::error::Error for Error {
     fn description(&self) -> &str {
+        if *self == Error::InternalRs {
+            return "An error occurred in FMOD.rs that wasn't supposed to. Open an issue. This should be a panic with debug_assertions enabled.";
+        }
+
         // SAFETY: FMOD_ErrorString is a C `static` function which thus isn't
         // bindgen'd, but hand implemented in fmod-core-sys. As such, we're
         // 100% sure that it always returns valid nul-terminated ASCII.
@@ -250,12 +258,6 @@ impl std::error::Error for Error {
             let error_string = CStr::from_ptr(FMOD_ErrorString(self.raw.into()));
             error_string.to_str().unwrap_unchecked()
         }
-    }
-}
-
-impl fmt::Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Error").field("raw", &self.raw).finish()
     }
 }
 

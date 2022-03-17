@@ -3,7 +3,7 @@ use {
         raw::*, Channel, ChannelGroup, Dsp, Error, FmodResource, Handle, InitFlags, Mode, Result,
         Sound,
     },
-    std::{ffi::CString, path::Path, ptr, sync::atomic::Ordering},
+    std::{ffi::CString, path::Path, ptr},
 };
 
 opaque! {
@@ -15,32 +15,13 @@ impl System {
     ///
     /// # FMOD.rs implementation note
     ///
-    /// To maintain thread safety, only one `System` or `studio::System` may be
-    /// initialized. Attempts to create a second `System` will fail with
-    /// [`Error::Initialized`] before calling into FMOD.
+    /// FMOD.rs internally maintains that only a single FMOD System is created.
+    /// This ensures that FMOD System creation and destruction, which are thread
+    /// unsafe, are unable to race with any other FMOD functionality. The System
+    /// is only released once the final `Handle` (to any FMOD type, not just the
+    /// System itself) is dropped (the System is reference counted).
     pub fn new() -> Result<Handle<Self>> {
-        if crate::CREATE_ONCE.fetch_or(true, Ordering::AcqRel) {
-            Err(Error::Initialized)
-        } else {
-            unsafe { Self::new_unsafe() }
-        }
-    }
-
-    /// Creates an instance of the FMOD system.
-    ///
-    /// # Safety
-    ///
-    /// This function is not thread safe. In fact, _releasing_ a `System` is not
-    /// thread safe! If [`System::new_unsafe`] or [`System::release`] (called by
-    /// [`Handle`]'s drop implementation)
-    pub unsafe fn new_unsafe() -> Result<Handle<Self>> {
-        let mut raw = ptr::null_mut();
-        let result = FMOD_System_Create(&mut raw, FMOD_VERSION);
-        if let Some(error) = Error::from_raw(result) {
-            Err(error)
-        } else {
-            Ok(Handle::from_raw(raw))
-        }
+        Handle::new_system()
     }
 
     raw! {
@@ -53,18 +34,33 @@ impl System {
             self as *const _ as *const _ as *mut _
         }
     }
-}
 
-unsafe impl FmodResource for System {
-    type Raw = FMOD_SYSTEM;
+    pub(super) unsafe fn raw_create() -> Result<*mut Self> {
+        let mut raw = ptr::null_mut();
+        let result = FMOD_System_Create(&mut raw, FMOD_VERSION);
+        if let Some(error) = Error::from_raw(result) {
+            Err(error)
+        } else {
+            Ok(raw as *mut Self)
+        }
+    }
 
-    unsafe fn release(this: *mut Self) -> Result<()> {
+    pub(super) unsafe fn raw_release(this: *mut Self) -> Result<()> {
         let result = FMOD_System_Release(this as *mut _);
         if let Some(error) = Error::from_raw(result) {
             Err(error)
         } else {
             Ok(())
         }
+    }
+}
+
+unsafe impl FmodResource for System {
+    type Raw = FMOD_SYSTEM;
+
+    unsafe fn release(_this: *mut FMOD_SYSTEM) -> Result<()> {
+        // System is released by the Handle's beating heart
+        Ok(())
     }
 }
 
@@ -282,7 +278,7 @@ impl System {
         if let Some(error) = Error::from_raw(result) {
             Err(error)
         } else {
-            Ok(unsafe { Handle::from_raw(dsp) })
+            unsafe { Handle::new_raw(dsp) }
         }
     }
 
@@ -376,7 +372,7 @@ impl System {
         if let Some(error) = Error::from_raw(result) {
             Err(error)
         } else {
-            Ok(unsafe { Handle::from_raw(sound) })
+            unsafe { Handle::new_raw(sound) }
         }
     }
 
@@ -387,7 +383,7 @@ impl System {
         sound: &Sound,
         channel_group: Option<&ChannelGroup>,
         paused: bool,
-    ) -> Result<&Channel> {
+    ) -> Result<Handle<Channel>> {
         let sound = Sound::as_raw(sound);
         let channelgroup = channel_group
             .map(ChannelGroup::as_raw)
@@ -406,7 +402,7 @@ impl System {
             Err(error)
         } else {
             debug_assert!(!channel.is_null());
-            Ok(unsafe { Channel::from_raw(channel) })
+            unsafe { Handle::new_raw(channel) }
         }
     }
 

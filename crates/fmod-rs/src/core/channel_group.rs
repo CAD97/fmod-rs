@@ -20,8 +20,8 @@ impl ChannelGroup {
 unsafe impl FmodResource for ChannelGroup {
     type Raw = FMOD_CHANNELGROUP;
 
-    unsafe fn release(this: *mut Self) -> Result<()> {
-        let result = FMOD_ChannelGroup_Release(this as *mut _);
+    unsafe fn release(this: *mut FMOD_CHANNELGROUP) -> Result<()> {
+        let result = FMOD_ChannelGroup_Release(this);
         if let Some(error) = Error::from_raw(result) {
             Err(error)
         } else {

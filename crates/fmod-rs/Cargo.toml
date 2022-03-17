@@ -19,5 +19,6 @@ tracing = ["dep:tracing"]
 fmod-core-sys = { version = "0.0.0", path = "../fmod-core-sys" }
 fmod-studio-sys = { version = "0.0.0", path = "../fmod-studio-sys", optional = true }
 once_cell = "1.10.0"
+parking_lot = "0.12.0"
 static_assertions = "1.1.0"
 tracing = { version = "0.1.32", optional = true }

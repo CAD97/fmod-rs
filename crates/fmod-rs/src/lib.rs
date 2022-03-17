@@ -23,7 +23,9 @@ macro_rules! raw {
     };
 }
 
-use {once_cell::sync::Lazy, std::sync::atomic::AtomicBool};
+extern crate self as fmod;
+
+use once_cell::sync::Lazy;
 
 mod common;
 mod core;
@@ -44,4 +46,3 @@ raw! {
 
 #[cfg(feature = "tracing")]
 static SPAN: Lazy<tracing::Span> = Lazy::new(|| tracing::info_span!(parent: None, "FMOD"));
-static CREATE_ONCE: AtomicBool = AtomicBool::new(false);

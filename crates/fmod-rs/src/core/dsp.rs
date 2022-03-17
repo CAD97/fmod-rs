@@ -20,8 +20,8 @@ impl Dsp {
 unsafe impl FmodResource for Dsp {
     type Raw = FMOD_DSP;
 
-    unsafe fn release(this: *mut Self) -> Result<()> {
-        let result = FMOD_DSP_Release(this as *mut _);
+    unsafe fn release(this: *mut FMOD_DSP) -> Result<()> {
+        let result = FMOD_DSP_Release(this);
         if let Some(error) = Error::from_raw(result) {
             Err(error)
         } else {

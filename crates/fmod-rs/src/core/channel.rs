@@ -1,5 +1,5 @@
 use {
-    crate::{raw::*, Error, Result, Sound, TimeUnit},
+    crate::{raw::*, Error, FmodResource, Result, Sound, TimeUnit},
     std::ptr,
 };
 
@@ -20,6 +20,15 @@ impl Channel {
     }
 
     // snip
+}
+
+unsafe impl FmodResource for Channel {
+    type Raw = FMOD_CHANNEL;
+
+    unsafe fn release(_this: *mut FMOD_CHANNEL) -> Result<()> {
+        // Channels do not require releasing
+        Ok(())
+    }
 }
 
 /// General control functionality.

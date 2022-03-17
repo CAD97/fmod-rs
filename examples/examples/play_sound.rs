@@ -35,7 +35,7 @@ fn main() -> anyhow::Result<()> {
             let mut lenms = 0;
             let mut playing = false;
             let mut paused = false;
-            if let Some(channel) = channel {
+            if let Some(channel) = channel.as_deref() {
                 match channel.is_playing() {
                     Ok(x) => playing = x,
                     Err(fmod::Error::InvalidHandle | fmod::Error::ChannelStolen) => {}
