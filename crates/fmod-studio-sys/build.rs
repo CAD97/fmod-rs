@@ -4,7 +4,7 @@ fn main() {
         "x86_64" => "x64",
         _ => panic!("unsupported fmod arch"),
     };
-    let dev = build::profile() == "dev";
+    let dev = build::profile() == "debug";
 
     build::rustc_link_search(format!("lib/{arch}"));
     if dev {
