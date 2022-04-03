@@ -23,19 +23,27 @@ enum BeatingHeart {
 
 cfg_if! {
     if #[cfg(feature = "unstable")] {
+        #[cfg(not(feature = "parking_lot"))]
         use std::lazy::SyncLazy as Lazy;
     } else if #[cfg(feature = "once_cell")] {
         use once_cell::sync::Lazy;
     } else {
-        compile_error!("FMOD.rs requires either the `unstable` or `once_cell` feature to be enabled")
+        compile_error!("FMOD.rs requires either the `unstable` or `once_cell` feature to be enabled");
     }
 }
 
 cfg_if! {
     if #[cfg(feature = "parking_lot")] {
         use parking_lot::{RwLock, RwLockUpgradableReadGuard};
-        static HEART: Lazy<RwLock<Weak<TrustMe<BeatingHeart>>>> =
-            Lazy::new(|| RwLock::new(Weak::new()));
+        cfg_if! {
+            if #[cfg(feature = "unstable")] {
+                static HEART: RwLock<Weak<TrustMe<BeatingHeart>>> =
+                    parking_lot::const_rwlock(Weak::new());
+            } else {
+                static HEART: Lazy<RwLock<Weak<TrustMe<BeatingHeart>>>> =
+                    Lazy::new(|| RwLock::new(Weak::new()));
+            }
+        }
     } else {
         use std::sync::RwLock;
         static HEART: Lazy<RwLock<Weak<TrustMe<BeatingHeart>>>> =
@@ -87,6 +95,7 @@ impl<T: FmodResource> Handle<T> {
 impl<T: FmodResource> Drop for Handle<T> {
     fn drop(&mut self) {
         unsafe { T::release(self.as_raw()) }.unwrap_or_else(|error| {
+            let _ = error;
             #[cfg(feature = "tracing")]
             tracing::error!(
                 parent: crate::span(),
@@ -124,7 +133,7 @@ impl<T: FmodResource> Handle<T> {
                 #[cfg(not(debug_assertions))]
                 {
                     tracing::error!(
-                        parent: &crate::SPAN,
+                        parent: &crate::span(),
                         "`Handle::new_raw` called improperly somehow",
                     );
                     Err(fmod::Error::InternalRs)

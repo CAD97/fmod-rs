@@ -1,7 +1,23 @@
 use crate::raw::*;
-use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign};
+use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
 macro_rules! ops {
+    ($Name:ty: $Op:ident $fn_op:ident $op:tt) => {
+        impl $Op for $Name {
+            type Output = $Name;
+            fn $fn_op(self) -> $Name {
+                let raw = $op <$Name>::into_raw(self);
+                unsafe { <$Name>::from_raw(raw) }
+            }
+        }
+
+        impl $Op for &'_ $Name {
+            type Output = $Name;
+            fn $fn_op(self) -> $Name {
+                $op *self
+            }
+        }
+    };
     ($Name:ty: $Op:ident $fn_op:ident $op:tt $OpAssign:ident $fn_op_assign:ident) => {
         impl $Op for $Name {
             type Output = $Name;
@@ -86,6 +102,7 @@ macro_rules! flags {
         ops!($Name: BitAnd bitand & BitAndAssign bitand_assign);
         ops!($Name: BitOr bitor | BitOrAssign bitor_assign);
         ops!($Name: BitXor bitxor ^ BitXorAssign bitxor_assign);
+        ops!($Name: Not not !);
     )*};
 }
 

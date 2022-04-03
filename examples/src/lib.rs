@@ -65,7 +65,6 @@ impl Example {
         tracing_subscriber::fmt()
             .pretty()
             .with_ansi(false)
-            .with_max_level(tracing::Level::TRACE)
             .with_writer(writer)
             .init();
 

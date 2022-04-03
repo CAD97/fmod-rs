@@ -1,4 +1,4 @@
-#[cfg_attr(feature = "unstable", feature(once_cell))]
+#![cfg_attr(feature = "unstable", feature(const_weak_new, once_cell))]
 
 macro_rules! opaque {
     ($($(#[$meta:meta])* class $Name:ident;)*) => {$(
@@ -48,19 +48,4 @@ raw! {
 #[cfg(feature = "tracing")]
 fn span() -> tracing::Span {
     tracing::error_span!(target: "fmod", parent: None, "fmod")
-}
-
-#[cfg(feature = "tracing")]
-fn memory_span() -> tracing::Span {
-    tracing::debug_span!(target: "fmod", parent: &crate::span(), "memory")
-}
-
-#[cfg(feature = "tracing")]
-fn file_span() -> tracing::Span {
-    tracing::debug_span!(target: "fmod", parent: &crate::span(), "file")
-}
-
-#[cfg(feature = "tracing")]
-fn codec_span() -> tracing::Span {
-    tracing::debug_span!(target: "fmod", parent: &crate::span(), "codec")
 }

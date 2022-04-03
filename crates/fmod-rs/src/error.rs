@@ -273,7 +273,7 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
     use {
         crate::{DebugFlags, DebugMode},
         std::ptr,
-        tracing::{level_filters::STATIC_MAX_LEVEL, Level},
+        tracing::Level,
     };
 
     // From my experience, FMOD_DEBUG_TYPE_MEMORY, _FILE, _CODEC are *very very*
@@ -291,11 +291,11 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
         message: Option<&str>,
     ) {
         if flags.is_set(DebugFlags::TypeMemory) {
-            tracing::trace!(target: "fmod::memory", parent: &crate::memory_span(), file, line, func, message)
+            tracing::trace!(target: "fmod::memory", parent: &crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeFile) {
-            tracing::trace!(target: "fmod::file", parent: &crate::file_span(), file, line, func, message)
+            tracing::trace!(target: "fmod::file", parent: &crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeCodec) {
-            tracing::trace!(target: "fmod::codec", parent: &crate::codec_span(), file, line, func, message)
+            tracing::trace!(target: "fmod::codec", parent: &crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeTrace) {
             tracing::debug!(target: "fmod", parent: &crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::LevelLog) {
@@ -309,31 +309,40 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
         };
     }
 
-    let debug_flags = if Level::TRACE <= STATIC_MAX_LEVEL {
-        let debug_flags = DebugFlags::LevelLog | DebugFlags::TypeTrace;
-        if Level::TRACE <= tracing::level_filters::LevelFilter::current() {
-            // Try to eagerly avoid turning on TypeMemory/File/Codec debug flags
-            // if they're statically allowed but dynamically filtered out. We'd
-            // like to check more granularly than just if TRACE is ever allowed,
-            // and Span::is_disabled *seems* like it'd be what we want, but I'm
-            // unsure if spans are appropriate for this, and unable to get the
-            // span to actually disable (without a custom subscriber layer)
-            // independantly from the global setting.
-            debug_flags | DebugFlags::TypeMemory | DebugFlags::TypeFile | DebugFlags::TypeCodec
-        } else {
-            debug_flags
-        }
-    } else if Level::DEBUG <= STATIC_MAX_LEVEL {
-        DebugFlags::LevelLog | DebugFlags::TypeTrace
-    } else if Level::INFO <= STATIC_MAX_LEVEL {
-        DebugFlags::LevelLog
-    } else if Level::WARN <= STATIC_MAX_LEVEL {
-        DebugFlags::LevelWarning
-    } else if Level::ERROR <= STATIC_MAX_LEVEL {
-        DebugFlags::LevelError
-    } else {
-        DebugFlags::LevelNone
-    };
+    let mut debug_flags = DebugFlags::LevelNone;
+
+    // Enable logging for each level if and only if they're `enabled!`. This
+    // allows us to tell FMOD what we're actually interested in hearing about.
+    // The FMOD default filter is `fmod=INFO` (DebugFlags::LevelLog). Enabling
+    // fmod::memory/file/codec=trace should only be done when debugging specific
+    // issues that require tracing that module's execution.
+
+    // This techically relies on the default subscriber in this context always
+    // being the subscriber that we log to for correctness, but the advantage of
+    // not enabling logs FMOD-side at all outweigh the inability to dynamically
+    // switch subscriber / filter in this case.
+
+    if tracing::enabled!(target: "fmod", Level::ERROR, { file, line, func, message }) {
+        debug_flags = DebugFlags::LevelError;
+    }
+    if tracing::enabled!(target: "fmod", Level::WARN, { file, line, func, message }) {
+        debug_flags = DebugFlags::LevelWarning;
+    }
+    if tracing::enabled!(target: "fmod", Level::INFO, { file, line, func, message }) {
+        debug_flags = DebugFlags::LevelLog;
+    }
+    if tracing::enabled!(target: "fmod", Level::DEBUG, { file, line, func, message }) {
+        debug_flags |= DebugFlags::TypeTrace;
+    }
+    if tracing::enabled!(target: "fmod::memory", Level::TRACE, { file, line, func, message }) {
+        debug_flags |= DebugFlags::TypeMemory;
+    }
+    if tracing::enabled!(target: "fmod::file", Level::TRACE, { file, line, func, message }) {
+        debug_flags |= DebugFlags::TypeFile;
+    }
+    if tracing::enabled!(target: "fmod::codec", Level::TRACE, { file, line, func, message }) {
+        debug_flags |= DebugFlags::TypeCodec;
+    }
 
     let flags = DebugFlags::into_raw(debug_flags);
     let mode = DebugMode::into_raw(DebugMode::Callback);
@@ -367,12 +376,7 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
         }) {
             Ok(()) => FMOD_OK,
             Err(e) => {
-                if let Some(e) = e.downcast_ref::<String>() {
-                    tracing::error!(
-                        parent: &crate::span(),
-                        "FMOD.rs panicked in a callback: {e}"
-                    );
-                } else if let Some(e) = e.downcast_ref::<&str>() {
+                if let Some(e) = cool_asserts::get_panic_message(&e) {
                     tracing::error!(
                         parent: &crate::span(),
                         "FMOD.rs panicked in a callback: {e}"
