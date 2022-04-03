@@ -61,7 +61,7 @@ impl Drop for BeatingHeart {
                 .unwrap_or_else(|error| {
                     #[cfg(feature = "tracing")]
                     tracing::error!(
-                        parent: crate::span(),
+                        parent: &crate::span(),
                         error = error.into_raw(),
                         "Error releasing System({:p}): {error}",
                         system,
@@ -98,7 +98,7 @@ impl<T: FmodResource> Drop for Handle<T> {
             let _ = error;
             #[cfg(feature = "tracing")]
             tracing::error!(
-                parent: crate::span(),
+                parent: &crate::span(),
                 error = error.into_raw(),
                 "Error releasing {}({:p}): {error}",
                 std::any::type_name::<T>(),

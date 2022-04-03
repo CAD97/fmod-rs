@@ -290,23 +290,93 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
         func: Option<&str>,
         message: Option<&str>,
     ) {
-        if flags.is_set(DebugFlags::TypeMemory) {
-            tracing::trace!(target: "fmod::memory", parent: &crate::span(), file, line, func, message)
+        const FIELD_NAMES: &[&str] = &[
+            tracing_log::MAGIC_EVENT_FIELD_NAME,
+            tracing_log::MAGIC_EVENT_FIELD_FILE,
+            tracing_log::MAGIC_EVENT_FIELD_LINE,
+            tracing_log::MAGIC_EVENT_FIELD_MODULE_PATH,
+            "message",
+        ];
+
+        macro_rules! fmod_debug_meta {
+            ($level:expr, $target:literal) => {{
+                struct Callsite;
+                static CALLSITE: Callsite = Callsite;
+                static META: tracing::Metadata<'static> = tracing::Metadata::new(
+                    tracing_log::MAGIC_EVENT_NAME,
+                    $target,
+                    $level,
+                    None,
+                    None,
+                    None,
+                    tracing::field::FieldSet::new(
+                        FIELD_NAMES,
+                        tracing_core::identify_callsite!(&CALLSITE),
+                    ),
+                    tracing_core::metadata::Kind::EVENT,
+                );
+                impl tracing::Callsite for Callsite {
+                    fn set_interest(&self, _: tracing::collect::Interest) {}
+                    fn metadata(&self) -> &'static tracing::Metadata<'static> {
+                        &META
+                    }
+                }
+
+                &META
+            }};
+        }
+
+        let meta: &'static tracing::Metadata<'static> = if flags.is_set(DebugFlags::TypeMemory) {
+            fmod_debug_meta!(Level::TRACE, "fmod::memory")
         } else if flags.is_set(DebugFlags::TypeFile) {
-            tracing::trace!(target: "fmod::file", parent: &crate::span(), file, line, func, message)
+            fmod_debug_meta!(Level::TRACE, "fmod::file")
         } else if flags.is_set(DebugFlags::TypeCodec) {
-            tracing::trace!(target: "fmod::codec", parent: &crate::span(), file, line, func, message)
+            fmod_debug_meta!(Level::TRACE, "fmod::codec")
         } else if flags.is_set(DebugFlags::TypeTrace) {
-            tracing::debug!(target: "fmod", parent: &crate::span(), file, line, func, message)
+            fmod_debug_meta!(Level::DEBUG, "fmod")
         } else if flags.is_set(DebugFlags::LevelLog) {
-            tracing::info!(target: "fmod", parent: &crate::span(), file, line, func, message)
+            fmod_debug_meta!(Level::INFO, "fmod")
         } else if flags.is_set(DebugFlags::LevelWarning) {
-            tracing::warn!(target: "fmod", parent: &crate::span(), file, line, func, message)
+            fmod_debug_meta!(Level::WARN, "fmod")
         } else if flags.is_set(DebugFlags::LevelError) {
-            tracing::error!(target: "fmod", parent: &crate::span(), file, line, func, message)
+            fmod_debug_meta!(Level::ERROR, "fmod")
         } else {
             panic!("FMOD debug callback called without message level")
         };
+
+        // NB: If we get here, we assume we're enabled, since we were earlier
+        // NB: Upstream should probably add a wrapper around this dispatch?
+        tracing::dispatch::get_default(|dispatch| {
+            let mut fields = meta.fields().iter();
+            let field_name = fields.next().unwrap();
+            let field_file = fields.next().unwrap();
+            let field_line = fields.next().unwrap();
+            let field_module = fields.next().unwrap();
+            let field_message = fields.next().unwrap();
+
+            let name: &(dyn std::error::Error) = &tracing_log::RuntimeMetadataName("FMOD Debug");
+            let name = &name as &dyn tracing::field::Value;
+            dispatch.event(&tracing::Event::new_child_of(
+                &crate::span(),
+                meta,
+                &meta.fields().value_set(&[
+                    (&field_name, Some(name)),
+                    (
+                        &field_file,
+                        file.as_ref().map(|x| x as &dyn tracing::field::Value),
+                    ),
+                    (&field_line, Some(&line)),
+                    (
+                        &field_module,
+                        func.as_ref().map(|x| x as &dyn tracing::field::Value),
+                    ),
+                    (
+                        &field_message,
+                        message.as_ref().map(|x| x as &dyn tracing::field::Value),
+                    ),
+                ]),
+            ))
+        });
     }
 
     let mut debug_flags = DebugFlags::LevelNone;
@@ -322,25 +392,25 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
     // not enabling logs FMOD-side at all outweigh the inability to dynamically
     // switch subscriber / filter in this case.
 
-    if tracing::enabled!(target: "fmod", Level::ERROR, { file, line, func, message }) {
+    if tracing::enabled!(target: "fmod", Level::ERROR, { message }) {
         debug_flags = DebugFlags::LevelError;
     }
-    if tracing::enabled!(target: "fmod", Level::WARN, { file, line, func, message }) {
+    if tracing::enabled!(target: "fmod", Level::WARN, { message }) {
         debug_flags = DebugFlags::LevelWarning;
     }
-    if tracing::enabled!(target: "fmod", Level::INFO, { file, line, func, message }) {
+    if tracing::enabled!(target: "fmod", Level::INFO, { message }) {
         debug_flags = DebugFlags::LevelLog;
     }
-    if tracing::enabled!(target: "fmod", Level::DEBUG, { file, line, func, message }) {
+    if tracing::enabled!(target: "fmod", Level::DEBUG, { message }) {
         debug_flags |= DebugFlags::TypeTrace;
     }
-    if tracing::enabled!(target: "fmod::memory", Level::TRACE, { file, line, func, message }) {
+    if tracing::enabled!(target: "fmod::memory", Level::TRACE, { message }) {
         debug_flags |= DebugFlags::TypeMemory;
     }
-    if tracing::enabled!(target: "fmod::file", Level::TRACE, { file, line, func, message }) {
+    if tracing::enabled!(target: "fmod::file", Level::TRACE, { message }) {
         debug_flags |= DebugFlags::TypeFile;
     }
-    if tracing::enabled!(target: "fmod::codec", Level::TRACE, { file, line, func, message }) {
+    if tracing::enabled!(target: "fmod::codec", Level::TRACE, { message }) {
         debug_flags |= DebugFlags::TypeCodec;
     }
 
