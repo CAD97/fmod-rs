@@ -271,7 +271,7 @@ impl fmt::Display for Error {
 }
 
 #[cfg(feature = "fmod_debug_is_tracing")]
-pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
+pub(crate) fn fmod_debug_install_tracing() {
     use {
         crate::{DebugFlags, DebugMode},
         std::ptr,
@@ -293,19 +293,19 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
         message: Option<&str>,
     ) {
         if flags.is_set(DebugFlags::TypeMemory) {
-            tracing::trace!(target: "fmod::memory", parent: &crate::span(), file, line, func, message)
+            tracing::trace!(target: "fmod::memory", parent: crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeFile) {
-            tracing::trace!(target: "fmod::file", parent: &crate::span(), file, line, func, message)
+            tracing::trace!(target: "fmod::file", parent: crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeCodec) {
-            tracing::trace!(target: "fmod::codec", parent: &crate::span(), file, line, func, message)
+            tracing::trace!(target: "fmod::codec", parent: crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::TypeTrace) {
-            tracing::debug!(target: "fmod", parent: &crate::span(), file, line, func, message)
+            tracing::debug!(target: "fmod", parent: crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::LevelLog) {
-            tracing::info!(target: "fmod", parent: &crate::span(), file, line, func, message)
+            tracing::info!(target: "fmod", parent: crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::LevelWarning) {
-            tracing::warn!(target: "fmod", parent: &crate::span(), file, line, func, message)
+            tracing::warn!(target: "fmod", parent: crate::span(), file, line, func, message)
         } else if flags.is_set(DebugFlags::LevelError) {
-            tracing::error!(target: "fmod", parent: &crate::span(), file, line, func, message)
+            tracing::error!(target: "fmod", parent: crate::span(), file, line, func, message)
         } else {
             panic!("FMOD debug callback called without message level")
         };
@@ -379,12 +379,9 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
             Ok(()) => FMOD_OK,
             Err(e) => {
                 if let Some(e) = cool_asserts::get_panic_message(&e) {
-                    tracing::error!(
-                        parent: &crate::span(),
-                        "FMOD.rs panicked in a callback: {e}"
-                    );
+                    tracing::error!(parent: crate::span(), "FMOD.rs panicked in a callback: {e}");
                 } else {
-                    tracing::error!(parent: &crate::span(), "FMOD.rs panicked in a callback");
+                    tracing::error!(parent: crate::span(), "FMOD.rs panicked in a callback");
                 }
                 Error::into_raw(Error::InternalRs)
             },
@@ -397,12 +394,14 @@ pub(crate) fn fmod_debug_install_tracing() -> Result<()> {
     if let Some(error) = Error::from_raw(result) {
         match error {
             Error::Unsupported => {
-                tracing::info!(parent: &crate::span(), "FMOD logging disabled");
-                Ok(())
+                tracing::info!(parent: crate::span(), "FMOD debug disabled");
             },
-            error => Err(error),
+            error => {
+                tracing::error!(
+                    parent: crate::span(),
+                    "Error during FMOD debug initialization: {error}",
+                )
+            },
         }
-    } else {
-        Ok(())
     }
 }

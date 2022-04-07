@@ -9,17 +9,15 @@ publish = false
 name = "fmod"
 
 [features]
-default = ["once_cell", "fmod_debug_is_tracing"]
+default = ["fmod_debug_is_tracing"]
 
-unstable = ["parking_lot?/nightly"]
+unstable = []
 
 raw = []
 studio = ["dep:fmod-studio-sys"]
 fmod_debug_is_tracing = ["tracing"]
 
-once_cell = ["dep:once_cell"]
-tracing = ["dep:tracing"]
-parking_lot = ["dep:parking_lot"]
+tracing = ["dep:tracing", "dep:once_cell"]
 
 [dependencies]
 fmod-core-sys = { version = "0.0.0", path = "../fmod-core-sys" }
@@ -28,7 +26,7 @@ fmod-studio-sys = { version = "0.0.0", path = "../fmod-studio-sys", optional = t
 static_assertions = "1.1.0"
 
 once_cell = { version = "1.10.0", optional = true }
-parking_lot = { version = "0.12.0", optional = true }
 tracing = { version = "0.1.32", optional = true }
 cfg-if = "1.0.0"
 cool_asserts = "1.1.1"
+paste = "1.0.7"

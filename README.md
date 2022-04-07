@@ -34,6 +34,11 @@ FMOD.rs does not currently support staticly linking FMOD.
 
 The currently vendored headers are for FMOD Engine 2.02.05.
 
+### Windows note
+
+`fmod_vc.lib` (and other `.lib`s) must be renamed to remove the `_vc` so that
+Cargo will find and use them.
+
 ## Functionality
 
 ### Complete

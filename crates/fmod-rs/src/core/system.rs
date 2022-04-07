@@ -1,46 +1,72 @@
 use {
-    crate::{raw::*, Channel, ChannelGroup, Dsp, Error, Handle, InitFlags, Mode, Result, Sound},
+    crate::{
+        raw::*, Channel, ChannelGroup, Dsp, Error, Handle, InitFlags, Mode, Result, Sound,
+        GLOBAL_SYSTEM_STATE,
+    },
     cfg_if::cfg_if,
-    std::{ffi::CString, ptr},
+    std::{ffi::CString, ptr, sync::atomic::Ordering},
 };
 
-// System is managed/released by the Handle's beating heart.
-fn noop_release(_: *mut FMOD_SYSTEM) -> FMOD_RESULT {
-    FMOD_OK
-}
-
-opaque! {
-    class System = FMOD_SYSTEM, noop_release;
-}
+opaque!(class System = FMOD_SYSTEM, FMOD_System_*);
 
 impl System {
-    /// Creates an instance of the FMOD system.
-    ///
-    /// # FMOD.rs implementation note
-    ///
-    /// FMOD.rs internally maintains that only a single FMOD System is created.
-    /// This ensures that FMOD System creation and destruction, which are thread
-    /// unsafe, are unable to race with any other FMOD functionality. The System
-    /// is only released once the final `Handle` (to any FMOD type, not just the
-    /// System itself) is dropped (the System is reference counted).
-    pub fn new() -> Result<Handle<Self>> {
-        Handle::new_system()
-    }
-
-    pub(super) unsafe fn raw_create() -> Result<*mut Self> {
+    /// Create an instance of the FMOD system.
+    pub fn new() -> Result<&'static Self> {
         // log setup
         #[cfg(feature = "fmod_debug_is_tracing")]
-        crate::fmod_debug_install_tracing()?;
+        {
+            static ONCE: std::sync::Once = std::sync::Once::new();
+            ONCE.call_once(crate::fmod_debug_install_tracing);
+        }
+
+        // guard against multiple system creation racing
+        if GLOBAL_SYSTEM_STATE
+            .compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
+            if cfg!(debug_assertions) {
+                panic!("Only one FMOD system may be created safely. \
+                    Read the docs on `System::new_unchecked` if you actually mean to create more than one system. \
+                    Note: constructing a studio system automatically creates a core system for you!");
+            }
+
+            #[cfg(feature = "tracing")]
+            tracing::error!(
+                parent: crate::span(),
+                "Only one FMOD system may be created safely. \
+                    Read the docs on `System::new_unchecked` if you actually mean to create more than one system. \
+                    Note: constructing a studio system automatically creates a core system for you!"
+            );
+
+            return Err(Error::Initialized);
+        }
 
         // actual creation
-        let mut raw = ptr::null_mut();
-        fmod_try!(FMOD_System_Create(&mut raw, FMOD_VERSION));
-        Ok(raw as *mut Self)
+        unsafe { Self::new_unchecked() }
     }
 
-    pub(super) unsafe fn raw_release(this: *mut Self) -> Result<()> {
-        fmod_try!(FMOD_System_Release(this as *mut _));
-        Ok(())
+    /// Create an instance of the FMOD system.
+    ///
+    /// # ⚠ SAFETY WARNING ⚠
+    ///
+    /// Working with multiple FMOD systems is fraught with unsafety. Creating
+    /// and releasing FMOD systems is *thread unsafe*! If creating or releasing
+    /// a system potentially races with *any* FMOD API call (including (but not
+    /// limited to) other system create/release calls), this is a data race and
+    /// potential UB.
+    ///
+    /// If you only need a single system, use [`new`][Self::new] instead; it
+    /// ensures that only a single system is ever created, and thus no race can
+    /// occur. If you want to release a system, you can use [`Handle::unleak`],
+    /// but need to ensure that dropping the handle cannot race with any other
+    /// FMOD API calls (and, of course, that all resources in that system are
+    /// cleaned up).
+    #[allow(clippy::missing_safety_doc)] // it's there, just different
+    pub unsafe fn new_unchecked() -> Result<&'static Self> {
+        let mut raw = ptr::null_mut();
+        fmod_try!(FMOD_System_Create(&mut raw, FMOD_VERSION));
+        GLOBAL_SYSTEM_STATE.store(2, Ordering::Release);
+        Ok(Handle::leak(Handle::new(raw)))
     }
 }
 
@@ -248,7 +274,7 @@ impl System {
             handle,
             &mut dsp,
         ));
-        unsafe { Handle::new_raw(dsp) }
+        Ok(unsafe { Handle::new(dsp) })
     }
 
     // pub fn register_codec(priority: u32) -> Result<(FMOD_CODEC_DESCRIPTION, PluginHandle)>;
@@ -316,7 +342,7 @@ impl System {
                 } else {
                     #[cfg(feature = "tracing")]
                     tracing::error!(
-                        parent: &crate::span(),
+                        parent: crate::span(),
                         ?mode,
                         "System::create_sound called with extended mode; use create_sound_ex instead",
                     );
@@ -336,7 +362,7 @@ impl System {
             exinfo,
             &mut sound,
         ));
-        unsafe { Handle::new_raw(sound) }
+        Ok(unsafe { Handle::new(sound) })
     }
 
     // snip
@@ -349,7 +375,7 @@ impl System {
             name.as_ptr(),
             &mut channel_group,
         ));
-        unsafe { Handle::new_raw(channel_group) }
+        Ok(unsafe { Handle::new(channel_group) })
     }
 
     // snip
@@ -372,7 +398,7 @@ impl System {
             paused as _,
             &mut channel,
         ));
-        unsafe { Handle::new_raw(channel) }
+        Ok(unsafe { Handle::new(channel) })
     }
 
     // snip

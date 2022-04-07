@@ -1,8 +1,6 @@
 use crate::{raw::*, Result};
 
-opaque! {
-    class ChannelGroup = FMOD_CHANNELGROUP, FMOD_ChannelGroup_Release;
-}
+opaque!(class ChannelGroup = FMOD_CHANNELGROUP, FMOD_ChannelGroup_*);
 
 /// General control functionality.
 impl ChannelGroup {
