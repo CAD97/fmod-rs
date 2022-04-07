@@ -1,8 +1,6 @@
 use crate::{raw::*, Mode, Result, TimeUnit};
 
-opaque! {
-    class Sound = FMOD_SOUND, FMOD_Sound_Release;
-}
+opaque!(class Sound = FMOD_SOUND, FMOD_Sound_*);
 
 /// Standard sound manipulation functions.
 impl Sound {

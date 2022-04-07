@@ -3,14 +3,7 @@ use {
     std::ptr,
 };
 
-// Channels are managed by FMOD and don't need to be released.
-fn noop_release(_: *mut FMOD_CHANNEL) -> FMOD_RESULT {
-    FMOD_OK
-}
-
-opaque! {
-    class Channel = FMOD_CHANNEL, noop_release;
-}
+opaque!(weak class Channel = FMOD_CHANNEL, FMOD_Channel_*);
 
 /// General control functionality.
 impl Channel {

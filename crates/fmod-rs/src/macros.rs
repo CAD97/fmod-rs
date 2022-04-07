@@ -1,11 +1,17 @@
 macro_rules! opaque {
-    ($($(#[$meta:meta])* class $Name:ident = $Raw:ident, $release:ident;)*) => {$(
+    {
+        $(#[$meta:meta])*
+        class $Name:ident {
+            type Raw = $Raw:ident;
+            fn release = $release:expr;
+        }
+    } => {
+        use fmod::FmodResource;
+
         #[cfg(not(feature = "unstable"))]
-        #[repr(C)]
-        $(#[$meta])*
         pub struct $Name {
-            _data: std::cell::Cell<[u8; 0]>,
-            _marker: std::marker::PhantomData<(*mut u8, std::marker::PhantomPinned)>,
+            _data: ::std::cell::Cell<[u8; 0]>,
+            _marker: ::std::marker::PhantomData<(*mut u8, std::marker::PhantomPinned)>,
         }
 
         #[cfg(feature = "unstable")]
@@ -14,32 +20,44 @@ macro_rules! opaque {
             pub type $Name;
         }
 
-        unsafe impl fmod::FmodResource for $Name {
+        unsafe impl Send for $Name {}
+        unsafe impl Sync for $Name {}
+        impl fmod::Sealed for $Name {}
+        unsafe impl FmodResource for $Name {
             type Raw = $Raw;
 
-            unsafe fn release(this: *mut $Raw) -> fmod::Result {
-                fmod_try!($release(this));
+            unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self {
+                &*(this as *mut Self)
+            }
+
+            #[allow(clippy::redundant_closure_call)]
+            unsafe fn release(this: *mut Self::Raw) -> fmod::Result {
+                std::ptr::drop_in_place(Self::from_raw(this) as *const Self as *mut Self);
+                fmod_try!(($release)(this));
                 Ok(())
             }
+        }
+    };
 
-            unsafe fn cast_raw(this: *mut $Raw) -> *mut Self {
-                this as *mut Self
+    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident*) => {
+        opaque! {
+            $(#[$meta:meta])*
+            class $Name {
+                type Raw = $Raw;
+                fn release = paste::paste!([<$raw Release>]);
             }
         }
+    };
 
-        impl $Name {
-            raw! {
-                #[allow(clippy::missing_safety_doc)]
-                pub unsafe fn from_raw(raw: *mut $Raw) -> &'static $Name {
-                    &*(raw as *mut _)
-                }
-
-                pub fn as_raw(&self) -> *mut $Raw {
-                    self as *const _ as *const _ as *mut _
-                }
+    ($(#[$meta:meta])* weak class $Name:ident = $Raw:ident, $raw:ident*) => {
+        opaque! {
+            $(#[$meta:meta])*
+            class $Name {
+                type Raw = $Raw;
+                fn release = |_| FMOD_OK;
             }
         }
-    )*};
+    };
 }
 
 #[cfg(feature = "raw")]

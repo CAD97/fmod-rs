@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "unstable", feature(const_weak_new, extern_types, once_cell))]
+#![cfg_attr(feature = "unstable", feature(extern_types))]
 
 #[macro_use]
 mod macros;
@@ -8,8 +8,9 @@ extern crate self as fmod;
 mod common;
 mod core;
 mod error;
+mod handle;
 
-pub use self::{common::*, core::*, error::*};
+pub use self::{common::*, core::*, error::*, handle::*};
 
 raw! {
     pub mod raw {
@@ -23,6 +24,8 @@ raw! {
 }
 
 #[cfg(feature = "tracing")]
-fn span() -> tracing::Span {
-    tracing::error_span!(target: "fmod", parent: None, "fmod")
+fn span() -> &'static tracing::Span {
+    use once_cell::sync::OnceCell;
+    static ONCE: OnceCell<tracing::Span> = OnceCell::new();
+    ONCE.get_or_init(|| tracing::error_span!(target: "fmod", parent: None, "fmod"))
 }
