@@ -1,0 +1,2 @@
+*.h linguist-vendored
+bindings.rs linguist-generated
