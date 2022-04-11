@@ -1,10 +1,23 @@
 [package]
 name = "fmod-core-sys"
-version = "0.0.0+2.02.05-123444"
+version = "2.2.124257+2.02.06-124257"
 edition = "2021"
+rust-version = "1.56"
 license-file = "LICENSE.txt"
 
-publish = false
+description = "FMOD Core bindings"
+repository = "https://github.com/CAD97/fmod-rs"
+keywords = ["gamedev", "audio", "sound", "fmod", "adaptive audio"]
+categories = ["external-ffi-bindings", "game-development", "multimedia::audio"]
+
+include = [
+    "/inc/bindings.rs",
+    "/src/lib.rs",
+    "/build.rs",
+    "/Cargo.toml",
+    "/LICENSE.txt",
+    "/README.md",
+]
 
 [dependencies]
 cstr = "0.2.10"
