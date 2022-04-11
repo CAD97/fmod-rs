@@ -1,4 +1,4 @@
-                    FMOD END USER LICENCE AGREEMENT
+﻿                    FMOD END USER LICENCE AGREEMENT
                     ===============================
 
 This End User Licence Agreement (EULA) is a legal agreement between you and

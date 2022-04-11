@@ -1,7 +1,9 @@
 [package]
 name = "fmod-rs"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
+rust-version = "1.60"
+license = "MIT OR Apache-2.0"
 
 publish = false
 
@@ -20,8 +22,8 @@ fmod_debug_is_tracing = ["tracing"]
 tracing = ["dep:tracing", "dep:once_cell"]
 
 [dependencies]
-fmod-core-sys = { version = "0.0.0", path = "../fmod-core-sys" }
-fmod-studio-sys = { version = "0.0.0", path = "../fmod-studio-sys", optional = true }
+fmod-core-sys = { version = "2.2.0", path = "../fmod-core-sys" }
+fmod-studio-sys = { version = "2.2.0", path = "../fmod-studio-sys", optional = true }
 
 static_assertions = "1.1.0"
 
