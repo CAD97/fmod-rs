@@ -67,19 +67,19 @@ fn fetch_driver(example: &mut Example, system: &fmod::System) -> anyhow::Result<
 fn main() -> anyhow::Result<()> {
     let mut example = Example::init()?;
 
+    // Create Sound Card A
+    let system_a = fmod::System::new()?;
+    let driver = fetch_driver(&mut example, system_a)?;
+    system_a.set_driver(driver)?;
+    system_a.init(32, fmod::InitFlags::Normal)?;
+
+    // Create Sound Card B
+    let system_b = unsafe { fmod::System::new_unchecked() }?;
+    let driver = fetch_driver(&mut example, system_b)?;
+    system_b.set_driver(driver)?;
+    system_b.init(32, fmod::InitFlags::Normal)?;
+
     {
-        // Create Sound Card A
-        let system_a = fmod::System::new()?;
-        let driver = fetch_driver(&mut example, system_a)?;
-        system_a.set_driver(driver)?;
-        system_a.init(32, fmod::InitFlags::Normal)?;
-
-        // Create Sound Card B
-        let system_b = unsafe { fmod::System::new_unchecked() }?;
-        let driver = fetch_driver(&mut example, system_b)?;
-        system_b.set_driver(driver)?;
-        system_b.init(32, fmod::InitFlags::Normal)?;
-
         // Load 1 sample into each soundcard.
         let sound_a = system_a.create_sound(media!("drumloop.wav"), fmod::Mode::LoopOff)?;
         let sound_b = system_b.create_sound(media!("jaguar.wav"), fmod::Mode::Default)?;
@@ -123,6 +123,12 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
+    unsafe {
+        fmod::Handle::unleak(system_a);
+        fmod::Handle::unleak(system_b);
+    }
+
     example.close()?;
+
     Ok(())
 }
