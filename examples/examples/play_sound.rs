@@ -16,9 +16,10 @@ use fmod_examples::{media, Buttons, Example};
 fn main() -> anyhow::Result<()> {
     let mut example = Example::init()?;
 
+    let system = fmod::System::new()?;
+    system.init(32, fmod::InitFlags::Normal)?;
+
     {
-        let system = fmod::System::new()?;
-        system.init(32, fmod::InitFlags::Normal)?;
         let sound1 = system.create_sound(media!("drumloop.wav"), fmod::Mode::Default)?;
 
         // drumloop.wav has embedded loop points which automatically makes looping turn on,
@@ -116,6 +117,9 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
+    unsafe { fmod::Handle::unleak(system) };
+
     example.close()?;
+
     Ok(())
 }
