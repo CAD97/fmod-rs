@@ -1,7 +1,7 @@
 // FMOD_ASYNCREADINFO
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Vector {
     pub x: f32,
     pub y: f32,
@@ -9,7 +9,7 @@ pub struct Vector {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Attributes3d {
     pub position: Vector,
     pub velocity: Vector,
@@ -17,14 +17,22 @@ pub struct Attributes3d {
     pub up: Vector,
 }
 
-// FMOD_GUID
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Guid {
+    pub data1: u32,
+    pub data2: u16,
+    pub data3: u16,
+    pub data4: [u8; 4],
+}
+
 // FMOD_PLUGINLIST
 // FMOD_ADVANCEDSETTINGS
 // FMOD_TAG
 // FMOD_CREATESOUNDEXINFO
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct ReverbProperties {
     pub decay_time: f32,
     pub early_delay: f32,
@@ -103,7 +111,7 @@ impl ReverbProperties {
 // FMOD_ERRORCALLBACK_INFO
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct CpuUsage {
     pub dsp: f32,
     pub stream: f32,

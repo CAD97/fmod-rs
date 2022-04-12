@@ -77,7 +77,7 @@ fn main() -> anyhow::Result<()> {
 
             example.draw("==================================================");
             example.draw("Play Sound Example.");
-            example.draw("Copyright (c) Firelight Technologies 2004-2021.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2022.");
             example.draw("==================================================");
             example.draw("");
             example.draw(format_args!(

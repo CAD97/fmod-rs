@@ -1,24 +1,34 @@
+use std::borrow::Cow;
+
 use {
     crate::{
-        raw::*, Channel, ChannelGroup, Dsp, Error, Handle, InitFlags, Mode, Result, Sound,
-        GLOBAL_SYSTEM_STATE,
+        raw::*, strlen, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, Result,
+        Sound, SpeakerMode, GLOBAL_SYSTEM_STATE,
     },
     cfg_if::cfg_if,
-    std::{ffi::CString, ptr, sync::atomic::Ordering},
+    std::{
+        ffi::CString,
+        mem,
+        os::raw::{c_char, c_int},
+        ptr,
+        sync::atomic::Ordering,
+    },
 };
 
 opaque!(class System = FMOD_SYSTEM, FMOD_System_*);
 
 impl System {
     /// Create an instance of the FMOD system.
+    ///
+    /// Only a single system
+    #[cfg_attr(
+        feature = "studio",
+        doc = " (or [studio system][fmod::studio::System])"
+    )]
+    /// can be constructed with this function; further attempts to create a
+    /// system will return an error. See [`new_unchecked`][Self::new_unchecked]
+    /// for more information about why having multiple systems is unsafe.
     pub fn new() -> Result<&'static Self> {
-        // log setup
-        #[cfg(feature = "fmod_debug_is_tracing")]
-        {
-            static ONCE: std::sync::Once = std::sync::Once::new();
-            ONCE.call_once(crate::fmod_debug_install_tracing);
-        }
-
         // guard against multiple system creation racing
         if GLOBAL_SYSTEM_STATE
             .compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed)
@@ -41,6 +51,9 @@ impl System {
             return Err(Error::Initialized);
         }
 
+        // log setup
+        crate::fmod_debug_install_tracing();
+
         // actual creation
         unsafe { Self::new_unchecked() }
     }
@@ -55,13 +68,42 @@ impl System {
     /// limited to) other system create/release calls), this is a data race and
     /// potential UB.
     ///
+    /// Additionally, FMOD makes no guarantee that using handles with systems
+    /// other than the one that created them to correctly cause an error. The
+    /// `Studio::System::release` documentation says (as of 2.02.05):
+    ///
+    /// > All handles or pointers to objects associated with a Studio System
+    /// > object become invalid when the Studio System object is released. The
+    /// > FMOD Studio API attempts to protect against stale handles and pointers
+    /// > being used with a different Studio System object but this protection
+    /// > cannot be guaranteed and attempting to use stale handles or pointers
+    /// > may cause undefined behavior.
+    ///
+    /// and it is reasonable to assume that this applies to the core / low-level
+    /// API as well. At a minimum, the `multiple_systems.cpp` example says that
+    ///
+    /// > Note that sounds created on device A cannot be played on device B and
+    /// > vice versa.
+    ///
+    /// but experimental testing in said example has it not return an error.
+    /// This implies that such practice is not even protected against for
+    /// pointer-like handles, and should be considered UB.
+    ///
     /// If you only need a single system, use [`new`][Self::new] instead; it
-    /// ensures that only a single system is ever created, and thus no race can
-    /// occur. If you want to release a system, you can use [`Handle::unleak`],
-    /// but need to ensure that dropping the handle cannot race with any other
-    /// FMOD API calls (and, of course, that all resources in that system are
-    /// cleaned up).
-    #[allow(clippy::missing_safety_doc)] // it's there, just different
+    /// ensures that only a single system is ever created, and thus no race nor
+    /// stale/misused handles can occur. If you want to release a system, you
+    /// can use [`Handle::unleak`], but need to ensure that dropping the handle
+    /// cannot race with any other FMOD API calls (and, of course, that all
+    /// resources in that system are cleaned up).
+    ///
+    /// # Safety
+    ///
+    /// In summary, if you construct multiple systems, you must:
+    ///
+    /// - Ensure that system creation and releasing does not potentially race
+    ///   any FMOD API calls.
+    /// - Ensure that handles created in one system are not used with a
+    ///   different system.
     pub unsafe fn new_unchecked() -> Result<&'static Self> {
         let mut raw = ptr::null_mut();
         fmod_try!(FMOD_System_Create(&mut raw, FMOD_VERSION));
@@ -90,7 +132,83 @@ impl System {
         Ok(numdrivers)
     }
 
-    // pub fn get_driver_info(&self, id: i32) -> Result<(String, FMOD_GUID, i32, FMOD_SPEAKERMODE, i32)>;
+    pub fn get_driver_info(
+        &self,
+        id: i32,
+        name: &mut String,
+    ) -> Result<(Guid, i32, SpeakerMode, i32)> {
+        let mut guid = Guid::default();
+        let mut system_rate = 0;
+        let mut speaker_mode = 0;
+        let mut speaker_mode_channels = 0;
+
+        name.clear();
+        if name.capacity() == 0 {
+            // the multiple_system.cpp example uses a 256 byte
+            // buffer, so it's probably enough; try that first
+            name.reserve(256);
+        }
+
+        unsafe {
+            let name = name.as_mut_vec();
+
+            let mut raw_error = FMOD_System_GetDriverInfo(
+                self.as_raw(),
+                id,
+                name.as_mut_ptr() as *mut c_char,
+                name.capacity() as c_int,
+                &mut guid as *mut Guid as *mut FMOD_GUID,
+                &mut system_rate,
+                &mut speaker_mode,
+                &mut speaker_mode_channels,
+            );
+
+            while let Some(error) = fmod::Error::from_raw(raw_error) {
+                match error {
+                    fmod::Error::Truncated => {
+                        if name.capacity() < 256 {
+                            // the multiple_system.cpp example uses a 256 byte
+                            // buffer, so it's probably enough; try that first
+                            name.reserve(256);
+                        } else {
+                            // try doubling the buffer size?
+                            name.reserve(name.len() * 2);
+                        }
+                    },
+                    error => return Err(error)?,
+                }
+
+                // try again
+                raw_error = FMOD_System_GetDriverInfo(
+                    self.as_raw(),
+                    id,
+                    name.as_mut_ptr() as *mut c_char,
+                    name.len() as c_int,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                );
+            }
+
+            // now we need to set the string len and verify it's UTF-8
+            name.set_len(strlen(name.as_ptr()));
+            match String::from_utf8_lossy(name) {
+                Cow::Borrowed(_) => {}, // it's valid
+                Cow::Owned(fixed) => {
+                    // swap in the fixed UTF-8
+                    mem::swap(name, &mut fixed.into_bytes());
+                },
+            }
+        }
+
+        Ok((
+            guid,
+            system_rate,
+            unsafe { fmod::SpeakerMode::from_raw(speaker_mode) },
+            speaker_mode_channels,
+        ))
+    }
 
     pub fn set_driver(&self, id: i32) -> Result {
         fmod_try!(FMOD_System_SetDriver(self.as_raw(), id));
