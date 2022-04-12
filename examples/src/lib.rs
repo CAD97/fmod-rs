@@ -66,7 +66,7 @@ impl Example {
             .pretty()
             .with_ansi(false)
             .with_writer(writer)
-            .with_env_filter("info,fmod::handle=trace".parse::<tracing_subscriber::EnvFilter>()?)
+            .with_env_filter("debug,fmod::handle=trace".parse::<tracing_subscriber::EnvFilter>()?)
             .init();
 
         terminal::enable_raw_mode()?;
