@@ -1,51 +1,272 @@
+#[cfg(doc)]
+use fmod::{InitFlags, Sound, System, ThreadType};
+use {
+    crate::utils::{decode_sbcd_u8, string_from_utf16be_lossy, string_from_utf16le_lossy},
+    fmod::{raw::*, Error, Result, TagDataType, TagType},
+    std::{borrow::Cow, ffi::CStr, slice},
+};
+
+macro_rules! fmod_struct {
+    {$(
+        $(#[$meta:meta])*
+        $vis:vis struct $Name:ident = $Raw:ident {
+            $($body:tt)*
+        }
+    )*} => {$(
+        #[repr(C)]
+        #[derive(Debug, Clone, Copy, Default)]
+        pub struct $Name {
+            $($body)*
+        }
+
+        ::static_assertions::assert_eq_size!($Name, $Raw);
+        ::static_assertions::assert_eq_align!($Name, $Raw);
+
+        impl $Name {
+            raw! {
+                pub const fn from_raw(raw: $Raw) -> $Name {
+                    unsafe { ::std::mem::transmute(raw) }
+                }
+            }
+            raw! {
+                pub const fn from_raw_ref(raw: &$Raw) -> &$Name {
+                    unsafe { &*(raw as *const $Raw as *const $Name ) }
+                }
+            }
+            raw! {
+                pub fn from_raw_ref_mut(raw: &mut $Raw) -> &mut $Name {
+                    unsafe { &mut *(raw as *mut $Raw as *mut $Name ) }
+                }
+            }
+            raw! {
+                pub const fn into_raw(self) -> $Raw {
+                    unsafe { ::std::mem::transmute(self) }
+                }
+            }
+            raw! {
+                pub const fn as_raw(&self) -> &$Raw {
+                    unsafe { &*(self as *const $Name as *const $Raw ) }
+                }
+            }
+            raw! {
+                pub fn as_raw_mut(&mut self) -> &mut $Raw {
+                    unsafe { &mut *(self as *mut $Name as *mut $Raw ) }
+                }
+            }
+        }
+    )*};
+}
+
+/// FMOD version number.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Version {
+    /// Product version
+    pub product: u8,
+    /// Major version
+    pub major: u8,
+    /// Minor version
+    pub minor: u8,
+}
+
+impl Version {
+    raw! {
+        #[allow(clippy::identity_op)]
+        pub const fn from_raw(raw: u32) -> Version {
+            Version {
+                product: decode_sbcd_u8(((raw & 0x000000FF) >> 0) as u8),
+                major: decode_sbcd_u8(((raw & 0x0000FF00) >> 4) as u8),
+                minor: decode_sbcd_u8(((raw & 0x00FF0000) >> 8) as u8),
+            }
+        }
+    }
+}
+
 // FMOD_ASYNCREADINFO
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Vector {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
+fmod_struct! {
+    /// Structure describing a point in 3D space.
+    ///
+    /// FMOD uses a left handed coordinate system by default.
+    ///
+    /// To use a right handed coordinate system specify [InitFlags::RightHanded3d] in [System::init].
+    pub struct Vector = FMOD_VECTOR {
+        /// X coordinate (right) in 3D space.
+        pub x: f32,
+        /// Y coordinate (up) in 3D space.
+        pub y: f32,
+        /// Z coordinate in 3D space.
+        pub z: f32,
+    }
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Attributes3d {
-    pub position: Vector,
-    pub velocity: Vector,
-    pub forward: Vector,
-    pub up: Vector,
-}
+    /// Structure describing a position, velocity and orientation.
+    ///
+    /// Vectors must be provided in the correct handedness.
+    pub struct Attributes3d = FMOD_3D_ATTRIBUTES {
+        /// Position in world space used for panning and attenuation.
+        ///
+        /// **Units**: Distance units
+        pub position: Vector,
+        /// Velocity in world space used for doppler.
+        ///
+        /// **Units**: Distance units per second
+        pub velocity: Vector,
+        /// Forwards orientation, must be of unit length (1.0) and perpendicular to `up`.
+        pub forward: Vector,
+        /// Upwards orientation, must be of unit length (1.0) and perpendicular to `forward`.
+        pub up: Vector,
+    }
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Guid {
-    pub data1: u32,
-    pub data2: u16,
-    pub data3: u16,
-    pub data4: [u8; 4],
+    /// Structure describing a globally unique identifier.
+    pub struct Guid = FMOD_GUID {
+        /// Specifies the first 8 hexadecimal digits of the GUID.
+        pub data1: u32,
+        /// Specifies the first group of 4 hexadecimal digits.
+        pub data2: u16,
+        /// Specifies the second group of 4 hexadecimal digits.
+        pub data3: u16,
+        /// Array of 8 bytes. The first 2 bytes contain the third group of 4 hexadecimal digits. The remaining 6 bytes contain the final 12 hexadecimal digits.
+        pub data4: [u8; 8],
+    }
 }
 
 // FMOD_PLUGINLIST
 // FMOD_ADVANCEDSETTINGS
-// FMOD_TAG
+
+/// Tag data / metadata description.
+pub struct Tag<'a> {
+    /// Tag type.
+    pub kind: TagType,
+    /// Name.
+    pub name: Cow<'a, str>,
+    /// Tag data.
+    pub data: TagData<'a>,
+    /// True if this tag has been updated since last being accessed with [Sound::get_tag]
+    pub updated: bool,
+}
+
+pub enum TagData<'a> {
+    Binary(&'a [u8]),
+    Int(i64),
+    Float(f64),
+    Str(Cow<'a, str>),
+}
+
+impl Tag<'_> {
+    raw! {
+        pub unsafe fn from_raw(tag: FMOD_TAG) -> Result<Self> {
+            let name = CStr::from_ptr(tag.name);
+            let name = name.to_string_lossy();
+            let data = slice::from_raw_parts(tag.data as *const u8, tag.datalen as usize);
+            let data = match TagDataType::from_raw(tag.datatype) {
+                TagDataType::Binary => TagData::Binary(data),
+                TagDataType::Int if data.len() == 1 => TagData::Int((tag.data as *const u8).read() as _),
+                TagDataType::Int if data.len() == 2 => TagData::Int((tag.data as *const u16).read_unaligned() as _),
+                TagDataType::Int if data.len() == 4 => TagData::Int((tag.data as *const u32).read_unaligned() as _),
+                TagDataType::Int if data.len() == 8 => TagData::Int((tag.data as *const u64).read_unaligned() as _),
+                TagDataType::Float if data.len() == 4 => TagData::Float((tag.data as *const f32).read_unaligned() as _),
+                TagDataType::Float if data.len() == 8 => TagData::Float((tag.data as *const f64).read_unaligned() as _),
+                TagDataType::String | TagDataType::StringUtf8 => TagData::Str(String::from_utf8_lossy(data)),
+                TagDataType::StringUtf16 => TagData::Str(Cow::Owned(string_from_utf16le_lossy(data))),
+                TagDataType::StringUtf16be => TagData::Str(Cow::Owned(string_from_utf16be_lossy(data))),
+                r#type => {
+                    if cfg!(debug_assertions) {
+                        unreachable!("unknown {type:?} (len {}) encountered", tag.datalen)
+                    }
+                    #[cfg(feature = "tracing")]
+                    tracing::error!(tag.datatype, tag.datalen, tag.data = ?data, "Unknown {type:?} encountered");
+                    return Err(Error::InternalRs);
+                },
+            };
+            Ok(Tag {
+                kind: TagType::from_raw(tag.type_),
+                name,
+                data,
+                updated: tag.updated == 0,
+            })
+        }
+    }
+}
+
 // FMOD_CREATESOUNDEXINFO
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-pub struct ReverbProperties {
-    pub decay_time: f32,
-    pub early_delay: f32,
-    pub late_delay: f32,
-    pub hf_reference: f32,
-    pub hf_decay_ratio: f32,
-    pub diffusion: f32,
-    pub density: f32,
-    pub low_shelf_frequency: f32,
-    pub low_shelf_gain: f32,
-    pub high_cut: f32,
-    pub early_late_mix: f32,
-    pub wet_level: f32,
+fmod_struct! {
+    /// Structure defining a reverb environment.
+    ///
+    /// The generic reverb properties are those used by [ReverbProperties::GENERIC].
+    pub struct ReverbProperties = FMOD_REVERB_PROPERTIES {
+        /// Reverberation decay time.
+        ///
+        /// **Units**: Milliseconds
+        /// **Generic**: 1500
+        /// **Range**: [0, 20000]
+        pub decay_time: f32,
+        /// Initial reflection delay time.
+        ///
+        /// **Units**: Milliseconds
+        /// **Generic**: 7
+        /// **Range**: [0, 300]
+        pub early_delay: f32,
+        /// Late reverberation delay time relative to initial reflection.
+        ///
+        /// ***Units**: Milliseconds
+        /// **Generic**: 11
+        /// **Range**: [0, 100]
+        pub late_delay: f32,
+        /// Reference high frequency.
+        ///
+        /// **Units**: Hertz
+        /// **Generic**: 5000
+        /// **Range**: [20, 20000]
+        pub hf_reference: f32,
+        /// High-frequency to mid-frequency decay time ratio.
+        ///
+        /// **Units**: Percent
+        /// **Generic**: 50,
+        /// **Range**: [10, 100]
+        pub hf_decay_ratio: f32,
+        /// Value that controls the echo density in the late reverberation decay.
+        ///
+        /// **Units**: Percent
+        /// **Generic**: 50
+        /// **Range**: [10, 100]
+        pub diffusion: f32,
+        /// Value that controls the modal density in the late reverberation decay.
+        ///
+        /// **Units**: Percent
+        /// **Generic**: 100
+        /// **Range**: [0, 100]
+        pub density: f32,
+        /// Reference low frequency
+        ///
+        /// **Units**: Hertz
+        /// **Generic**: 250
+        /// **Range**: [20, 1000]
+        pub low_shelf_frequency: f32,
+        /// Relative room effect level at low frequencies.
+        ///
+        /// **Units**: Decibels
+        /// **Generic**: 0
+        /// **Range**: [-36, 12]
+        pub low_shelf_gain: f32,
+        /// Relative room effect level at high frequencies.
+        ///
+        /// **Units**: Hertz
+        /// **Generic**: 200000
+        /// **Range**: [0, 20000]
+        pub high_cut: f32,
+        /// Early reflections level relative to room effect.
+        ///
+        /// **Units**: Percent
+        /// **Generic**: 50
+        /// **Range**: [0, 100]
+        pub early_late_mix: f32,
+        /// Room effect level at mid frequencies.
+        ///
+        /// **Units**: Decibels
+        /// **Generic**: -6
+        /// **Range**: [-80, 20]
+        pub wet_level: f32,
+    }
 }
 
 macro_rules! reverb {
@@ -110,13 +331,28 @@ impl ReverbProperties {
 
 // FMOD_ERRORCALLBACK_INFO
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
-pub struct CpuUsage {
-    pub dsp: f32,
-    pub stream: f32,
-    pub geometry: f32,
-    pub update: f32,
-    pub convolution1: f32,
-    pub convolution2: f32,
+fmod_struct! {
+    /// Performance information for Core API functionality.
+    ///
+    /// This structure is filled in with [System::get_cpu_usage].
+    ///
+    /// For readability, the percentage values are smoothed to provide a more stable output.
+    ///
+    /// 'Percentage of main thread' in the descriptions above refers to the thread that the function is called from by the user.
+    ///
+    /// The use of [ThreadType::Convolution1] or [ThreadType::Convolution2] can be controlled with [AdvancedSettings::max_convolution_threads].
+    pub struct CpuUsage = FMOD_CPU_USAGE {
+        /// DSP mixing engine CPU usage. Percentage of [ThreadType::Mixer], or main thread if [InitFlags::MixFromUpdate] flag is used with [System::init].
+        pub dsp: f32,
+        /// Streaming engine CPU usage. Percentage of [ThreadType::Stream], or main thread if [InitFlags::StreamFromUpdate] flag is used with [System::init].
+        pub stream: f32,
+        /// Geometry engine CPU usage. Percentage of [ThreadType::Geometry].
+        pub geometry: f32,
+        /// [System::update] CPU usage. Percentage of main thread.
+        pub update: f32,
+        /// Convolution reverb processing thread #1 CPU usage. Percentage of [ThreadType::Convolution1].
+        pub convolution1: f32,
+        /// Convolution reverb processing thread #2 CPU usage. Percentage of [ThreadType::Convolution2].
+        pub convolution2: f32,
+    }
 }

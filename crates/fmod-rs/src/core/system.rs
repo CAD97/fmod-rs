@@ -1,13 +1,11 @@
-use std::borrow::Cow;
-
 use {
     crate::{
-        raw::*, strlen, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, Result,
-        Sound, SpeakerMode, GLOBAL_SYSTEM_STATE,
+        raw::*, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, Result, Sound,
+        SpeakerMode, GLOBAL_SYSTEM_STATE,
     },
-    cfg_if::cfg_if,
     std::{
-        ffi::CString,
+        borrow::Cow,
+        ffi::{CStr, CString},
         mem,
         os::raw::{c_char, c_int},
         ptr,
@@ -123,7 +121,7 @@ impl System {
     pub fn get_output(&self) -> Result<fmod::OutputType> {
         let mut output = 0;
         fmod_try!(FMOD_System_GetOutput(self.as_raw(), &mut output));
-        Ok(unsafe { fmod::OutputType::from_raw(output) })
+        Ok(fmod::OutputType::from_raw(output))
     }
 
     pub fn get_num_drivers(&self) -> Result<i32> {
@@ -157,7 +155,7 @@ impl System {
                 id,
                 name.as_mut_ptr() as *mut c_char,
                 name.capacity() as c_int,
-                &mut guid as *mut Guid as *mut FMOD_GUID,
+                guid.as_raw_mut(),
                 &mut system_rate,
                 &mut speaker_mode,
                 &mut speaker_mode_channels,
@@ -192,7 +190,7 @@ impl System {
             }
 
             // now we need to set the string len and verify it's UTF-8
-            name.set_len(strlen(name.as_ptr()));
+            name.set_len(CStr::from_ptr(name.as_ptr() as *const _).to_bytes().len());
             match String::from_utf8_lossy(name) {
                 Cow::Borrowed(_) => {}, // it's valid
                 Cow::Owned(fixed) => {
@@ -205,7 +203,7 @@ impl System {
         Ok((
             guid,
             system_rate,
-            unsafe { fmod::SpeakerMode::from_raw(speaker_mode) },
+            fmod::SpeakerMode::from_raw(speaker_mode),
             speaker_mode_channels,
         ))
     }
@@ -243,7 +241,7 @@ impl System {
         ));
         Ok((
             sample_rate,
-            unsafe { fmod::SpeakerMode::from_raw(speaker_mode) },
+            fmod::SpeakerMode::from_raw(speaker_mode),
             num_raw_speakers,
         ))
     }
@@ -299,6 +297,7 @@ impl System {
     // }
 }
 
+#[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PluginHandle {
     raw: u32,
@@ -311,7 +310,6 @@ impl PluginHandle {
             Self { raw }
         }
     }
-
     raw! {
         pub const fn into_raw(this: Self) -> u32 {
             this.raw
@@ -402,18 +400,56 @@ impl System {
 
 /// Init/Close.
 impl System {
-    // TODO: figure out the init story better.
+    /// Initialize the system object and prepare FMOD for playback.
+    ///
+    /// Most API functions require an initialized System object before they will succeed, otherwise they will return [Error::Uninitialized]. Some can only be called before initialization. These are:
+    ///
+    /// - [memory_initialize]
+    /// - [System::set_software_format]
+    /// - [System::set_software_channels]
+    /// - [System::set_dsp_buffer_size]
+    ///
+    /// [System::set_output] / [System::set_output_by_plugin] can be called before or after [System::init] on Android, GameCore, UWP, Windows and Mac. Other platforms can only call this **before** [System::init].
+    ///
+    /// ## max_channels
+    ///
+    /// Maximum number of [Channel] objects available for playback, also known as virtual channels. Virtual channels will play with minimal overhead, with a subset of 'real' voices that are mixed, and selected based on priority and audibility. See the Virtual Voices guide for more information.
+    /// Range: [0, 4095]
+    ///
+    /// ## flags
+    ///
+    /// Initialization flags. More than one mode can be set at once by combining them with the OR operator.
     pub fn init(&self, max_channels: i32, flags: InitFlags) -> Result {
+        // I hope FMOD does the right thing for a nullptr driver data in all cases...
+        unsafe { self.init_ex(max_channels, flags, ptr::null()) }
+    }
+
+    /// Initialize the system object and prepare FMOD for playback.
+    ///
+    /// # Safety
+    ///
+    /// `extra_driver_data` must be correct.
+    ///
+    /// ## extra_driver_data
+    ///
+    /// Additional output specific initialization data. This will be passed to the output plugin. See [OutputType] for descriptions of data that can be passed in, based on the selected output mode.
+    pub unsafe fn init_ex(
+        &self,
+        max_channels: i32,
+        flags: InitFlags,
+        extra_driver_data: *const (),
+    ) -> Result {
         let flags = InitFlags::into_raw(flags);
-        let extradriverdata = ptr::null_mut();
         fmod_try!(FMOD_System_Init(
             self.as_raw(),
             max_channels,
             flags,
-            extradriverdata,
+            extra_driver_data as *mut _
         ));
         Ok(())
     }
+
+    // TODO: safe init_ex wrappers for WavWriter[Nrt], PulseAudio
 }
 
 /// General post-init system functions.
@@ -452,21 +488,16 @@ impl System {
             mode,
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
         ) {
-            cfg_if! {
-                if #[cfg(debug_assertions)] {
-                    panic!(
-                        "System::create_sound cannot be called with extended mode {mode:?}; use create_sound_ex instead",
-                    )
-                } else {
-                    #[cfg(feature = "tracing")]
-                    tracing::error!(
-                        parent: crate::span(),
-                        ?mode,
-                        "System::create_sound called with extended mode; use create_sound_ex instead",
-                    );
-                    return Err(Error::InvalidParam);
-                }
+            if cfg!(debug_assertions) {
+                panic!("System::create_sound cannot be called with extended mode {mode:?}; use create_sound_ex instead");
             }
+            #[cfg(feature = "tracing")]
+            tracing::error!(
+                parent: crate::span(),
+                ?mode,
+                "System::create_sound called with extended mode; use create_sound_ex instead",
+            );
+            return Err(Error::InvalidParam);
         }
 
         let name = CString::new(name).map_err(|_| Error::InvalidParam)?;

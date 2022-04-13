@@ -68,7 +68,8 @@ impl<T: ?Sized + FmodResource> Handle<T> {
             let this = ManuallyDrop::new(this);
             this.as_raw()
         }
-
+    }
+    raw! {
         #[allow(clippy::missing_safety_doc)]
         pub unsafe fn from_raw(raw: *mut T::Raw) -> Self {
             Self { raw: ptr::NonNull::new_unchecked(raw) }
