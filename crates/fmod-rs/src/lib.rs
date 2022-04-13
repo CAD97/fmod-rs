@@ -11,7 +11,10 @@ mod error;
 mod handle;
 pub(crate) mod utils;
 
-pub use self::{common::*, core::*, error::*, handle::*};
+pub use {
+    self::{common::*, core::*, error::*, handle::*},
+    cstr::cstr,
+};
 
 raw! {
     pub mod raw {

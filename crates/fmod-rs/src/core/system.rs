@@ -1,5 +1,5 @@
 use {
-    crate::{
+    fmod::{
         raw::*, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, Result, Sound,
         SpeakerMode, GLOBAL_SYSTEM_STATE,
     },
@@ -319,14 +319,12 @@ impl PluginHandle {
 
 /// Plug-in support.
 impl System {
-    pub fn set_plugin_path(&self, path: &str) -> Result {
-        let path = CString::new(path).map_err(|_| Error::InvalidParam)?;
+    pub fn set_plugin_path(&self, path: &CStr) -> Result {
         fmod_try!(FMOD_System_SetPluginPath(self.as_raw(), path.as_ptr()));
         Ok(())
     }
 
-    pub fn load_plugin(&self, filename: &str, priority: u32) -> Result<PluginHandle> {
-        let filename = CString::new(filename).map_err(|_| Error::InvalidParam)?;
+    pub fn load_plugin(&self, filename: &CStr, priority: u32) -> Result<PluginHandle> {
         let mut handle = 0;
         fmod_try!(FMOD_System_LoadPlugin(
             self.as_raw(),
@@ -483,7 +481,7 @@ impl System {
 /// Sound/DSP/Channel/FX creation and retrieval.
 impl System {
     // TODO: create_cound_ex
-    pub fn create_sound(&self, name: &str, mode: Mode) -> Result<Handle<Sound>> {
+    pub fn create_sound(&self, name: &CStr, mode: Mode) -> Result<Handle<Sound>> {
         if matches!(
             mode,
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
@@ -500,7 +498,6 @@ impl System {
             return Err(Error::InvalidParam);
         }
 
-        let name = CString::new(name).map_err(|_| Error::InvalidParam)?;
         let mode = Mode::into_raw(mode);
         let exinfo = ptr::null_mut();
         let mut sound = ptr::null_mut();
@@ -516,8 +513,7 @@ impl System {
 
     // snip
 
-    pub fn create_channel_group(&self, name: &str) -> Result<Handle<ChannelGroup>> {
-        let name = CString::new(name).map_err(|_| Error::InvalidParam)?;
+    pub fn create_channel_group(&self, name: &CStr) -> Result<Handle<ChannelGroup>> {
         let mut channel_group = ptr::null_mut();
         fmod_try!(FMOD_System_CreateChannelGroup(
             self.as_raw(),
