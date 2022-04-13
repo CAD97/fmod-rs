@@ -9,6 +9,7 @@ mod common;
 mod core;
 mod error;
 mod handle;
+pub(crate) mod utils;
 
 pub use self::{common::*, core::*, error::*, handle::*};
 
@@ -22,6 +23,9 @@ raw! {
         pub use fmod_studio_sys::*;
     }
 }
+
+/// Current FMOD version number.
+pub const VERSION: Version = Version::from_raw(raw::FMOD_VERSION);
 
 #[cfg(feature = "tracing")]
 fn span() -> &'static tracing::Span {
