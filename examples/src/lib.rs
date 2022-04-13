@@ -196,6 +196,9 @@ impl Example {
 #[macro_export]
 macro_rules! media {
     ($fname:expr) => {
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../media/", $fname)
+        ::std::ffi::CStr::from_bytes_with_nul(
+            concat!(env!("CARGO_MANIFEST_DIR"), "/../media/", $fname, "\0").as_bytes(),
+        )
+        .map_err(|_| ::fmod::Error::FileNotFound)?
     };
 }
