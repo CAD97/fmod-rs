@@ -6,18 +6,33 @@ macro_rules! enum_struct {
     {$(
         $(#[$meta:meta])*
         $vis:vis enum $Name:ident: $Raw:ty {$(
-            $(#[$vmeta:meta])*
+            $(#[$($vmeta:tt)*])*
             $Variant:ident = $value:expr,
         )*}
     )*} => {$(
         $(#[$meta])*
         #[repr(transparent)]
-        #[derive(Clone, Copy, PartialEq, Eq)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         $vis struct $Name {
             raw: $Raw,
         }
 
         impl $Name {
+            $(
+                enum_struct! {@stripdefault
+                    $(#[$($vmeta)*])*
+                    #[allow(non_upper_case_globals)]
+                    pub const $Variant: Self = Self::from_raw($value);
+                }
+            )*
+        }
+
+        impl $Name {
+            raw! {
+                pub const fn zeroed() -> $Name {
+                    Self::from_raw(0)
+                }
+            }
             raw! {
                 pub const fn from_raw(raw: $Raw) -> $Name {
                     unsafe { ::std::mem::transmute(raw) }
@@ -48,12 +63,6 @@ macro_rules! enum_struct {
                     unsafe { &mut *(self as *mut $Name as *mut $Raw ) }
                 }
             }
-
-            $(
-                $(#[$vmeta])*
-                #[allow(non_upper_case_globals)]
-                pub const $Variant: Self = Self::from_raw($value);
-            )*
         }
 
         impl fmt::Debug for $Name {
@@ -65,7 +74,46 @@ macro_rules! enum_struct {
                 }
             }
         }
+
+        enum_struct! {@default $Name {$(
+            $(#[$($vmeta)*])*
+            $Variant = $value,
+        )*}}
     )*};
+
+    {@default $Name:ident {}} => {};
+
+    {@default $Name:ident {
+        #[default]
+        $(#[$meta:meta])*
+        $Variant:ident = $value:expr,
+        $(
+            $(#[$($vmeta:tt)*])*
+            $VVariant:ident = $vvalue:expr,
+        )*
+    }} => {
+        #[doc = concat!("[`", stringify!($Name), "::", stringify!($Variant), "`]")]
+        impl Default for $Name {
+            fn default() -> $Name {
+                $Name::$Variant
+            }
+        }
+        enum_struct! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+    };
+
+    {@default $Name:ident {
+        $(#[$meta:meta])*
+        $Variant:ident = $value:expr,
+        $(
+            $(#[$($vmeta:tt)*])*
+            $VVariant:ident = $vvalue:expr,
+        )*
+    }} => {
+        enum_struct! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+    };
+
+    {@stripdefault #[default] $($tt:tt)*} => { $($tt)* };
+    {@stripdefault $($tt:tt)*} => { $($tt)* };
 }
 
 enum_struct! {
@@ -73,6 +121,7 @@ enum_struct! {
     pub enum DriverState: u32 {
         /// Device is currently plugged in.
         Connected = FMOD_DRIVER_STATE_CONNECTED,
+        #[default]
         /// Device is the users preferred choice.
         Default   = FMOD_DRIVER_STATE_DEFAULT,
     }
@@ -109,6 +158,7 @@ enum_struct! {
     ///
     /// With [Mode::OpenMemoryPoint] and [Mode::OpenRaw] or PCM, if using them together, note that you must pad the data on each side by 16 bytes. This is so fmod can modify the ends of the data for looping / interpolation / mixing purposes. If a wav file, you will need to insert silence, and then reset loop points to stop the playback from playing that silence.
     pub enum Mode: u32 {
+        #[default]
         /// Default for all modes listed below. [Mode::LoopOff], [Mode::D2], [Mode::WorldRelative3d], [Mode::InverseRolloff3d]
         Default                 = FMOD_DEFAULT,
         /// For non looping sounds. (DEFAULT). Overrides [Mode::LoopNormal] / [Mode::LoopBidi].
@@ -184,6 +234,7 @@ enum_struct! {
         /// Upper bound of platform specific priority range.
         PlatformMax = FMOD_THREAD_PRIORITY_PLATFORM_MAX as i32,
         // Platform agnostic priorities, maps internally to platform specific value
+        #[default]
         /// For a given thread use the default listed below, i.e. [ThreadType::Mixer] uses [ThreadPriority::Mixer].
         Default  = FMOD_THREAD_PRIORITY_DEFAULT,
         /// Low platform agnostic priority.
@@ -231,6 +282,7 @@ enum_struct! {
     ///
     /// Stack size can be specified explicitly, however for each thread you should provide a size equal to or larger than the expected default or risk causing a stack overflow at runtime.
     pub enum ThreadStackSize: u32 {
+        #[default]
         /// For a given thread use the default listed below, i.e. [ThreadType::Mixer] uses [ThreadStackSize::Mixer].
         Default          = FMOD_THREAD_STACK_SIZE_DEFAULT,
         /// Default stack size for [ThreadType::Mixer].
@@ -353,19 +405,25 @@ enum_struct! {
         /// HTML5 - Web Audio AudioWorkletNode output. (Default on HTML5 if available)
         AudioWorklet = FMOD_OUTPUTTYPE_AUDIOWORKLET,
     }
+}
 
-    /// Specify the destination of log output when using the logging version of FMOD.
-    ///
-    /// TTY destination can vary depending on platform, common examples include the Visual Studio / Xcode output window, stderr and LogCat.
-    pub enum DebugMode: i32 {
-        /// Default log location per platform, i.e. Visual Studio output window, stderr, LogCat, etc.
-        Tty      = FMOD_DEBUG_MODE_TTY,
-        /// Write log to specified file path.
-        File     = FMOD_DEBUG_MODE_FILE,
-        /// Call specified callback with log information.
-        Callback = FMOD_DEBUG_MODE_CALLBACK,
+raw! {
+    enum_struct! {
+        /// Specify the destination of log output when using the logging version of FMOD.
+        ///
+        /// TTY destination can vary depending on platform, common examples include the Visual Studio / Xcode output window, stderr and LogCat.
+        pub enum DebugMode: i32 {
+            /// Default log location per platform, i.e. Visual Studio output window, stderr, LogCat, etc.
+            Tty      = FMOD_DEBUG_MODE_TTY,
+            /// Write log to specified file path.
+            File     = FMOD_DEBUG_MODE_FILE,
+            /// Call specified callback with log information.
+            Callback = FMOD_DEBUG_MODE_CALLBACK,
+        }
     }
+}
 
+enum_struct! {
     /// Speaker mode types.
     ///
     /// Note below the phrase 'sound channels' is used. These are the subchannels inside a sound, they are not related and have nothing to do with the FMOD class "Channel".
@@ -374,6 +432,7 @@ enum_struct! {
     ///
     /// See the FMOD Studio Mixing Guide for graphical depictions of each speaker mode.
     pub enum SpeakerMode: i32 {
+        #[default]
         /// Default speaker mode for the chosen output mode which will resolve after [System::init].
         Default     = FMOD_SPEAKERMODE_DEFAULT,
         /// Assume there is no special mapping from a given channel to a speaker, channels map 1:1 in order. Use [System::set_software_format] to specify the speaker count.
@@ -469,6 +528,7 @@ enum_struct! {
 
     /// Speaker ordering for multichannel signals.
     pub enum ChannelOrder: i32 {
+        #[default]
         /// Left, Right, Center, LFE, Surround Left, Surround Right, Back Left, Back Right (see [Speaker] enumeration)
         Default    = FMOD_CHANNELORDER_DEFAULT,
         /// Left, Right, Center, LFE, Back Left, Back Right, Surround Left, Surround Right (as per Microsoft .wav WAVEFORMAT structure master order)
@@ -677,6 +737,7 @@ enum_struct! {
     ///
     /// Use [System::set_advanced_settings] and [AdvancedSettings::resampler_method] to configure the resampling quality you require for sample rate conversion during sound playback.
     pub enum DspResampler: i32 {
+        #[default]
         /// Default interpolation method, same as [DspResampler::Linear].
         Default  = FMOD_DSP_RESAMPLER_DEFAULT,
         /// No interpolation. High frequency aliasing hiss will be audible depending on the sample rate of the sound.
@@ -691,6 +752,7 @@ enum_struct! {
 
     /// List of connection types between 2 DSP nodes.
     pub enum DspConnectionType: i32 {
+        #[default]
         /// Default connection type. Audio is mixed from the input to the output [Dsp]'s audible buffer.
         ///
         /// Default [DspConnection] type. Audio is mixed from the input to the output [Dsp]'s audible buffer, meaning it will be part of the audible signal. A standard connection will execute its input [Dsp] if it has not been executed before.

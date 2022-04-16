@@ -51,7 +51,7 @@ fn fetch_driver(example: &mut Example, system: &fmod::System) -> anyhow::Result<
         ));
         example.draw("");
         for i in 0..num_drivers {
-            let _ = system.get_driver_info(i, &mut name)?;
+            system.get_driver_name(i, &mut name)?;
             example.draw(format_args!(
                 "[{}] - {i}. {name}",
                 if selected_index == i { 'X' } else { ' ' }

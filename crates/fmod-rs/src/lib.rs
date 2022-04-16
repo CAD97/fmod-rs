@@ -5,14 +5,13 @@ mod macros;
 
 extern crate self as fmod;
 
-mod common;
 mod core;
 mod error;
 mod handle;
 pub(crate) mod utils;
 
 pub use {
-    self::{common::*, core::*, error::*, handle::*},
+    self::{core::*, error::*, handle::*},
     cstr::cstr,
 };
 
