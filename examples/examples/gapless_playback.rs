@@ -63,7 +63,7 @@ fn main() -> anyhow::Result<()> {
     {
         // Get information needed later for scheduling.  The mixer block size, and the output rate of the mixer.
         let (dsp_block_len, _) = system.get_dsp_buffer_size()?;
-        let (output_rate, _, _) = system.get_software_format()?;
+        let fmod::SoftwareFormat { sample_rate, .. } = system.get_software_format()?;
 
         // Load 3 sounds - these are just sine wave tones at different frequencies.  C, D and E on the musical scale.
         let note_c = system.create_sound(media!("c.ogg"), fmod::Mode::Default)?;
@@ -100,7 +100,7 @@ fn main() -> anyhow::Result<()> {
                 // Get the default frequency that the sound was recorded at.
                 let (freq, _) = s.get_defaults()?;
                 // Convert the length of the sound to 'output samples' for the output timeline.
-                let slen = (slen as f32 / freq * output_rate as f32) as u32;
+                let slen = (slen as f32 / freq * sample_rate as f32) as u32;
                 // Place the sound clock start time to this value after the last one.
                 clock_start += slen as u64;
             }

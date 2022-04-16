@@ -73,17 +73,32 @@ macro_rules! flags {
     {$(
         $(#[$meta:meta])*
         $vis:vis struct $Name:ident: $Raw:ty {$(
-            $(#[$vmeta:meta])*
+            $(#[$($vmeta:tt)*])*
             $Variant:ident = $value:expr,
         )*}
     )*} => {$(
         $(#[$meta])*
-        #[derive(Clone, Copy, PartialEq, Eq)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         $vis struct $Name {
             raw: $Raw,
         }
 
         impl $Name {
+            $(
+                flags! {@stripdefault
+                    $(#[$($vmeta)*])*
+                    #[allow(non_upper_case_globals)]
+                    pub const $Variant: Self = Self::from_raw($value);
+                }
+            )*
+        }
+
+        impl $Name {
+            raw! {
+                pub const fn zeroed() -> $Name {
+                    Self::from_raw(0)
+                }
+            }
             raw! {
                 pub const fn from_raw(raw: $Raw) -> $Name {
                     unsafe { ::std::mem::transmute(raw) }
@@ -118,12 +133,6 @@ macro_rules! flags {
             pub fn is_set(self, variant: Self) -> bool {
                 self & variant == variant
             }
-
-            $(
-                $(#[$vmeta])*
-                #[allow(non_upper_case_globals)]
-                pub const $Variant: Self = Self::from_raw($value);
-            )*
         }
 
         ops!($Name: BitAnd bitand & BitAndAssign bitand_assign);
@@ -140,7 +149,46 @@ macro_rules! flags {
                 }
             }
         }
+
+        flags! {@default $Name {$(
+            $(#[$($vmeta)*])*
+            $Variant = $value,
+        )*}}
     )*};
+
+    {@default $Name:ident {}} => {};
+
+    {@default $Name:ident {
+        #[default]
+        $(#[$meta:meta])*
+        $Variant:ident = $value:expr,
+        $(
+            $(#[$($vmeta:tt)*])*
+            $VVariant:ident = $vvalue:expr,
+        )*
+    }} => {
+        #[doc = concat!("[`", stringify!($Name), "::", stringify!($Variant), "`]")]
+        impl Default for $Name {
+            fn default() -> $Name {
+                $Name::$Variant
+            }
+        }
+        flags! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+    };
+
+    {@default $Name:ident {
+        $(#[$meta:meta])*
+        $Variant:ident = $value:expr,
+        $(
+            $(#[$($vmeta:tt)*])*
+            $VVariant:ident = $vvalue:expr,
+        )*
+    }} => {
+        flags! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+    };
+
+    {@stripdefault #[default] $($tt:tt)*} => { $($tt)* };
+    {@stripdefault $($tt:tt)*} => { $($tt)* };
 }
 
 flags! {
@@ -152,6 +200,7 @@ flags! {
         LevelError         = FMOD_DEBUG_LEVEL_ERROR,
         /// Enable warning and error messages.
         LevelWarning       = FMOD_DEBUG_LEVEL_WARNING,
+        #[default]
         /// Enable informational, warning and error messages (default).
         LevelLog           = FMOD_DEBUG_LEVEL_LOG,
         /// Verbose logging for memory operations, only use this if you are debugging a memory related issue.
@@ -172,6 +221,7 @@ flags! {
 
     /// Bitfields for memory allocation type being passed into FMOD memory callbacks.
     pub struct MemoryType: u32 {
+        #[default]
         /// Standard memory.
         Normal       = FMOD_MEMORY_NORMAL,
         /// Stream file buffer, size controllable with [System::set_stream_buffer_size].
@@ -192,6 +242,7 @@ flags! {
 
     /// Configuration flags used when initializing the System object.
     pub struct InitFlags: u32 {
+        #[default]
         /// Initialize normally
         Normal                 = FMOD_INIT_NORMAL,
         /// No stream thread is created internally. Streams are driven from [System::update]. Mainly used with non-realtime outputs.
@@ -216,7 +267,7 @@ flags! {
         ThreadUnsafe           = FMOD_INIT_THREAD_UNSAFE,
         /// Slower, but adds level metering for every single DSP unit in the graph. Use [DSP::set_metering_enabled] to turn meters off individually. Setting this flag implies [InitFlags::ProfileEnable].
         ProfileMeterAll        = FMOD_INIT_PROFILE_METER_ALL,
-        /// Enables memory allocation tracking. Currently this is only useful when using the Studio API. Increases memory footprint and reduces performance. This flag is implied by [StudioInitFlags::MemoryTracking].
+        /// Enables memory allocation tracking. Currently this is only useful when using the Studio API. Increases memory footprint and reduces performance. This flag is implied by [studio::InitFlags::MemoryTracking].
         MemoryTracking         = FMOD_INIT_MEMORY_TRACKING,
     }
 
@@ -312,6 +363,7 @@ flags! {
     /// Explicit core assignment up to [ThreadAffinity::Core(61)][Self::Core] is supported for platforms with that many cores.
     pub struct ThreadAffinity: u64 {
         // Platform agnostic thread groupings
+        #[default]
         /// For a given thread use the default listed below, i.e. [ThreadType::Mixer] uses [ThreadAffinity::Mixer].
         GroupDefault = FMOD_THREAD_AFFINITY_GROUP_DEFAULT,
         /// Grouping A is recommended to isolate the mixer thread [ThreadType::Mixer].

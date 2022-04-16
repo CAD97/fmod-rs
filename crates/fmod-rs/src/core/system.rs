@@ -1,11 +1,11 @@
 use {
     fmod::{
-        raw::*, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, Result, Sound,
-        SpeakerMode, GLOBAL_SYSTEM_STATE,
+        raw::*, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, OutputType,
+        Result, Sound, SpeakerMode, GLOBAL_SYSTEM_STATE,
     },
     std::{
         borrow::Cow,
-        ffi::{CStr, CString},
+        ffi::CStr,
         mem,
         os::raw::{c_char, c_int},
         ptr,
@@ -110,64 +110,137 @@ impl System {
     }
 }
 
+/// Identification information about a sound device specified by its index,
+/// specific to the selected output mode.
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct DriverInfo {
+    /// GUID that uniquely identifies the device.
+    pub guid: Guid,
+    /// Sample rate this device operates at.
+    pub system_rate: i32,
+    /// Speaker setup this device is currently using.
+    pub speaker_mode: SpeakerMode,
+    /// Number of channels in the current speaker setup.
+    pub speaker_mode_channels: i32,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+/// Output format for the software mixer
+pub struct SoftwareFormat {
+    /// Sample rate of the mixer.
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[8000, 192000]</dd>
+    /// <dt>Units</dt><dd>Hertz</dd>
+    /// <dt>Default</dt><dd>48000</dd>
+    pub sample_rate: i32,
+    /// Speaker setup of the mixer.
+    pub speaker_mode: SpeakerMode,
+    /// Number of speakers for [SpeakerMode::Raw].
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[0, MAX_CHANNEL_WIDTH]</dd>
+    /// </d>
+    pub num_raw_speakers: i32,
+}
+
 /// Setup functions.
 impl System {
+    /// Sets the type of output interface used to run the mixer.
+    ///
+    /// This function is typically used to select between different OS specific
+    /// audio APIs which may have different features.
+    ///
+    /// It is only necessary to call this function if you want to specifically
+    /// switch away from the default output mode for the operating system. The
+    /// most optimal mode is selected by default for the operating system.
+    ///
+    /// (Windows, UWP, GameCore, Android, MacOS, iOS, Linux Only) This function
+    /// can be called after System::init to perform special handling of driver
+    /// disconnections, see [SystemCallback::DeviceListChanged].
     pub fn set_output(&self, output: fmod::OutputType) -> Result {
         let output = output.into_raw();
         fmod_try!(FMOD_System_SetOutput(self.as_raw(), output));
         Ok(())
     }
 
+    /// Retrieves the type of output interface used to run the mixer.
     pub fn get_output(&self) -> Result<fmod::OutputType> {
-        let mut output = 0;
-        fmod_try!(FMOD_System_GetOutput(self.as_raw(), &mut output));
-        Ok(fmod::OutputType::from_raw(output))
+        let mut output = OutputType::zeroed();
+        fmod_try!(FMOD_System_GetOutput(self.as_raw(), output.as_raw_mut()));
+        Ok(output)
     }
 
+    /// Retrieves the number of output drivers available for the selected output
+    /// type.
+    ///
+    /// If [System::set_output] has not been called, this function will return
+    /// the number of drivers available for the default output type.
+    /// A possible use for this function is to iterate through available sound
+    /// devices for the current output type, and use [System::get_driver_name]
+    /// to get the device's name and [System::get_driver_info] for other
+    /// attributes.
     pub fn get_num_drivers(&self) -> Result<i32> {
         let mut numdrivers = 0;
         fmod_try!(FMOD_System_GetNumDrivers(self.as_raw(), &mut numdrivers));
         Ok(numdrivers)
     }
 
-    pub fn get_driver_info(
-        &self,
-        id: i32,
-        name: &mut String,
-    ) -> Result<(Guid, i32, SpeakerMode, i32)> {
+    // NB: we split get_driver_info/name into separate calls for two reasons:
+    // getting *just* the name is common, and the name has extra retry
+    // requirements to validate non-truncation and UTF-8.
+
+    /// Retrieves identification information about a sound device specified by
+    /// its index, and specific to the selected output mode.
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[0, System::get_num_drivers]</dd>
+    /// </dl>
+    pub fn get_driver_info(&self, id: i32) -> Result<DriverInfo> {
         let mut guid = Guid::default();
         let mut system_rate = 0;
-        let mut speaker_mode = 0;
+        let mut speaker_mode = SpeakerMode::default();
         let mut speaker_mode_channels = 0;
 
-        name.clear();
-        if name.capacity() == 0 {
-            // the multiple_system.cpp example uses a 256 byte
-            // buffer, so it's probably enough; try that first
-            name.reserve(256);
-        }
+        fmod_try!(FMOD_System_GetDriverInfo(
+            self.as_raw(),
+            id,
+            ptr::null_mut(),
+            0,
+            guid.as_raw_mut(),
+            &mut system_rate,
+            speaker_mode.as_raw_mut(),
+            &mut speaker_mode_channels,
+        ));
 
+        Ok(DriverInfo {
+            guid,
+            system_rate,
+            speaker_mode,
+            speaker_mode_channels,
+        })
+    }
+
+    /// Retrieves the name of a sound device specified by its index, specific to
+    /// the selected output mode.
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[0, System::get_num_drivers]</dd>
+    /// </dl>
+    pub fn get_driver_name(&self, id: i32, name: &mut String) -> Result {
+        /// The multiple_system.cpp example uses a 256 byte buffer,
+        /// so that's probably enough; try that size first
+        const DEFAULT_NAME_CAPACITY: usize = 256;
+
+        name.clear();
         unsafe {
             let name = name.as_mut_vec();
-
-            let mut raw_error = FMOD_System_GetDriverInfo(
-                self.as_raw(),
-                id,
-                name.as_mut_ptr() as *mut c_char,
-                name.capacity() as c_int,
-                guid.as_raw_mut(),
-                &mut system_rate,
-                &mut speaker_mode,
-                &mut speaker_mode_channels,
-            );
-
-            while let Some(error) = fmod::Error::from_raw(raw_error) {
-                match error {
+            let mut error = Some(fmod::Error::Truncated);
+            while let Some(terror) = error {
+                match terror {
                     fmod::Error::Truncated => {
-                        if name.capacity() < 256 {
-                            // the multiple_system.cpp example uses a 256 byte
-                            // buffer, so it's probably enough; try that first
-                            name.reserve(256);
+                        if name.capacity() < DEFAULT_NAME_CAPACITY {
+                            name.reserve(DEFAULT_NAME_CAPACITY);
                         } else {
                             // try doubling the buffer size?
                             name.reserve(name.len() * 2);
@@ -177,16 +250,16 @@ impl System {
                 }
 
                 // try again
-                raw_error = FMOD_System_GetDriverInfo(
+                error = fmod::Error::from_raw(FMOD_System_GetDriverInfo(
                     self.as_raw(),
                     id,
                     name.as_mut_ptr() as *mut c_char,
-                    name.len() as c_int,
+                    name.capacity() as c_int,
                     ptr::null_mut(),
                     ptr::null_mut(),
                     ptr::null_mut(),
                     ptr::null_mut(),
-                );
+                ));
             }
 
             // now we need to set the string len and verify it's UTF-8
@@ -200,25 +273,42 @@ impl System {
             }
         }
 
-        Ok((
-            guid,
-            system_rate,
-            fmod::SpeakerMode::from_raw(speaker_mode),
-            speaker_mode_channels,
-        ))
+        Ok(())
     }
 
+    /// Sets the output driver for the selected output type.
+    ///
+    /// When an output type has more than one driver available, this function
+    /// can be used to select between them.
+    ///
+    /// If this function is called after [System::init], the current driver will
+    /// be shutdown and the newly selected driver will be initialized / started.
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[0, System::get_num_drivers]</dd>
+    /// </dl>
     pub fn set_driver(&self, id: i32) -> Result {
         fmod_try!(FMOD_System_SetDriver(self.as_raw(), id));
         Ok(())
     }
 
+    /// Retrieves the output driver index for the selected output type.
+    ///
+    /// 0 represents the default for the output type.
     pub fn get_driver(&self) -> Result<i32> {
         let mut driver = 0;
         fmod_try!(FMOD_System_GetDriver(self.as_raw(), &mut driver));
         Ok(driver)
     }
 
+    /// Sets the maximum number of software mixed channels possible.
+    ///
+    /// This function cannot be called after FMOD is already activated, it must
+    /// be called before [System::init], or after [System::close].
+    ///
+    /// <dl>
+    /// <dt>Default</dt><dd>64</dd>
+    /// </dl>
     pub fn set_software_channels(&self, num_software_channels: i32) -> Result {
         fmod_try!(FMOD_System_SetSoftwareChannels(
             self.as_raw(),
@@ -227,23 +317,46 @@ impl System {
         Ok(())
     }
 
-    // pub fn set_software_format(&self, sample_rate: i32, speaker_mode: FMOD_SPEAKERMODE, num_raw_speakers: i32) -> Result;
+    /// Retrieves the maximum number of software mixed channels possible.
+    pub fn get_software_channels(&self) -> Result<i32> {
+        let mut num_software_channels = 0;
+        fmod_try!(FMOD_System_GetSoftwareChannels(
+            self.as_raw(),
+            &mut num_software_channels
+        ));
+        Ok(num_software_channels)
+    }
 
-    pub fn get_software_format(&self) -> Result<(i32, fmod::SpeakerMode, i32)> {
+    pub fn set_software_format(&self, format: SoftwareFormat) -> Result {
+        let SoftwareFormat {
+            sample_rate,
+            speaker_mode,
+            num_raw_speakers,
+        } = format;
+        fmod_try!(FMOD_System_SetSoftwareFormat(
+            self.as_raw(),
+            sample_rate,
+            speaker_mode.into_raw(),
+            num_raw_speakers
+        ));
+        Ok(())
+    }
+
+    pub fn get_software_format(&self) -> Result<SoftwareFormat> {
         let mut sample_rate = 0;
-        let mut speaker_mode = 0;
+        let mut speaker_mode = SpeakerMode::default();
         let mut num_raw_speakers = 0;
         fmod_try!(FMOD_System_GetSoftwareFormat(
             self.as_raw(),
             &mut sample_rate,
-            &mut speaker_mode,
+            speaker_mode.as_raw_mut(),
             &mut num_raw_speakers
         ));
-        Ok((
+        Ok(SoftwareFormat {
             sample_rate,
-            fmod::SpeakerMode::from_raw(speaker_mode),
+            speaker_mode,
             num_raw_speakers,
-        ))
+        })
     }
 
     pub fn set_dsp_buffer_size(&self, buffer_length: u32, num_buffers: i32) -> Result {

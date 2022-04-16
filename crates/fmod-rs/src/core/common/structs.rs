@@ -14,7 +14,8 @@ macro_rules! fmod_struct {
         }
     )*} => {$(
         #[repr(C)]
-        #[derive(Debug, Clone, Copy, Default)]
+        $(#[$meta])*
+        #[derive(Debug, Clone, Copy, Default, PartialEq)]
         pub struct $Name {
             $($body)*
         }
@@ -58,7 +59,7 @@ macro_rules! fmod_struct {
 }
 
 /// FMOD version number.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Version {
     /// Product version
     pub product: u8,
@@ -117,6 +118,7 @@ fmod_struct! {
     }
 
     /// Structure describing a globally unique identifier.
+    #[derive(Eq, Hash)]
     pub struct Guid = FMOD_GUID {
         /// Specifies the first 8 hexadecimal digits of the GUID.
         pub data1: u32,
@@ -133,6 +135,7 @@ fmod_struct! {
 // FMOD_ADVANCEDSETTINGS
 
 /// Tag data / metadata description.
+#[derive(Debug, Clone, PartialEq)]
 pub struct Tag<'a> {
     /// Tag type.
     pub kind: TagType,
@@ -144,6 +147,7 @@ pub struct Tag<'a> {
     pub updated: bool,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum TagData<'a> {
     Binary(&'a [u8]),
     Int(i64),
@@ -196,75 +200,99 @@ fmod_struct! {
     pub struct ReverbProperties = FMOD_REVERB_PROPERTIES {
         /// Reverberation decay time.
         ///
-        /// **Units**: Milliseconds
-        /// **Generic**: 1500
-        /// **Range**: [0, 20000]
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Generic</dt><dd>1500</dd>
+        /// <dt>Range</dt><dd>[0, 20000]</dd>
+        /// </dl>
         pub decay_time: f32,
         /// Initial reflection delay time.
         ///
-        /// **Units**: Milliseconds
-        /// **Generic**: 7
-        /// **Range**: [0, 300]
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Generic</dt><dd>7</dd>
+        /// <dt>Range</dt><dd>[0, 300]</dd>
+        /// </dl>
         pub early_delay: f32,
         /// Late reverberation delay time relative to initial reflection.
         ///
-        /// ***Units**: Milliseconds
-        /// **Generic**: 11
-        /// **Range**: [0, 100]
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Generic</dt><dd>11</dd>
+        /// <dt>Range</dt><dd>[0, 100]</dd>
+        /// </dl>
         pub late_delay: f32,
         /// Reference high frequency.
         ///
-        /// **Units**: Hertz
-        /// **Generic**: 5000
-        /// **Range**: [20, 20000]
+        /// <dl>
+        /// <dt>Units</dt><dd>Hertz</dd>
+        /// <dt>Generic</dt><dd>5000</dd>
+        /// <dt>Range</dt><dd>[20, 20000]</dd>
+        /// </dl>
         pub hf_reference: f32,
         /// High-frequency to mid-frequency decay time ratio.
         ///
-        /// **Units**: Percent
-        /// **Generic**: 50,
-        /// **Range**: [10, 100]
+        /// <dl>
+        /// <dt>Units</dt><dd>Percent</dd>
+        /// <dt>Generic</dt><dd>50,</dd>
+        /// <dt>Range</dt><dd>[10, 100]</dd>
+        /// </dl>
         pub hf_decay_ratio: f32,
         /// Value that controls the echo density in the late reverberation decay.
         ///
-        /// **Units**: Percent
-        /// **Generic**: 50
-        /// **Range**: [10, 100]
+        /// <dl>
+        /// <dt>Units</dt><dd>Percent</dd>
+        /// <dt>Generic</dt><dd>50</dd>
+        /// <dt>Range</dt><dd>[10, 100]</dd>
+        /// </dl>
         pub diffusion: f32,
         /// Value that controls the modal density in the late reverberation decay.
         ///
-        /// **Units**: Percent
-        /// **Generic**: 100
-        /// **Range**: [0, 100]
+        /// <dl>
+        /// <dt>Units</dt><dd>Percent</dd>
+        /// <dt>Generic</dt><dd>100</dd>
+        /// <dt>Range</dt><dd>[0, 100]</dd>
+        /// </dl>
         pub density: f32,
         /// Reference low frequency
         ///
-        /// **Units**: Hertz
-        /// **Generic**: 250
-        /// **Range**: [20, 1000]
+        /// <dl>
+        /// <dt>Units</dt><dd>Hertz</dd>
+        /// <dt>Generic</dt><dd>250</dd>
+        /// <dt>Range</dt><dd>[20, 1000]</dd>
+        /// </dl>
         pub low_shelf_frequency: f32,
         /// Relative room effect level at low frequencies.
         ///
-        /// **Units**: Decibels
-        /// **Generic**: 0
-        /// **Range**: [-36, 12]
+        /// <dl>
+        /// <dt>Units</dt><dd>Decibels</dd>
+        /// <dt>Generic</dt><dd>0</dd>
+        /// <dt>Range</dt><dd>[-36, 12]</dd>
+        /// </dl>
         pub low_shelf_gain: f32,
         /// Relative room effect level at high frequencies.
         ///
-        /// **Units**: Hertz
-        /// **Generic**: 200000
-        /// **Range**: [0, 20000]
+        /// <dl>
+        /// <dt>Units</dt><dd>Hertz</dd>
+        /// <dt>Generic</dt><dd>200000</dd>
+        /// <dt>Range</dt><dd>[0, 20000]</dd>
+        /// </dl>
         pub high_cut: f32,
         /// Early reflections level relative to room effect.
         ///
-        /// **Units**: Percent
-        /// **Generic**: 50
-        /// **Range**: [0, 100]
+        /// <dl>
+        /// <dt>Units</dt><dd>Percent</dd>
+        /// <dt>Generic</dt><dd>50</dd>
+        /// <dt>Range</dt><dd>[0, 100]</dd>
+        /// </dl>
         pub early_late_mix: f32,
         /// Room effect level at mid frequencies.
         ///
-        /// **Units**: Decibels
-        /// **Generic**: -6
-        /// **Range**: [-80, 20]
+        /// <dl>
+        /// <dt>Units</dt><dd>Decibels</dd>
+        /// <dt>Generic</dt><dd>-6</dd>
+        /// <dt>Range</dt><dd>[-80, 20]</dd>
+        /// </dl>
         pub wet_level: f32,
     }
 }
