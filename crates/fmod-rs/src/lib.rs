@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "unstable", feature(extern_types))]
+#![warn(rust_2018_idioms)] // lol, this reads backwards
 
 #[macro_use]
 mod macros;

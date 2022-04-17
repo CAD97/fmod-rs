@@ -11,12 +11,21 @@ use FMOD, you must [acquire a license](https://www.fmod.com/sales). However, if
 you make less than $200k revenue/year on a small (<$500k) development budget,
 FMOD provides a [Free Indie License](https://www.fmod.com/sales#indie-note).
 
-The Rust code in this repository is licensed under MIT OR Apache-2.0, but this
-does not remove the requirement to comply with the FMOD license.
-
 The examples in the [examples](examples) folder are direct ports from the
 distributed FMOD examples, and are thus under the FMOD license. Similarly,
 the [media](media) folder is also under the FMOD license.
+
+The Rust code in this repository is licensed under MIT OR Apache-2.0, but this
+does not remove the requirement to comply with the FMOD license.
+
+<!-- Commented until the sponsor tier goes public with FMOD.rs publish
+Using these bindings is free under these licenses. However, if you do pay for
+an FMOD license, you are encouraged to [tip the developer][tip]. This helps pay
+for future support of FMOD.rs, gets you a proper commercial license without
+attribution requirement, and earns you prioritized private support for a year.
+
+[tip]: https://github.com/sponsors/CAD97/sponsorships?sponsor=CAD97&tier_id=NNNNNN
+-->
 
 ## Providing the FMOD runtime
 

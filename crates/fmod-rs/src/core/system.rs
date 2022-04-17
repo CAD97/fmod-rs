@@ -3,13 +3,13 @@ use {
         raw::*, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, OutputType,
         Result, Sound, SpeakerMode, GLOBAL_SYSTEM_STATE,
     },
+    parking_lot::RwLockUpgradableReadGuard,
     std::{
         borrow::Cow,
         ffi::CStr,
         mem,
         os::raw::{c_char, c_int},
         ptr,
-        sync::atomic::Ordering,
     },
 };
 
@@ -23,15 +23,21 @@ impl System {
         feature = "studio",
         doc = " (or [studio system][fmod::studio::System])"
     )]
-    /// can be constructed with this function; further attempts to create a
-    /// system will return an error. See [`new_unchecked`][Self::new_unchecked]
-    /// for more information about why having multiple systems is unsafe.
-    pub fn new() -> Result<&'static Self> {
-        // guard against multiple system creation racing
-        if GLOBAL_SYSTEM_STATE
-            .compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed)
-            .is_err()
-        {
+    /// can exist safely at a time; further attempts to create a system will
+    /// return an error. See [`new_unchecked`][Self::new_unchecked] for more
+    /// information about why having multiple systems is unsafe.
+    ///
+    /// In the common case where the system is used as a global resource, you
+    /// can use [`Handle::leak`] to get `&'static System`, which will then allow
+    /// all resources aquired from the system to be `Handle<'static, Resource>`.
+    /// Dealing in `'static` types avoids the lifetime annotation burden and
+    /// unlocks new patterns, like [anymap] backed storage used by many ECSs.
+    ///
+    /// [anymap]: https://lib.rs/crates/anymap
+    pub fn new() -> Result<Handle<'static, Self>> {
+        // guard against creating multiple systems
+        let system_exists = GLOBAL_SYSTEM_STATE.upgradable_read();
+        if *system_exists != 0 {
             if cfg!(debug_assertions) {
                 panic!("Only one FMOD system may be created safely. \
                     Read the docs on `System::new_unchecked` if you actually mean to create more than one system. \
@@ -49,11 +55,11 @@ impl System {
             return Err(Error::Initialized);
         }
 
-        // log setup
-        crate::fmod_debug_install_tracing();
+        // guard against racing other free API calls
+        let mut system_count = RwLockUpgradableReadGuard::upgrade(system_exists);
 
         // actual creation
-        unsafe { Self::new_unchecked() }
+        unsafe { Self::new_inner(&mut system_count) }
     }
 
     /// Create an instance of the FMOD system.
@@ -89,10 +95,9 @@ impl System {
     ///
     /// If you only need a single system, use [`new`][Self::new] instead; it
     /// ensures that only a single system is ever created, and thus no race nor
-    /// stale/misused handles can occur. If you want to release a system, you
-    /// can use [`Handle::unleak`], but need to ensure that dropping the handle
-    /// cannot race with any other FMOD API calls (and, of course, that all
-    /// resources in that system are cleaned up).
+    /// stale/misused handles can occur. When dropping systems when multiple
+    /// systems can be live, you need to ensure that dropping the handle cannot
+    /// race with any other FMOD API calls.
     ///
     /// # Safety
     ///
@@ -100,13 +105,53 @@ impl System {
     ///
     /// - Ensure that system creation and releasing does not potentially race
     ///   any FMOD API calls.
+    ///   - Note that calling this function makes dropping *any* system handles
+    ///     `unsafe`, as that potentially races with any API calls in the other
+    ///     live systems!
     /// - Ensure that handles created in one system are not used with a
     ///   different system.
-    pub unsafe fn new_unchecked() -> Result<&'static Self> {
+    ///
+    /// In short: if you use `new_unchecked`, you're on your own.
+    ///
+    /// # What would it take to make this safe?
+    ///
+    /// There is already a global `RWLock` to prevent safe multiple system
+    /// creation. Avoiding racing against the rest of the API would thus just
+    /// be making every single API call take a read lock. This actually isn't
+    /// *that* much of a pessimization, but it's not the only requirement.
+    ///
+    /// To keep reference handles within the originating system, however,
+    /// requires a generative brand, à la [ghost-cell], [qcell's `LCell`], or
+    /// [generativity]. This has a notable downside: the system is no longer
+    /// `'static`, as it caries around the branded lifetime. This means that
+    /// the system can no longer be stored in `'static` storage such as used by
+    /// most Rust game engines' resource management flows, even when another
+    /// library reencapsulates them.
+    ///
+    /// The cost of the latter solution was deemed enough that multiple systems,
+    /// already being a niche use case, can be relegated to `unsafe` with some
+    /// subtle pitfalls. These pitfalls are the same as when using FMOD's API
+    /// directly, with the exception of FMOD.rs adding an implicit RAII release.
+    ///
+    /// If you would like to make the release explicit to avoid the implicit
+    /// point of `unsafe`ty, you can [`Handle::leak`] all of your systems, and
+    /// then use [`Handle::unleak`] to drop them unsafely.
+    ///
+    /// [generativity]: https://lib.rs/crates/generativity
+    /// [ghost-cell]: https://lib.rs/crates/ghost-cell
+    /// [qcell's `LCell`]: https://lib.rs/crates/qcell
+    pub unsafe fn new_unchecked() -> Result<Handle<'static, Self>> {
+        let mut system_count = GLOBAL_SYSTEM_STATE.write();
+        Self::new_inner(&mut system_count)
+    }
+
+    unsafe fn new_inner(system_count: &mut usize) -> Result<Handle<'static, Self>> {
+        crate::debug_initialize_once(); // setup debug logging
+
         let mut raw = ptr::null_mut();
         fmod_try!(FMOD_System_Create(&mut raw, FMOD_VERSION));
-        GLOBAL_SYSTEM_STATE.store(2, Ordering::Release);
-        Ok(Handle::leak(Handle::new(raw)))
+        *system_count += 1;
+        Ok(Handle::new(raw))
     }
 }
 
@@ -493,7 +538,7 @@ impl System {
         Ok(unsafe { PluginHandle::from_raw(handle) })
     }
 
-    pub fn create_dsp_by_plugin(&self, handle: PluginHandle) -> Result<Handle<Dsp>> {
+    pub fn create_dsp_by_plugin(&self, handle: PluginHandle) -> Result<Handle<'_, Dsp>> {
         let handle = PluginHandle::into_raw(handle);
         let mut dsp = ptr::null_mut();
         fmod_try!(FMOD_System_CreateDSPByPlugin(
@@ -594,7 +639,7 @@ impl System {
 /// Sound/DSP/Channel/FX creation and retrieval.
 impl System {
     // TODO: create_cound_ex
-    pub fn create_sound(&self, name: &CStr, mode: Mode) -> Result<Handle<Sound>> {
+    pub fn create_sound(&self, name: &CStr, mode: Mode) -> Result<Handle<'_, Sound>> {
         if matches!(
             mode,
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
@@ -626,7 +671,7 @@ impl System {
 
     // snip
 
-    pub fn create_channel_group(&self, name: &CStr) -> Result<Handle<ChannelGroup>> {
+    pub fn create_channel_group(&self, name: &CStr) -> Result<Handle<'_, ChannelGroup>> {
         let mut channel_group = ptr::null_mut();
         fmod_try!(FMOD_System_CreateChannelGroup(
             self.as_raw(),
@@ -643,7 +688,7 @@ impl System {
         sound: &Sound,
         channel_group: Option<&ChannelGroup>,
         paused: bool,
-    ) -> Result<Handle<Channel>> {
+    ) -> Result<Handle<'_, Channel>> {
         let sound = Sound::as_raw(sound);
         let channelgroup = channel_group
             .map(ChannelGroup::as_raw)

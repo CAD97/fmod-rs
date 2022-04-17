@@ -1,12 +1,17 @@
-use std::{mem::ManuallyDrop, ops::Deref, ptr, sync::atomic::AtomicUsize};
+use {
+    parking_lot::{const_rwlock, RwLock},
+    std::{mem::ManuallyDrop, ops::Deref},
+};
 
-/// Only one system may be safely created, as system creation races with all
-/// FMOD API use.
+/// Only one system may be safely created, at a time, as system create and
+/// release races with all FMOD API use. Additionally, this must be an actual
+/// lock, so that it can synchronize with free functions as well.
 ///
-/// - `0`: No system has been created.
-/// - `1`: A system is being created.
-/// - `2`: A system has been created.
-pub(crate) static GLOBAL_SYSTEM_STATE: AtomicUsize = AtomicUsize::new(0);
+/// - A write lock is acquired to perform system create/release.
+/// - A read lock is acquired to perform free functions.
+/// - `false` indicates that no system exists, and one may be created.
+/// - `true` indicates that a system exists, and creating another is unsafe.
+pub(crate) static GLOBAL_SYSTEM_STATE: RwLock<usize> = const_rwlock(0);
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe trait FmodResource: Sealed {
@@ -14,7 +19,7 @@ pub unsafe trait FmodResource: Sealed {
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     fn as_raw(&self) -> *mut Self::Raw {
-        self as *const Self as *mut Self as *mut Self::Raw
+        self as *const Self as *const Self::Raw as *mut Self::Raw
     }
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
@@ -29,11 +34,13 @@ mod sealed {
     pub trait Sealed {}
 }
 
-pub struct Handle<T: ?Sized + FmodResource> {
-    raw: ptr::NonNull<T::Raw>,
+/// An owning handle to an FMOD resource. When this handle is dropped, the
+/// underlying FMOD resource is released.
+pub struct Handle<'a, T: ?Sized + FmodResource> {
+    raw: &'a T::Raw,
 }
 
-impl<T: ?Sized + FmodResource> Drop for Handle<T> {
+impl<T: ?Sized + FmodResource> Drop for Handle<'_, T> {
     fn drop(&mut self) {
         let raw = self.as_raw();
 
@@ -62,7 +69,7 @@ impl<T: ?Sized + FmodResource> Drop for Handle<T> {
     }
 }
 
-impl<T: ?Sized + FmodResource> Handle<T> {
+impl<'a, T: ?Sized + FmodResource> Handle<'a, T> {
     raw! {
         pub fn into_raw(this: Self) -> *mut T::Raw {
             let this = ManuallyDrop::new(this);
@@ -72,7 +79,7 @@ impl<T: ?Sized + FmodResource> Handle<T> {
     raw! {
         #[allow(clippy::missing_safety_doc)]
         pub unsafe fn from_raw(raw: *mut T::Raw) -> Self {
-            Self { raw: ptr::NonNull::new_unchecked(raw) }
+            Self { raw: &mut *raw }
         }
     }
 
@@ -89,7 +96,7 @@ impl<T: ?Sized + FmodResource> Handle<T> {
     }
 
     /// Forget to release this FMOD resource.
-    pub fn leak(this: Self) -> &'static T {
+    pub fn leak(this: Self) -> &'a T {
         let this = ManuallyDrop::new(this);
         unsafe { T::from_raw(this.as_raw()) }
     }
@@ -99,22 +106,14 @@ impl<T: ?Sized + FmodResource> Handle<T> {
     /// # Safety
     ///
     /// No references to the resource may outlive the owning handle.
-    ///
-    /// # Special note for `System` and `studio::System`
-    ///
-    /// Releasing an FMOD system is *thread unsafe*. If a system's release can
-    /// race with *any* FMOD API call, then that is a data race and potential
-    /// UB. If you want to release a system, it is *on you* to ensure that *all*
-    /// references to FMOD resources are gone, such that no API calls can be
-    /// made during or after releasing the system.
-    pub unsafe fn unleak(this: &'static T) -> Self {
+    pub unsafe fn unleak(this: &'a T) -> Self {
         Self::from_raw(this.as_raw())
     }
 }
 
-// Deref impls are scary to me, but required for ergonomics, and every other
-// FFI binding does it with opaque types, so it's necessarily okay in practice.
-// The theoretical problem is twofold:
+// Using references is scary to me, but required for ergonomics, and almost
+// every other FFI binding does it with opaque types, so it's necessarily okay
+// in practice. The theoretical problem is twofold:
 //  1. Rust references under Stacked Borrows 2021 only hold pointer provenance
 //     for exactly as many bytes as mem::size_of_val. These are 1-ZSTs for the
 //     type system, so in theory a reference has provenance over no memory, and
@@ -133,10 +132,10 @@ impl<T: ?Sized + FmodResource> Handle<T> {
 // We take the ~~coward's~~ simple way out: we deal almost exclusively in &T,
 // and rely on the FFI barrier to keep us safe.
 
-impl<T: ?Sized + FmodResource> Deref for Handle<T> {
+impl<T: ?Sized + FmodResource> Deref for Handle<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
-        unsafe { T::from_raw(self.raw.as_ptr()) }
+        unsafe { T::from_raw(self.raw as *const _ as *mut _) }
     }
 }

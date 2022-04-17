@@ -57,10 +57,10 @@ static NOTES: [Note; 32] = [
 fn main() -> anyhow::Result<()> {
     let mut example = Example::init()?;
 
-    let system = fmod::System::new()?;
-    system.init(100, fmod::InitFlags::Normal)?;
-
     {
+        let system = fmod::System::new()?;
+        system.init(100, fmod::InitFlags::Normal)?;
+
         // Get information needed later for scheduling.  The mixer block size, and the output rate of the mixer.
         let (dsp_block_len, _) = system.get_dsp_buffer_size()?;
         let fmod::SoftwareFormat { sample_rate, .. } = system.get_software_format()?;
@@ -193,8 +193,6 @@ fn main() -> anyhow::Result<()> {
 
         example.sleep(50);
     }
-
-    unsafe { fmod::Handle::unleak(system) };
 
     example.close()?;
 
