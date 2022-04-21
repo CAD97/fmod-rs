@@ -39,24 +39,22 @@ macro_rules! opaque {
         }
     };
 
-    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident*) => {
+    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident* ($release:expr)) => {
         opaque! {
             $(#[$meta:meta])*
             class $Name {
                 type Raw = $Raw;
-                fn release = paste::paste!([<$raw Release>]);
+                fn release = $release;
             }
         }
     };
 
+    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident*) => {
+        opaque! { $(#[$meta:meta])* class $Name = $Raw, $raw* (paste::paste!([<$raw Release>])) }
+    };
+
     ($(#[$meta:meta])* weak class $Name:ident = $Raw:ident, $raw:ident*) => {
-        opaque! {
-            $(#[$meta:meta])*
-            class $Name {
-                type Raw = $Raw;
-                fn release = |_| FMOD_OK;
-            }
-        }
+        opaque! { $(#[$meta:meta])* class $Name = $Raw, $raw* (|_| FMOD_OK) }
     };
 }
 

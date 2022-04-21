@@ -13,7 +13,7 @@ use {
     },
 };
 
-opaque!(class System = FMOD_SYSTEM, FMOD_System_*);
+opaque!(class System = FMOD_SYSTEM, FMOD_System_* (System::raw_release));
 
 impl System {
     /// Create an instance of the FMOD system.
@@ -152,6 +152,17 @@ impl System {
         fmod_try!(FMOD_System_Create(&mut raw, FMOD_VERSION));
         *system_count += 1;
         Ok(Handle::new(raw))
+    }
+
+    unsafe fn raw_release(raw: *mut FMOD_SYSTEM) -> FMOD_RESULT {
+        let mut system_count = GLOBAL_SYSTEM_STATE.write();
+        let result = FMOD_System_Release(raw);
+        if result == FMOD_OK {
+            *system_count -= 1;
+            FMOD_OK
+        } else {
+            result
+        }
     }
 }
 
