@@ -1,3 +1,8 @@
+#![doc = include_str!("README.md")]
+
+#[cfg(doc)]
+use fmod::raw;
+
 mod channel;
 mod channel_group;
 mod common;

@@ -13,13 +13,26 @@ name = "fmod"
 [features]
 default = ["fmod_debug_is_tracing"]
 
-unstable = []
+#! # Feature flags
 
-raw = []
+## Enable the FMOD Studio API
 studio = ["dep:fmod-studio-sys"]
+## Hook FMOD's debug logging to tracing (default)
 fmod_debug_is_tracing = ["tracing"]
-
+## Enable use of tracing in FMOD.rs (implied by `fmod_debug_is_tracing`)
 tracing = ["dep:tracing", "dep:once_cell"]
+
+## Enable access to the raw FMOD API calls.
+raw = []
+
+#! ## Experimental feature flags
+#!
+#! These features change the public API and can change at any time. Be warned!
+
+## Use unstable Rust features for the safe API. Currently, this means to:
+## - Use `feature(extern_type)` for FMOD resource types.
+## - Use `feature(doc_auto_cfg, doc_cfg)` to display cfg gates in documentation.
+unstable = []
 
 [dependencies]
 fmod-core-sys = { version = "2.2.0", path = "../fmod-core-sys" }
@@ -28,6 +41,7 @@ fmod-studio-sys = { version = "2.2.0", path = "../fmod-studio-sys", optional = t
 cfg-if = "1.0.0"
 cool_asserts = "1.1.1"
 cstr = "0.2.10"
+document-features = "0.2.1"
 parking_lot = "0.12.0"
 paste = "1.0.7"
 static_assertions = "1.1.0"
