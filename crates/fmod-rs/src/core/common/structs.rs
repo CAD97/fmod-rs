@@ -35,7 +35,7 @@ macro_rules! fmod_struct {
                 }
             }
             raw! {
-                pub fn from_raw_ref_mut(raw: &mut $Raw) -> &mut $Name {
+                pub fn from_raw_mut(raw: &mut $Raw) -> &mut $Name {
                     unsafe { &mut *(raw as *mut $Raw as *mut $Name ) }
                 }
             }
