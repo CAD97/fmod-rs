@@ -10,6 +10,8 @@ job "core-guide.html" "core/README.md" {
     replace r"pre-set list of environments in \[ReverbProperties\]\(ReverbProperties" "$0#impl-1"
     // Rename main header
     replace "# Core API Guide" "# Core API"
+    // Escape literal []
+    replace r"FMOD_\[CompanyName\]_\[ProductName\]_Get\[PluginType\]Description" r"FMOD_\[CompanyName\]_\[ProductName\]_Get\[PluginType\]Description"
 }
 
 // fix code block indentation
