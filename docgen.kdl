@@ -1,0 +1,91 @@
+link-base "https://fmod.com/resources/documentation-api?version=2.02&page="
+image-base "https://fmod.com/docs/2.02/api/"
+
+job "core-guide.html" "core/README.md" {
+    // improve tables
+    replace r" x " " × "
+    // adjust language so we don't imply we are an official product
+    replace "our parter plugins" "FMOD's partner plugins"
+    // link to ReverProperties constants impl block
+    replace r"pre-set list of environments in \[ReverbProperties\]\(ReverbProperties" "$0#impl-1"
+    // Rename main header
+    replace "# Core API Guide" "# Core API"
+}
+
+// fix code block indentation
+replace r" +```" "```"
+
+// strip heading numbers
+replace r"# (?:\d+\.?){1,3} " "# "
+
+// rename studio namespace
+replace "Studio::" "studio::"
+
+// map fmod.cpp names to fmod.rs names
+replace "FMOD_3D" "Mode::D3"
+replace "FMOD_3D_ROLLOFF_CALLBACK" "raw::FMOD_3D_ROLLOFF_CALLBACK"
+replace "FMOD_ADVANCEDSETTINGS" "AdvancedSettings"
+replace "FMOD_ASYNCREADINFO" "AsyncReadInfo"
+replace "FMOD_CREATECOMPRESSEDSAMPLE" "Mode::CreateCompressedSample"
+replace "FMOD_CREATESOUNDEXINFO" "CreateSoundExInfo"
+replace "FMOD_CREATESTREAM" "Mode::CreateStream"
+replace "FMOD_DSP_DESCRIPTION" "DspDescription"
+replace "FMOD_DSP_PARAMETER_3DATTRIBUTES" "raw::FMOD_DSP_PARAMETER_3DATTRIBUTES"
+replace "FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI" "raw::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI"
+replace "FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES" "raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES"
+replace "FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI" "raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI"
+replace "FMOD_DSP_TYPE" "DspType"
+replace "FMOD_DSP_TYPE_CONVOLUTIONREVERB" "DspType::ConvolutionReverb"
+replace "FMOD_INIT_3D_RIGHTHANDED" "InitFlags::RightHanded3d"
+replace "FMOD_INIT_PREFER_DOLBY_DOWNMIX" "InitFlags::PreferDolbyDownmix"
+replace "FMOD_NONBLOCKING" "Mode::NonBlocking"
+replace "FMOD_OPENMEMORY_POINT" "OpenMemory::Point"
+replace "FMOD_REVERB_PRESETS" "ReverbProperties"
+replace "FMOD_SOUND_TYPE" "SoundType"
+replace "FMOD_SPEAKER" "Speaker"
+replace "FMOD_SPEAKERMODE" "SpeakerMode"
+replace "FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED" "raw::FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED"
+replace "Memory_Initialize" "raw::Memory_Initialize"
+replace "addDSP" "add_dsp"
+replace "addInput" "add_input"
+replace "addPolygon" "add_polygon"
+replace "calculatePannerAttributes" "calculate_panner_attributes"
+replace "createDSP" "create_dsp"
+replace "createDSPByType" "create_dsp_by_type"
+replace "createGeometry" "create_geometry"
+replace "createReverb3D" "create_reverb_3d"
+replace "createSound" "create_sound"
+replace "createStream" "create_stream"
+replace "decodeBufferSize" "decode_buffer_size"
+replace "defaultDecodeBufferSize" "default_decode_buffer_size"
+replace "disconnectFrom" "disconnect_from"
+replace "getMasterChannelGroup" "get_master_channel_group"
+replace "getSubSound" "get_sub_sound"
+replace "loadPlugin" "load_plugin"
+replace "loadPlugin" "load_plugin"
+replace "playDSP" "play_dsp"
+replace "playSound" "play_sound"
+replace "registerCodec" "register_codec"
+replace "registerCodec" "register_codec"
+replace "registerDSP" "register_dsp"
+replace "registerDSP" "register_dsp"
+replace "registerOutput" "register_output"
+replace "registerOutput" "register_output"
+replace "set3DAttributes" "set_3d_attributes"
+replace "set3DCustomRolloff" "set_3d_custom_rolloff"
+replace "set3DListenerAttributes" "set_3d_listener_attributes"
+replace "set3DSpread" "set_3d_spread"
+replace "setAdvancedSettings" "set_advanced_settings"
+replace "setDriver" "set_driver"
+replace "setFileSystem" "set_file_system"
+replace "setMixMatrix" "set_mix_matrix"
+replace "setMode" "set_mode"
+replace "setParameterData" "set_parameter_data"
+replace "setProperties" "set_properties"
+replace "setReverbProperties" "set_reverb_properties"
+replace "setSoftwareFormat" "set_software_format"
+replace "setStreamBufferSize" "set_stream_buffer_size"
+
+// be careful renaming the DSP type, since we don't want to touch DSP in text
+replace "`DSP" "`Dsp"
+replace r"\]\(DSP" "](Dsp"
