@@ -33,11 +33,13 @@ In order to better comply with the FMOD license, we do _not_ redistribute the
 FMOD Engine. You should [download](https://www.fmod.com/download#fmodengine)
 the engine yourself.
 
-The currently vendored headers are for FMOD Engine 2.02.05 (build 124257). To
-pin the headers to a specific version, pin `fmod-sys` and `fmod-studio-sys`.
+The currently vendored headers are for FMOD Engine 2.02.06 (build 124257). To
+pin the headers to a specific version, pin `fmod-sys` and `fmod-studio-sys`. The
+sys libraries are versioned based on the FMOD version for convenient pinning;
+for example, FMOD version 2.02.06 is served by sys crates version 2.6.patch.
 
-We add `lib/{arch}` to the search path, and link the logging libraries for
-development builds and production libraries for release builds. The dynamic
+We add `lib/{arch}` to the search path, and link the logging version of FMOD
+for development builds and production libraries for release builds. The dynamic
 library is implicitly loaded from the run directory, or you can load them
 explicitly.
 
@@ -53,12 +55,12 @@ suffix which need to be removed such that cargo/rustc can link them properly.
 ### Complete
 
 - Raw bindings to the FMOD C API linking and running.
-- Simplest `play_sound` example runs on wrapped API.
+- Some examples ported to the wrapped API.
 - Thread-safe API.
 
 ### Planned (Soon™)
 
-- All examples using Rust idiomatic APIs.
+- All examples ported using Rust idiomatic APIs.
 - Test build and lib loading on macOS and Linux.
 
 ### Stretch Goals
@@ -85,7 +87,7 @@ make the FMOD.rs wrapper thread-safe: forbid the use of the thread-unsafe flags,
 or encode thread safety into the type system. The former is trivial, but the
 latter is potentially desirable for users who are using FMOD Studio with their
 own asynchronous command queue. See the [Studio API Threads] for more on FMOD
-Studio threading. Syncrhonous Update is very much a power-user feature and needs
+Studio threading. Synchronous Update is very much a power-user feature and needs
 to be encapsulated in a thread-safe worker queue to be used properly, though, so
 it is acceptable if the thread-unsafe API notably less ergonomic to use than the
 thread-safe API.<p>You might be tempted to thus just make `System` construction

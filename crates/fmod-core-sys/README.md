@@ -7,10 +7,9 @@ The bindings crate has its version derived directly from the FMOD library
 version, for easier pinning of a specific header version. To be specific, for
 a given FMOD version `aaaa.bb.cc` (`aaaa` = product version, `bb` = major
 version, `cc` = minor version), the bindings crate is released as version
-`aaaa.bb.BUILD+aaaa.bb.cc-BUILD`, where `BUILD` is the specific build version.
-The build version is used in the bindings crate version to provide some padding
-for if the bindings have an issue and need to be updated, as unlikely as that
-may be.
+`bb.cc.dd+aaaa.bb.cc-BUILD`, where `BUILD` is the specific FMOD build version,
+and `dd` is an FMOD.rs-specific patch number, to allow for bindings updates if
+necessary, though these are expected to be quite rare in practice.
 
 In application use, it is recommended to pin a specific version of this crate.
 FMOD checks that the header version matches the dynamic library version, so if
@@ -18,7 +17,7 @@ a version mismatch occurs, FMOD will fail to initialize.
 
 If you need an older header version, open an issue.
 
-The currently vendored headers are for FMOD Engine 2.02.05 (build 124257).
+The currently vendored headers are for FMOD Engine 2.02.06 (build 124257).
 
 ## Linking
 
