@@ -14,6 +14,11 @@ job "core-guide.html" "core/README.md" {
     replace r"FMOD_\[CompanyName\]_\[ProductName\]_Get\[PluginType\]Description" r"FMOD_\[CompanyName\]_\[ProductName\]_Get\[PluginType\]Description"
 }
 
+job "studio-guide.html" "studio/README.md" {
+    // Rename main header
+    replace "# Studio API Guide" "# Studio API"
+}
+
 // fix code block indentation
 replace r" +```" "```"
 
