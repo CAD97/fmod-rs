@@ -14,18 +14,24 @@ use {
 pub(crate) static GLOBAL_SYSTEM_STATE: RwLock<usize> = const_rwlock(0);
 
 #[allow(clippy::missing_safety_doc)]
+/// FMOD resources managed by a [Handle].
 pub unsafe trait FmodResource: Sealed {
+    #[cfg_attr(not(feature = "raw"), doc(hidden))]
+    #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
     type Raw;
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
+    #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
     fn as_raw(&self) -> *mut Self::Raw {
         self as *const Self as *const Self::Raw as *mut Self::Raw
     }
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
+    #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
     unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self;
 
-    #[doc(hidden)]
+    #[cfg_attr(not(feature = "raw"), doc(hidden))]
+    #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
     unsafe fn release(this: *mut Self::Raw) -> fmod::Result;
 }
 

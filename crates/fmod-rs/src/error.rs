@@ -61,6 +61,7 @@ macro_rules! error_enum_struct {
 }
 
 error_enum_struct! {
+    /// An error that FMOD can emit.
     pub enum Error: NonZeroI32 {
         /// Tried to call a function on a data type that does not allow this type of functionality (ie calling [Sound::lock] on a streaming sound).
         BadCommand = FMOD_ERR_BADCOMMAND,
@@ -231,6 +232,7 @@ error_enum_struct! {
     }
 }
 
+/// Type alias for FMOD function results.
 pub type Result<T = (), E = Error> = std::result::Result<T, E>;
 
 impl std::error::Error for Error {

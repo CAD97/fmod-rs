@@ -37,6 +37,8 @@ format into your tools and development pipelines, use the [fsbank] module.
 //! target platform and any specific functionality, compatibility, and
 //! requirements it may have. You can see details documented in the [platform]
 //! module.
+//!
+#![doc = ::document_features::document_features!()]
 
 #[macro_use]
 mod macros;
@@ -63,6 +65,7 @@ pub use self::{error::*, handle::*};
 pub use cstr::cstr as _cstr;
 
 raw! {
+    /// Raw access to the FMOD C API.
     pub mod raw {
         #[doc(inline)]
         pub use fmod_core_sys::*;

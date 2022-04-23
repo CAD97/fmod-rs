@@ -62,7 +62,7 @@ macro_rules! opaque {
 macro_rules! raw {
     ($(#[$meta:meta])* pub $($tt:tt)*) => {
         #[allow(clippy::missing_safety_doc, missing_docs)]
-        #[doc(cfg(feature = "raw"))]
+        #[cfg_attr(feature = "unstable", doc(cfg(feature = "raw")))]
         $(#[$meta])* pub $($tt)*
     };
     ($mac:ident! { $(#[$meta:meta])* pub $($tt:tt)* }) => {
