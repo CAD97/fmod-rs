@@ -13,7 +13,7 @@ name = "fmod"
 [features]
 default = ["fmod_debug_is_tracing"]
 
-#! # Feature flags
+#! ## Feature flags
 
 ## Enable the FMOD Studio API
 studio = ["dep:fmod-studio-sys"]
@@ -25,9 +25,9 @@ tracing = ["dep:tracing", "dep:once_cell"]
 ## Enable access to the raw FMOD API calls.
 raw = []
 
-#! ## Experimental feature flags
+#! ### Experimental feature flags
 #!
-#! These features change the public API and can change at any time. Be warned!
+#! These features can change the public API and can change at any time. Be warned!
 
 ## Use unstable Rust features for the safe API. Currently, this means to:
 ## - Use `feature(extern_type)` for FMOD resource types.
