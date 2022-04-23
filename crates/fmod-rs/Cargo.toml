@@ -35,8 +35,8 @@ raw = []
 unstable = []
 
 [dependencies]
-fmod-core-sys = { version = "2.2.0", path = "../fmod-core-sys" }
-fmod-studio-sys = { version = "2.2.0", path = "../fmod-studio-sys", optional = true }
+fmod-core-sys = { version = "2.6", path = "../fmod-core-sys" }
+fmod-studio-sys = { version = "2.6", path = "../fmod-studio-sys", optional = true }
 
 cfg-if = "1.0.0"
 cool_asserts = "1.1.1"
