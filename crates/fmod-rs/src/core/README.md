@@ -175,7 +175,7 @@
 
  FMOD 3D spatialization features:
 
-  1. Multiple attenuation rolloff models. Rolloff is the behavior of the volume of the sound as the sound gets closer to the listener or further away. Choose between linear, inverse, linear square, inverse tapered and custom rolloff modes. Custom rolloff allows a [`Mode::D3_ROLLOFF_CALLBACK`](Mode::D3_ROLLOFF_CALLBACK "Callback to allow custom calculation of distance attenuation.") to be set to allow the user to calculate how the volume rolloff happens. If a callback is not convenient, FMOD also allows an array of points that are linearly interpolated between, to denote a 'curve', using [`ChannelControl::set_3d_custom_rolloff`](ChannelControl::set_3d_custom_rolloff "Sets a custom rolloff shape for 3D distance attenuation.").
+  1. Multiple attenuation rolloff models. Rolloff is the behavior of the volume of the sound as the sound gets closer to the listener or further away. Choose between linear, inverse, linear square, inverse tapered and custom rolloff modes. Custom rolloff allows a [`raw::FMOD_3D_ROLLOFF_CALLBACK`](raw::FMOD_3D_ROLLOFF_CALLBACK "Callback to allow custom calculation of distance attenuation.") to be set to allow the user to calculate how the volume rolloff happens. If a callback is not convenient, FMOD also allows an array of points that are linearly interpolated between, to denote a 'curve', using [`ChannelControl::set_3d_custom_rolloff`](ChannelControl::set_3d_custom_rolloff "Sets a custom rolloff shape for 3D distance attenuation.").
  1. Doppler pitch shifting. Accurate pitch shifting, controlled by the user velocity setting of the listener and the channel or channelgroup, is calculated and set on the fly by the FMOD 3D spatialization system.
  1. Vector Based Amplitude Panning (VBAP). This system pans the sounds in the user's speakers in real time, supporting mono, stereo, up to 5.1 and 7.1 surround speaker setups.
  1. Occlusion. Channels or ChannelGroups can have lowpass filtering applied to them to simulate sounds going through walls or being muffled by large objects.
@@ -236,7 +236,7 @@
 
  This is an expensive to process effect, so FMOD supports GPU acceleration to offload the processing to the graphics card. This greatly reduces the overhead of the effect to being almost negligible. GPU acceleration is supported on Xbox One and PS4 platforms.
 
- Convolution reverb can be created with [`System::create_dspByType`](System::create_dspByType "Create a DSP object given a built in type index.") with [`DspType_CONVOLUTIONREVERB`](DspType_CONVOLUTIONREVERB "") and added to a ChannelGroup with [`ChannelControl::add_dsp`](ChannelControl::add_dsp "Adds a DSP unit to the specified index in the DSP chain."). It is recommended to only implement 1 or a limited number of these effects and place them on a sub-mix/group bus (a ChannelGroup), and not per channel.
+ Convolution reverb can be created with [`System::create_dspByType`](System::create_dspByType "Create a DSP object given a built in type index.") with [`DspType::ConvolutionReverb`](DspType::ConvolutionReverb "") and added to a ChannelGroup with [`ChannelControl::add_dsp`](ChannelControl::add_dsp "Adds a DSP unit to the specified index in the DSP chain."). It is recommended to only implement 1 or a limited number of these effects and place them on a sub-mix/group bus (a ChannelGroup), and not per channel.
 
  ### Virtual 3D Reverb System
 
@@ -330,7 +330,7 @@
 
  ## Driving the Spatializer
 
- Driving a spatializer using the Core API requires setting the data parameter associated with 3D attributes, this will be a data parameter of type: [`raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES`](raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES "") or [`raw::raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI`](raw::raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI ""). The [`studio::System`](studio::System "") sets this parameter automatically if an [`studio::EventInstance`](studio::EventInstance "") position changes, however if using the core [`System`](System "") you must set this DSP parameter explicitly.
+ Driving a spatializer using the Core API requires setting the data parameter associated with 3D attributes, this will be a data parameter of type: [`raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES`](raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES "") or [`raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI`](raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI ""). The [`studio::System`](studio::System "") sets this parameter automatically if an [`studio::EventInstance`](studio::EventInstance "") position changes, however if using the core [`System`](System "") you must set this DSP parameter explicitly.
 
  This will work with our 3D spatializer, the object spatializer, the resonance source / soundfield spatializers and any other third party plugins that make use of the FMOD spatializers.
 
@@ -387,7 +387,7 @@
     Matrix44f inverse(const Matrix44f &m);
 */
 
-void calculate_panner_attributes(const Mode::D3_ATTRIBUTES &listenerAttributes, const Mode::D3_ATTRIBUTES &emitterAttributes, raw::FMOD_DSP_PARAMETER_3DATTRIBUTES &pannerAttributes)
+void calculate_panner_attributes(const FMOD_3D_ATTRIBUTES &listenerAttributes, const FMOD_3D_ATTRIBUTES &emitterAttributes, raw::FMOD_DSP_PARAMETER_3DATTRIBUTES &pannerAttributes)
 {
     // pannerAttributes.relative is the emitter position and orientation transformed into the listener's space:
 
@@ -421,13 +421,13 @@ void calculate_panner_attributes(const Mode::D3_ATTRIBUTES &listenerAttributes, 
 }
 ``````````
 
- When using [`raw::raw::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI`](raw::raw::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI "3D attributes data structure for multiple listeners."), you will need to call `calculate_panner_attributes` for each listener filling in the appropriate listener attributes.
+ When using [`raw::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI`](raw::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI "3D attributes data structure for multiple listeners."), you will need to call `calculate_panner_attributes` for each listener filling in the appropriate listener attributes.
 
- Set this on the DSP by using [`Dsp::set_parameter_data`](Dsp::set_parameter_data "Sets a binary data parameter by index.") with the index of the [`raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES`](raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES ""), you will need to check with the author of the DSP for the structure index. Pass the data into the DSP using [`Dsp::set_parameter_data`](Dsp::set_parameter_data "Sets a binary data parameter by index.") with the index of the 3D Attributes, [`raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES`](raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES "") or [`raw::raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI`](raw::raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI "")
+ Set this on the DSP by using [`Dsp::set_parameter_data`](Dsp::set_parameter_data "Sets a binary data parameter by index.") with the index of the [`raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES`](raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES ""), you will need to check with the author of the DSP for the structure index. Pass the data into the DSP using [`Dsp::set_parameter_data`](Dsp::set_parameter_data "Sets a binary data parameter by index.") with the index of the 3D Attributes, [`raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES`](raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES "") or [`raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI`](raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI "")
 
  ## Upmix/Downmix Behavior
 
- FMOD handles downmixing using mix matrices. Below you can find the various mix matrix layouts, with each table representing a separate output format. In each table, speakers in the "Output" column are assigned levels from the incoming speaker formulas in the relevant row, according to the incoming speaker layout. Different mix matrix layouts can be set using [`ChannelControl::set_mix_matrix`](ChannelControl::set_mix_matrix "Sets a 2 dimensional pan matrix that maps the signal from input channels (columns) to output speakers (rows)."). See [`Speaker`](Speaker "Assigns an enumeration for a speaker index.") and [`SpeakerMODE`](SpeakerMODE "Speaker mode types.") for more details on existing speaker layouts.  
+ FMOD handles downmixing using mix matrices. Below you can find the various mix matrix layouts, with each table representing a separate output format. In each table, speakers in the "Output" column are assigned levels from the incoming speaker formulas in the relevant row, according to the incoming speaker layout. Different mix matrix layouts can be set using [`ChannelControl::set_mix_matrix`](ChannelControl::set_mix_matrix "Sets a 2 dimensional pan matrix that maps the signal from input channels (columns) to output speakers (rows)."). See [`Speaker`](Speaker "Assigns an enumeration for a speaker index.") and [`SpeakerMode`](SpeakerMode "Speaker mode types.") for more details on existing speaker layouts.  
  For an improved result when using 5.1 on a stereo output device,the Dolby Pro Logic II downmix algorithm can be chosen by specifying [`InitFlags::PreferDolbyDownmix`](InitFlags::PreferDolbyDownmix "") as an init flag when calling [`System::init`](System::init "Initialize the system object and prepare FMOD for playback.").
 
  | Key | Value |
@@ -448,20 +448,20 @@ void calculate_panner_attributes(const Mode::D3_ATTRIBUTES &listenerAttributes, 
 | **TBL** | Top Back Left |
 | **TBR** | Top Back Right |
 
- ### SpeakerMODE_MONO
+ ### SpeakerMode_MONO
 
   | Output | Mono | Stereo | Quad | 5.0 | 5.1 | 7.1 | 7.1.4 |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | **M** | **M** | **L** × 0.707 + **R** × 0.707 | **FL** × 0.500 + **FR** × 0.500 + **SL** × 0.500 + **SR** × 0.500 | **FL** × 0.447 + **FR** × 0.447 + **C** × 0.447 + **BL** × 0.447 + **BR** × 0.447 | **FL** × 0.447 + **FR** × 0.447 + **C** × 0.447 + **BL** × 0.447 + **BR** × 0.447 | **FL** × 0.378 + **FR** × 0.378 + **C** × 0.378 + **SL** × 0.378 + **SR** × 0.378 + **BL** × 0.378 + **BR** × 0.378 | **FL** × 0.378 + **FR** × 0.378 + **C** × 0.378 + **SL** × 0.378 + **SR** × 0.378 + **BL** × 0.378 + **BR** × 0.378 |
 
-  ### SpeakerMODE_STEREO
+  ### SpeakerMode_STEREO
 
   | Output | Mono | Stereo | Quad | 5.0 | 5.1 | 7.1 | 7.1.4 |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | **L** | **M** × 0.707 | **L** | **FL** + **SL** × 0.707 | **FL** + **C** × 0.707 + **BL** × 0.707 | **FL** + **C** × 0.707 + **BL** × 0.707 | **FL** + **C** × 0.707 + **SL** × 0.707 + **BL** × 0.596 | **FL** + **C** × 0.707 + **SL** × 0.707 + **BL** × 0.596 |
 | **R** | **M** × 0.707 | **R** | **FR** + **SR** × 0.707 | **FR** + **C** × 0.707 + **BR** × 0.707 | **FR** + **C** × 0.707 + **BR** × 0.707 | **FR** + **C** × 0.707 + **SR** × 0.707 + **BR** × 0.596 | **FR** + **C** × 0.707 + **SR** × 0.707 + **BR** × 0.596 |
 
-  ### SpeakerMODE_QUAD
+  ### SpeakerMode_QUAD
 
   | Output | Mono | Stereo | Quad | 5.0 | 5.1 | 7.1 | 7.1.4 |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
@@ -470,7 +470,7 @@ void calculate_panner_attributes(const Mode::D3_ATTRIBUTES &listenerAttributes, 
 | **SL** |  |  | **SL** | **BL** | **BL** | **SL** × 0.707 + **BL** × 0.965 + **BR** × 0.258 | **SL** × 0.707 + **BL** × 0.965 + **BR** × 0.258 |
 | **SR** |  |  | **SR** | **BR** | **BR** | **SR** × 0.707 + **BL** × 0.258 + **BR** × 0.965 | **SR** × 0.707 + **BL** × 0.258 + **BR** × 0.965 |
 
-  ### SpeakerMODE_SURROUND
+  ### SpeakerMode_SURROUND
 
   | Output | Mono | Stereo | Quad | 5.0 | 5.1 | 7.1 | 7.1.4 |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
@@ -480,7 +480,7 @@ void calculate_panner_attributes(const Mode::D3_ATTRIBUTES &listenerAttributes, 
 | **BL** |  |  | **FL** × 0.274 + **SL** × 0.960 + **SR** × 0.422 | **BL** | **BL** | **SL** × 0.930 + **BL** × 0.700 + **BR** × 0.460 | **SL** × 0.930 + **BL** × 0.700 + **BR** × 0.460 |
 | **BR** |  |  | **FR** × 0.274 + **SL** × 0.422 + **SR** × 0.960 | **BR** | **BR** | **SR** × 0.930 + **BL** × 0.460 + **BR** × 0.700 | **SR** × 0.930 + **BL** × 0.460 + **BR** × 0.700 |
 
-  ### SpeakerMODE_5POINT1
+  ### SpeakerMode_5POINT1
 
   | Output | Mono | Stereo | Quad | 5.0 | 5.1 | 7.1 | 7.1.4 |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
@@ -491,7 +491,7 @@ void calculate_panner_attributes(const Mode::D3_ATTRIBUTES &listenerAttributes, 
 | **BL** |  |  | **FL** × 0.274 + **SL** × 0.960 + **SR** × 0.422 | **BL** | **BL** | **SL** × 0.930 + **BL** × 0.700 + **BR** × 0.460 | **SL** × 0.930 + **BL** × 0.700 + **BR** × 0.460 |
 | **BR** |  |  | **FR** × 0.274 + **SL** × 0.422 + **SR** × 0.960 | **BR** | **BR** | **SR** × 0.930 + **BL** × 0.460 + **BR** × 0.700 | **SR** × 0.930 + **BL** × 0.460 + **BR** × 0.700 |
 
-  ### SpeakerMODE_7POINT1
+  ### SpeakerMode_7POINT1
 
   | Output | Mono | Stereo | Quad | 5.0 | 5.1 | 7.1 | 7.1.4 |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
@@ -504,7 +504,7 @@ void calculate_panner_attributes(const Mode::D3_ATTRIBUTES &listenerAttributes, 
 | **BL** |  |  | **SL** × 0.939 | **BL** × 0.470 | **BL** × 0.470 | **BL** | **BL** |
 | **BR** |  |  | **SR** × 0.939 | **BR** × 0.470 | **BR** × 0.470 | **BR** | **BR** |
 
-  ### SpeakerMODE_7POINT1POINT4
+  ### SpeakerMode_7POINT1POINT4
 
   | Output | Mono | Stereo | Quad | 5.0 | 5.1 | 7.1 | 7.1.4 |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
