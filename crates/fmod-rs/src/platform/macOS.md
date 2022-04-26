@@ -45,9 +45,9 @@ or <code>fmodstudio.dylib</code> depending on whether
 
 ### Latency
 
- The default latency introduced by FMOD for this platform is 4 blocks of 512 samples at a sample rate of 48KHz, which equates to approximately 43ms. You are free to change this using two APIs, [`System::setDSPBufferSize`](System::setDSPBufferSize "Sets the buffer size for the FMOD software mixing engine.") and [`System::set_software_format`](System::set_software_format "Sets the output format for the software mixer.") but there are some important considerations.
+ The default latency introduced by FMOD for this platform is 4 blocks of 512 samples at a sample rate of 48KHz, which equates to approximately 43ms. You are free to change this using two APIs, [`System::set_dsp_buffer_size`](System::set_dsp_buffer_size "Sets the buffer size for the FMOD software mixing engine.") and [`System::set_software_format`](System::set_software_format "Sets the output format for the software mixer.") but there are some important considerations.
 
- All audio devices have a number of samples they prefer to operate in, on Mac this is almost always 512, which makes our default a natural fit. If you use [`System::setDSPBufferSize`](System::setDSPBufferSize "Sets the buffer size for the FMOD software mixing engine.") to reduce FMODs granularity (to 256 samples for instance), be aware the audio device will still operate at its native block of 512 samples. If you would like to reduce the block size of the audio device (to 256 samples), after you have set the FMOD granularity and initialized the System object use the following code:
+ All audio devices have a number of samples they prefer to operate in, on Mac this is almost always 512, which makes our default a natural fit. If you use [`System::set_dsp_buffer_size`](System::set_dsp_buffer_size "Sets the buffer size for the FMOD software mixing engine.") to reduce FMODs granularity (to 256 samples for instance), be aware the audio device will still operate at its native block of 512 samples. If you would like to reduce the block size of the audio device (to 256 samples), after you have set the FMOD granularity and initialized the System object use the following code:
 
 
 ```rust,ignore

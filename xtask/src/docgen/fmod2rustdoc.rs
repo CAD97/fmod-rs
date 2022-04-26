@@ -243,6 +243,15 @@ impl Converter<'_> {
                                 self.out.push_str("``````````\n\n");
                                 Ok(())
                             },
+                            "highlight language-java" => {
+                                let text = get_text_transitively(children.iter().cloned());
+                                self.out.push_str("``````````java\n");
+                                for child in text {
+                                    self.out.push_str(&*child);
+                                }
+                                self.out.push_str("``````````\n\n");
+                                Ok(())
+                            },
                             "toc" => {
                                 // skip
                                 Ok(())

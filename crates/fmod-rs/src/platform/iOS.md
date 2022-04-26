@@ -88,7 +88,7 @@ that these frameworks are linked properly.
 
  ### Handling Interruptions
 
- Unlike in previous versions of FMOD, it is now the responsibility of the developer to interact with the AudioSession APIs native to this platform. To assist in this matter we provide two functions you can use when you need to handle interruptions, [`System::mixerSuspend`](System::mixerSuspend "Suspend mixer thread and relinquish usage of audio hardware while maintaining internal state.") and [`System::mixerResume`](System::mixerResume "Resume mixer thread and reacquire access to audio hardware."). For more information about interruptions please check the [Apple documentation](<http://developer.apple.com/Library/ios/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/HandlingAudioInterruptions/HandlingAudioInterruptions.html>).
+ Unlike in previous versions of FMOD, it is now the responsibility of the developer to interact with the AudioSession APIs native to this platform. To assist in this matter we provide two functions you can use when you need to handle interruptions, [`System::mixer_suspend`](System::mixer_suspend "Suspend mixer thread and relinquish usage of audio hardware while maintaining internal state.") and [`System::mixer_resume`](System::mixer_resume "Resume mixer thread and reacquire access to audio hardware."). For more information about interruptions please check the [Apple documentation](<http://developer.apple.com/Library/ios/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/HandlingAudioInterruptions/HandlingAudioInterruptions.html>).
 
 ``````````objective-c
 [[NSNotificationCenter defaultCenter] addObserverForName:AVAudioSessionInterruptionNotification object:nil queue:nil usingBlock:^(NSNotification *notification)
@@ -159,7 +159,7 @@ that these frameworks are linked properly.
 
  ### Latency
 
- The default latency introduced by FMOD for this platform is 4 blocks of 512 samples at a sample rate of 24KHz, which equates to approximately 85ms. You are free to change this using two APIs, System::setDSPBufferSize and System::set_software_format but there are some important considerations.
+ The default latency introduced by FMOD for this platform is 4 blocks of 512 samples at a sample rate of 24KHz, which equates to approximately 85ms. You are free to change this using two APIs, System::set_dsp_buffer_size and System::set_software_format but there are some important considerations.
 
  If you have configured background or lock screen audio when locking the device the OS will conserve power by requesting audio from FMOD less frequently. If you desire this functionality please ensure your DSP buffer size is sufficiently large to cover the request. The iOS operating system will expect 4096 samples to be available, so configure FMOD as 8 blocks of 512 samples or 4 blocks of 1024 samples to satisfy the request (otherwise silence will be produced and a warning issued on the TTY).
 
@@ -168,7 +168,7 @@ that these frameworks are linked properly.
 ``````````objective-c
 AVAudioSession *session = [AVAudioSession sharedInstance];
 double rate = 24000.0; // This should match System::set_software_format 'samplerate' which defaults to 24000
-int blockSize = 512; // This should match System::setDSPBufferSize 'bufferlength' which defaults to 512
+int blockSize = 512; // This should match System::set_dsp_buffer_size 'bufferlength' which defaults to 512
 
 BOOL success = [session setPreferredSampleRate:rate error:nil];
 assert(success);
