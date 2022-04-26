@@ -6,6 +6,10 @@ rust-version = "1.60"
 license = "MIT OR Apache-2.0"
 
 publish = false
+description = "Bindings to the FMOD adaptive audio solution"
+repository = "https://github.com/CAD97/fmod-rs"
+keywords = ["gamedev", "audio", "sound", "fmod", "adaptive audio"]
+categories = ["api-bindings", "game-development", "multimedia::audio"]
 
 [lib]
 name = "fmod"
