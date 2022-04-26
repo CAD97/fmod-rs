@@ -19,12 +19,15 @@ default = ["fmod_debug_is_tracing"]
 
 #! ## Feature flags
 
-## Enable the FMOD Studio API
+## Enable the FMOD Studio API.
 studio = ["dep:fmod-studio-sys"]
-## Hook FMOD's debug logging to tracing
+## Hook FMOD's debug logging to tracing.
 fmod_debug_is_tracing = ["tracing"]
-## Enable use of tracing in FMOD.rs (implied by `fmod_debug_is_tracing`)
+## Enable use of tracing in FMOD.rs (implied by `fmod_debug_is_tracing`).
 tracing = ["dep:tracing", "dep:once_cell"]
+## Enable use of [memory::initialize_rust_global_alloc], which requires that
+## `size_of::<std::alloc::Layout>() <= 16`.
+rust_alloc_bridge = []
 
 ## Enable access to the raw FMOD API calls.
 raw = []
@@ -50,5 +53,5 @@ parking_lot = "0.12.0"
 paste = "1.0.7"
 static_assertions = "1.1.0"
 
-once_cell = { version = "1.10.0", optional = true }
+once_cell = { version = "1.10.0", optional = true, features = ["parking_lot"] }
 tracing = { version = "0.1.32", optional = true }
