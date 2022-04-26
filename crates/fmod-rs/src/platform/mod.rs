@@ -14,3 +14,6 @@ pub mod linux {}
 
 #[doc = include_str!("iOS.md")]
 pub mod ios {}
+
+#[doc = include_str!("Android.md")]
+pub mod android {}

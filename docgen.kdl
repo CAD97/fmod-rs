@@ -131,7 +131,7 @@ may be preferable.
 "#
 }
 
-// platform/macOS.md
+// platform/Linux.md
 job "platforms-linux.html" "platform/Linux.md" {
     // More headings
     replace r"(\n.*?)FMOD Core Engine library" "$1#### FMOD Core Engine library"
@@ -199,6 +199,39 @@ that these frameworks are linked properly.
 "#
 }
 
+// platform/Android.md
+job "platforms-android.html" "platform/Android.md" {
+    // More headings
+    replace r"(\n.*?)FMOD Core Engine library" "$1#### FMOD Core Engine library"
+    replace r"(\n.*?)FMOD Studio Engine library" "$1#### FMOD Studio Engine library"
+
+    // FMOD.rs notes
+    insert before="## Android Specific Starter Guide" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs is not tested to work on or even compile for Android.
+</pre>
+
+"#
+    insert before="#### FMOD Studio Engine library" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>libfmodL.so</code> or
+<code>libfmod.so</code> depending on whether <code>cfg(debug_assertions)</code>
+is true or false, respectively.
+</pre>
+
+"#
+    insert before="### Java" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>libfmodstudioL.so</code>
+or <code>libfmodstudio.so</code> depending on whether
+<code>cfg(debug_assertions)</code> is true or false, respectively.
+</pre>
+
+"#
+}
+
 
 // fix code block indentation
 replace r" +```" "```"
@@ -243,6 +276,8 @@ replace "FMOD_THREAD_PRIORITY_LOW" "ThreadPriority::Low"
 replace "FMOD_THREAD_PRIORITY_MEDIUM" "ThreadPriority::Medium"
 replace "FMOD_THREAD_PRIORITY_VERY_HIGH" "ThreadPriority::VeryHigh"
 replace "Memory_Initialize" "raw::FMOD_Memory_Initialize"
+replace r"System::create\b" "System::new"
+replace "System_Create" "System::new"
 replace "Thread_SetAttributes" "raw::FMOD_Thread_SetAttributes"
 replace "addDSP" "add_dsp"
 replace "addInput" "add_input"
@@ -276,6 +311,7 @@ replace "set3DCustomRolloff" "set_3d_custom_rolloff"
 replace "set3DListenerAttributes" "set_3d_listener_attributes"
 replace "set3DSpread" "set_3d_spread"
 replace "setAdvancedSettings" "set_advanced_settings"
+replace "setDSPBufferSize" "set_dsp_buffer_size"
 replace "setDriver" "set_driver"
 replace "setFileSystem" "set_file_system"
 replace "setMixMatrix" "set_mix_matrix"
@@ -287,6 +323,10 @@ replace "setReverbProperties" "set_reverb_properties"
 replace "setSoftwareFormat" "set_software_format"
 replace "setStreamBufferSize" "set_stream_buffer_size"
 
-// be careful renaming the DSP type, since we don't want to touch DSP in text
+// be careful renaming these methods; they're used in non-Rust codeblocks
+replace ":mixerResume" ":mixer_resume"
+replace ":mixerSuspend" ":mixer_suspend"
+
+// be careful renaming the DSP type; we don't want to touch DSP in text
 replace "`DSP" "`Dsp"
 replace r"\]\(DSP" "](Dsp"
