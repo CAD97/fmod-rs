@@ -13,6 +13,7 @@ use {
 struct Converter<'a> {
     out: &'a mut String,
     ordered: bool,
+    blockquote: usize,
     config: &'a Config,
 }
 
@@ -21,6 +22,7 @@ impl<'a> Converter<'a> {
         Self {
             out,
             ordered: false,
+            blockquote: 0,
             config,
         }
     }
@@ -89,48 +91,59 @@ impl Converter<'_> {
                 let name = name.local;
                 let children = node.children.borrow();
                 let attrs = attrs.borrow();
+                let blockquote = "> ".repeat(self.blockquote);
 
                 // NB: this is super hacky and just barely works. However, the self.output is spot-checked,
                 // so this is okay, so long as this gets maintained. If we're generating bad MD, this
                 // is the place to check!
                 match *name {
                     local_name!("h1") => {
-                        self.out.push_str("# ");
+                        write!(self.out, "{blockquote}# ")?;
                         for child in &**children {
                             self.convert(&strip_a(child))?;
                         }
-                        self.out.push_str("\n\n");
+                        writeln!(self.out, "\n{blockquote}")?;
                         Ok(())
                     },
                     local_name!("h2") => {
-                        self.out.push_str("## ");
+                        write!(self.out, "{blockquote}## ")?;
                         for child in &**children {
                             self.convert(&strip_a(child))?;
                         }
-                        self.out.push_str("\n\n");
+                        writeln!(self.out, "\n{blockquote}")?;
                         Ok(())
                     },
                     local_name!("h3") => {
-                        self.out.push_str("### ");
+                        write!(self.out, "{blockquote}### ")?;
                         for child in &**children {
                             self.convert(&strip_a(child))?;
                         }
-                        self.out.push_str("\n\n");
+                        writeln!(self.out, "\n{blockquote}")?;
                         Ok(())
                     },
                     local_name!("h4") => {
-                        self.out.push_str("#### ");
+                        write!(self.out, "{blockquote}#### ")?;
                         for child in &**children {
                             self.convert(&strip_a(child))?;
                         }
-                        self.out.push_str("\n\n");
+                        writeln!(self.out, "\n{blockquote}")?;
                         Ok(())
                     },
                     local_name!("p") => {
+                        write!(self.out, "{blockquote}")?;
                         for child in &**children {
                             self.convert(child)?;
                         }
-                        self.out.push_str("\n\n");
+                        writeln!(self.out, "\n{blockquote}")?;
+                        Ok(())
+                    },
+                    local_name!("blockquote") => {
+                        self.blockquote += 1;
+                        for child in &**children {
+                            self.convert(child)?;
+                        }
+                        self.blockquote -= 1;
+                        writeln!(self.out, "{blockquote}")?;
                         Ok(())
                     },
                     local_name!("em") => {
@@ -166,7 +179,7 @@ impl Converter<'_> {
                         for child in &**children {
                             self.convert(child)?;
                         }
-                        self.out.push('\n');
+                        writeln!(self.out, "{blockquote}")?;
                         Ok(())
                     },
                     local_name!("ol") => {
@@ -174,10 +187,11 @@ impl Converter<'_> {
                         for child in &**children {
                             self.convert(child)?;
                         }
-                        self.out.push('\n');
+                        writeln!(self.out, "{blockquote}")?;
                         Ok(())
                     },
                     local_name!("li") => {
+                        write!(self.out, "{blockquote}")?;
                         match self.ordered {
                             true => self.out.push_str("1. "),
                             false => self.out.push_str("- "),
@@ -214,6 +228,10 @@ impl Converter<'_> {
                                     self.out.push_str(&*child);
                                 }
                                 self.out.push_str("``````````\n\n");
+                                Ok(())
+                            },
+                            "toc" => {
+                                // skip
                                 Ok(())
                             },
                             "mixdowntable" => {

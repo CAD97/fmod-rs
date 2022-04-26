@@ -36,4 +36,14 @@ pub struct Job {
     pub to: PathBuf,
     #[knuffel(children(name = "replace"))]
     pub replace: Vec<ReplaceRegex>,
+    #[knuffel(children(name = "insert"))]
+    pub insertions: Vec<Insertion>,
+}
+
+#[derive(knuffel::Decode)]
+pub struct Insertion {
+    #[knuffel(property, str)]
+    pub before: Regex,
+    #[knuffel(argument, str)]
+    pub value: String,
 }

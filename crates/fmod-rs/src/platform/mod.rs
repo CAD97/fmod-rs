@@ -3,8 +3,6 @@
 #[cfg(doc)]
 use fmod::*;
 
-/// # Windows specific starter guide
-///
 #[doc = include_str!("Windows.md")]
 pub mod windows {}
 

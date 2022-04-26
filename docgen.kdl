@@ -1,23 +1,67 @@
 link-base "https://fmod.com/resources/documentation-api?version=2.02&page="
 image-base "https://fmod.com/docs/2.02/api/"
 
+
+
+// core/README.md
 job "core-guide.html" "core/README.md" {
+    // Rename main header
+    replace "# Core API Guide" "# Core API"
     // improve tables
     replace r" x " " × "
     // adjust language so we don't imply we are an official product
     replace "our parter plugins" "FMOD's partner plugins"
     // link to ReverProperties constants impl block
     replace r"pre-set list of environments in \[ReverbProperties\]\(ReverbProperties" "$0#impl-1"
-    // Rename main header
-    replace "# Core API Guide" "# Core API"
     // Escape literal []
     replace r"FMOD_\[CompanyName\]_\[ProductName\]_Get\[PluginType\]Description" r"FMOD_\[CompanyName\]_\[ProductName\]_Get\[PluginType\]Description"
 }
 
+// studio/README.md
 job "studio-guide.html" "studio/README.md" {
     // Rename main header
     replace "# Studio API Guide" "# Studio API"
 }
+
+// platform/Windows.md
+job "platforms-win.html" "platform/Windows.md" {
+    // More headings
+    replace r"(\n.*?)FMOD Core Engine library" "$1#### FMOD Core Engine library"
+    replace r"(\n.*?)FMOD Studio Engine library" "$1#### FMOD Studio Engine library"
+
+    // C'mon FMOD you got this right on linux
+    replace "x64" "x86_64"
+
+    // FMOD.rs notes
+    insert before="#### FMOD Studio Engine library" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>fmodL.lib</code> or
+<code>fmod.lib</code> depending on whether <code>cfg(debug_assertions)</code>
+is true or false, respectively.
+</pre>
+
+"#
+    insert before="### COM" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>fmodstudioL.lib</code>
+or <code>fmodstudio.lib</code> depending on whether
+<code>cfg(debug_assertions)</code> is true or false, respectively.
+</pre>
+
+"#
+    insert before="### Thread Affinity" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs does not handle COM initialization (it relies on the above behavior),
+nor does it attempt to restrict system init to the UI thread. This is a
+concession to cross-platform usability over niche theoretical concern.
+</pre>
+
+"#
+}
+
+
 
 // fix code block indentation
 replace r" +```" "```"
