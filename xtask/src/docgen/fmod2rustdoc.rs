@@ -267,13 +267,18 @@ impl Converter<'_> {
                                 ));
                             }
                         } else {
-                            let mut link_text = String::new();
-                            let link_base = &self.config.link_base;
-                            let mut converter = Converter::new(&mut link_text, self.config);
+                            let link_base = if href.starts_with("https://") {
+                                ""
+                            } else {
+                                &*self.config.link_base
+                            };
 
+                            let mut link_text = String::new();
+                            let mut converter = Converter::new(&mut link_text, self.config);
                             for child in &**children {
                                 converter.convert(child)?;
                             }
+
                             if let Some(title) = title {
                                 write!(
                                     self.out,

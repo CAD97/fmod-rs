@@ -101,7 +101,7 @@
 
  For localized dialogue, make sure that the required localized bank has been loaded. Ensure that any other localizations on the same bank are unloaded before loading a new localization.
 
- See the [FMOD Studio Documentation](<https://fmod.com/resources/documentation-api?version=2.02&page=https://fmod.com/resources/documentation-studio?version=2.2&page=dialogue-and-localization.html>) for more information. 
+ See the [FMOD Studio Documentation](<https://fmod.com/resources/documentation-studio?version=2.2&page=dialogue-and-localization.html>) for more information. 
 
  ### Scripting Example
 

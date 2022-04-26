@@ -1,8 +1,3 @@
-#![doc = include_str!("README.md")]
-
-#[cfg(doc)]
-use fmod::{raw, studio};
-
 mod channel;
 mod channel_group;
 mod common;

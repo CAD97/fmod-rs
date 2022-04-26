@@ -79,18 +79,18 @@ may be preferable.
 
  ### Thread Affinity
 
- All threads will default to [`FMOD_THREAD_AFFINITY_CORE_ALL`](FMOD_THREAD_AFFINITY_CORE_ALL ""), it is not currently possible to override this with [`Thread_SetAttributes`](Thread_SetAttributes "Specify the affinity, priority and stack size for all FMOD created threads.").
+ All threads will default to [`ThreadAffinity::CoreAll`](ThreadAffinity::CoreAll ""), it is not currently possible to override this with [`raw::FMOD_Thread_SetAttributes`](raw::FMOD_Thread_SetAttributes "Specify the affinity, priority and stack size for all FMOD created threads.").
 
  ### Thread Priority
 
  The relationship between FMOD platform agnostic thread priority and the platform specific values is as follows:
 
-  - [`FMOD_THREAD_PRIORITY_LOW`](FMOD_THREAD_PRIORITY_LOW "") ~ 83
- - [`FMOD_THREAD_PRIORITY_MEDIUM`](FMOD_THREAD_PRIORITY_MEDIUM "") ~ 87
- - [`FMOD_THREAD_PRIORITY_HIGH`](FMOD_THREAD_PRIORITY_HIGH "") ~ 90
- - [`FMOD_THREAD_PRIORITY_VERY_HIGH`](FMOD_THREAD_PRIORITY_VERY_HIGH "") ~ 94
- - [`FMOD_THREAD_PRIORITY_EXTREME`](FMOD_THREAD_PRIORITY_EXTREME "") ~ 97
- - [`FMOD_THREAD_PRIORITY_CRITICAL`](FMOD_THREAD_PRIORITY_CRITICAL "") ~ 99
+  - [`ThreadPriority::Low`](ThreadPriority::Low "") ~ 83
+ - [`ThreadPriority::Medium`](ThreadPriority::Medium "") ~ 87
+ - [`ThreadPriority::High`](ThreadPriority::High "") ~ 90
+ - [`ThreadPriority::VeryHigh`](ThreadPriority::VeryHigh "") ~ 94
+ - [`ThreadPriority::Extreme`](ThreadPriority::Extreme "") ~ 97
+ - [`ThreadPriority::Critical`](ThreadPriority::Critical "") ~ 99
  
  ## Performance Reference
 
