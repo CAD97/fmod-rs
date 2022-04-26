@@ -17,7 +17,7 @@ default = ["fmod_debug_is_tracing"]
 
 ## Enable the FMOD Studio API
 studio = ["dep:fmod-studio-sys"]
-## Hook FMOD's debug logging to tracing (default)
+## Hook FMOD's debug logging to tracing
 fmod_debug_is_tracing = ["tracing"]
 ## Enable use of tracing in FMOD.rs (implied by `fmod_debug_is_tracing`)
 tracing = ["dep:tracing", "dep:once_cell"]
