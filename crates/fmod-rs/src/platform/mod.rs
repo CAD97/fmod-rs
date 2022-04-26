@@ -17,3 +17,6 @@ pub mod ios {}
 
 #[doc = include_str!("Android.md")]
 pub mod android {}
+
+#[doc = include_str!("UWP.md")]
+pub mod uwp {}

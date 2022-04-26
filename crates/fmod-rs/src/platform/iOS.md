@@ -151,7 +151,7 @@ that these frameworks are linked properly.
 
  ### Recording
 
- Much like lock screen and background audio, recording requires a particular AudioSession category to be active at the time of System::recordStart (and must remain active until the recording finishes). The required category is called 'play and record' and can be read about in the [audio session basics](<http://developer.apple.com/Library/ios/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/AudioSessionBasics/AudioSessionBasics.html>) documentation. Note that FMOD is always 'playing' audio (even silence) so it is not sufficient to simply use the 'recording' category unless you are running the 'No Sound' or 'Wav Writer' output mode.
+ Much like lock screen and background audio, recording requires a particular AudioSession category to be active at the time of System::record_start (and must remain active until the recording finishes). The required category is called 'play and record' and can be read about in the [audio session basics](<http://developer.apple.com/Library/ios/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/AudioSessionBasics/AudioSessionBasics.html>) documentation. Note that FMOD is always 'playing' audio (even silence) so it is not sufficient to simply use the 'recording' category unless you are running the 'No Sound' or 'Wav Writer' output mode.
 
  Some devices may take some time to switch AudioSession category so it is recommended to set this category at application start time to avoid any hiccups in audio playback.
 

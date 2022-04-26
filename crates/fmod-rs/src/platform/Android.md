@@ -124,7 +124,7 @@ static
 
  Some functionality inside of FMOD will require you set relevant permissions in your AndroidManifest.xml file.
 
-  - **Recording** - to make use of the [`System::recordStart`](System::recordStart "Starts the recording engine recording to a pre-created Sound object.") API use *android.permission.RECORD_AUDIO*.
+  - **Recording** - to make use of the [`System::record_start`](System::record_start "Starts the recording engine recording to a pre-created Sound object.") API use *android.permission.RECORD_AUDIO*.
  - **Networking** - to use the FMOD profiler, FMOD Studio live update or stream audio from the internet use *android.permission.INTERNET*.
  
  ### Thread Affinity

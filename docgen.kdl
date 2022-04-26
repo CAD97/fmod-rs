@@ -29,9 +29,6 @@ job "platforms-win.html" "platform/Windows.md" {
     replace r"(\n.*?)FMOD Core Engine library" "$1#### FMOD Core Engine library"
     replace r"(\n.*?)FMOD Studio Engine library" "$1#### FMOD Studio Engine library"
 
-    // C'mon FMOD you got this right on every other platform
-    replace "x64" "x86_64"
-
     // FMOD.rs notes
     insert before="#### FMOD Studio Engine library" r#"
 <pre class="ignore" style="white-space:normal;font:inherit;">
@@ -233,6 +230,34 @@ or <code>libfmodstudio.so</code> depending on whether
 }
 
 
+// platform/UWP.md
+job "platforms-uwp.html" "platform/UWP.md" {
+    // More headings
+    replace r"(\n.*?)FMOD Core Engine library" "$1#### FMOD Core Engine library"
+    replace r"(\n.*?)FMOD Studio Engine library" "$1#### FMOD Studio Engine library"
+
+    // FMOD.rs notes
+    insert before="#### FMOD Studio Engine library" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>fmodL.lib</code> or
+<code>fmod.lib</code> depending on whether <code>cfg(debug_assertions)</code>
+is true or false, respectively.
+</pre>
+
+"#
+    insert before="### Plugins" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>fmodstudioL.lib</code>
+or <code>fmodstudio.lib</code> depending on whether
+<code>cfg(debug_assertions)</code> is true or false, respectively.
+</pre>
+
+"#
+}
+
+
 // fix code block indentation
 replace r" +```" "```"
 
@@ -244,84 +269,86 @@ replace "Studio::" "studio::"
 
 // map fmod.cpp names to fmod.rs names
 // keep this list alphabetized
-replace "FMOD_3D" "Mode::D3"
-replace "FMOD_3D_ROLLOFF_CALLBACK" "raw::FMOD_3D_ROLLOFF_CALLBACK"
-replace "FMOD_ADVANCEDSETTINGS" "AdvancedSettings"
-replace "FMOD_ASYNCREADINFO" "AsyncReadInfo"
-replace "FMOD_CREATECOMPRESSEDSAMPLE" "Mode::CreateCompressedSample"
-replace "FMOD_CREATESOUNDEXINFO" "CreateSoundExInfo"
-replace "FMOD_CREATESTREAM" "Mode::CreateStream"
-replace "FMOD_DSP_DESCRIPTION" "DspDescription"
-replace "FMOD_DSP_PARAMETER_3DATTRIBUTES" "raw::FMOD_DSP_PARAMETER_3DATTRIBUTES"
-replace "FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI" "raw::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI"
-replace "FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES" "raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES"
-replace "FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI" "raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI"
-replace "FMOD_DSP_TYPE" "DspType"
-replace "FMOD_DSP_TYPE_CONVOLUTIONREVERB" "DspType::ConvolutionReverb"
-replace "FMOD_ERR_PLUGIN_MISSING" "Error::PluginMissing"
-replace "FMOD_INIT_3D_RIGHTHANDED" "InitFlags::RightHanded3d"
-replace "FMOD_INIT_PREFER_DOLBY_DOWNMIX" "InitFlags::PreferDolbyDownmix"
-replace "FMOD_NONBLOCKING" "Mode::NonBlocking"
-replace "FMOD_OPENMEMORY_POINT" "OpenMemory::Point"
-replace "FMOD_REVERB_PRESETS" "ReverbProperties"
-replace "FMOD_SOUND_TYPE" "SoundType"
-replace "FMOD_SPEAKER" "Speaker"
-replace "FMOD_SPEAKERMODE" "SpeakerMode"
-replace "FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED" "raw::FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED"
-replace "FMOD_THREAD_AFFINITY_CORE_ALL" "ThreadAffinity::CoreAll"
-replace "FMOD_THREAD_PRIORITY_CRITICAL" "ThreadPriority::Critical"
-replace "FMOD_THREAD_PRIORITY_EXTREME" "ThreadPriority::Extreme"
-replace "FMOD_THREAD_PRIORITY_HIGH" "ThreadPriority::High"
-replace "FMOD_THREAD_PRIORITY_LOW" "ThreadPriority::Low"
-replace "FMOD_THREAD_PRIORITY_MEDIUM" "ThreadPriority::Medium"
-replace "FMOD_THREAD_PRIORITY_VERY_HIGH" "ThreadPriority::VeryHigh"
-replace "Memory_Initialize" "raw::FMOD_Memory_Initialize"
+replace r"FMOD_3D" "Mode::D3"
+replace r"FMOD_3D_ROLLOFF_CALLBACK" "raw::FMOD_3D_ROLLOFF_CALLBACK"
+replace r"FMOD_ADVANCEDSETTINGS" "AdvancedSettings"
+replace r"FMOD_ASYNCREADINFO" "AsyncReadInfo"
+replace r"FMOD_CREATECOMPRESSEDSAMPLE" "Mode::CreateCompressedSample"
+replace r"FMOD_CREATESOUNDEXINFO" "CreateSoundExInfo"
+replace r"FMOD_CREATESTREAM" "Mode::CreateStream"
+replace r"FMOD_DSP_DESCRIPTION" "DspDescription"
+replace r"FMOD_DSP_PARAMETER_3DATTRIBUTES" "raw::FMOD_DSP_PARAMETER_3DATTRIBUTES"
+replace r"FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI" "raw::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI"
+replace r"FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES" "raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES"
+replace r"FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI" "raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI"
+replace r"FMOD_DSP_TYPE" "DspType"
+replace r"FMOD_DSP_TYPE_CONVOLUTIONREVERB" "DspType::ConvolutionReverb"
+replace r"FMOD_ERR_OUTPUT_INIT" "Error::OutputInit"
+replace r"FMOD_ERR_PLUGIN_MISSING" "Error::PluginMissing"
+replace r"FMOD_INIT_3D_RIGHTHANDED" "InitFlags::RightHanded3d"
+replace r"FMOD_INIT_PREFER_DOLBY_DOWNMIX" "InitFlags::PreferDolbyDownmix"
+replace r"FMOD_NONBLOCKING" "Mode::NonBlocking"
+replace r"FMOD_OPENMEMORY_POINT" "OpenMemory::Point"
+replace r"FMOD_REVERB_PRESETS" "ReverbProperties"
+replace r"FMOD_SOUND_TYPE" "SoundType"
+replace r"FMOD_SPEAKER" "Speaker"
+replace r"FMOD_SPEAKERMODE" "SpeakerMode"
+replace r"FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED" "raw::FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED"
+replace r"FMOD_THREAD_AFFINITY_CORE_ALL" "ThreadAffinity::CoreAll"
+replace r"FMOD_THREAD_PRIORITY_CRITICAL" "ThreadPriority::Critical"
+replace r"FMOD_THREAD_PRIORITY_EXTREME" "ThreadPriority::Extreme"
+replace r"FMOD_THREAD_PRIORITY_HIGH" "ThreadPriority::High"
+replace r"FMOD_THREAD_PRIORITY_LOW" "ThreadPriority::Low"
+replace r"FMOD_THREAD_PRIORITY_MEDIUM" "ThreadPriority::Medium"
+replace r"FMOD_THREAD_PRIORITY_VERY_HIGH" "ThreadPriority::VeryHigh"
+replace r"Memory_Initialize" "raw::FMOD_Memory_Initialize"
 replace r"System::create\b" "System::new"
-replace "System_Create" "System::new"
-replace "Thread_SetAttributes" "raw::FMOD_Thread_SetAttributes"
-replace "addDSP" "add_dsp"
-replace "addInput" "add_input"
-replace "addPolygon" "add_polygon"
-replace "calculatePannerAttributes" "calculate_panner_attributes"
-replace "createDSP" "create_dsp"
-replace "createDSPByType" "create_dsp_by_type"
-replace "createGeometry" "create_geometry"
-replace "createReverb3D" "create_reverb_3d"
-replace "createSound" "create_sound"
-replace "createStream" "create_stream"
-replace "decodeBufferSize" "decode_buffer_size"
-replace "defaultDecodeBufferSize" "default_decode_buffer_size"
-replace "disconnectFrom" "disconnect_from"
-replace "getDriverInfo" "get_driver_info"
-replace "getMasterChannelGroup" "get_master_channel_group"
-replace "getNumDrivers" "get_num_drivers"
-replace "getSubSound" "get_sub_sound"
-replace "loadPlugin" "load_plugin"
-replace "loadPlugin" "load_plugin"
-replace "playDSP" "play_dsp"
-replace "playSound" "play_sound"
-replace "registerCodec" "register_codec"
-replace "registerCodec" "register_codec"
-replace "registerDSP" "register_dsp"
-replace "registerDSP" "register_dsp"
-replace "registerOutput" "register_output"
-replace "registerOutput" "register_output"
-replace "set3DAttributes" "set_3d_attributes"
-replace "set3DCustomRolloff" "set_3d_custom_rolloff"
-replace "set3DListenerAttributes" "set_3d_listener_attributes"
-replace "set3DSpread" "set_3d_spread"
-replace "setAdvancedSettings" "set_advanced_settings"
-replace "setDSPBufferSize" "set_dsp_buffer_size"
-replace "setDriver" "set_driver"
-replace "setFileSystem" "set_file_system"
-replace "setMixMatrix" "set_mix_matrix"
-replace "setMode" "set_mode"
-replace "setOutput" "set_output"
-replace "setParameterData" "set_parameter_data"
-replace "setProperties" "set_properties"
-replace "setReverbProperties" "set_reverb_properties"
-replace "setSoftwareFormat" "set_software_format"
-replace "setStreamBufferSize" "set_stream_buffer_size"
+replace r"System_Create" "System::new"
+replace r"Thread_SetAttributes" "raw::FMOD_Thread_SetAttributes"
+replace r"addDSP" "add_dsp"
+replace r"addInput" "add_input"
+replace r"addPolygon" "add_polygon"
+replace r"calculatePannerAttributes" "calculate_panner_attributes"
+replace r"createDSP" "create_dsp"
+replace r"createDSPByType" "create_dsp_by_type"
+replace r"createGeometry" "create_geometry"
+replace r"createReverb3D" "create_reverb_3d"
+replace r"createSound" "create_sound"
+replace r"createStream" "create_stream"
+replace r"decodeBufferSize" "decode_buffer_size"
+replace r"defaultDecodeBufferSize" "default_decode_buffer_size"
+replace r"disconnectFrom" "disconnect_from"
+replace r"getDriverInfo" "get_driver_info"
+replace r"getMasterChannelGroup" "get_master_channel_group"
+replace r"getNumDrivers" "get_num_drivers"
+replace r"getSubSound" "get_sub_sound"
+replace r"loadPlugin" "load_plugin"
+replace r"loadPlugin" "load_plugin"
+replace r"playDSP" "play_dsp"
+replace r"playSound" "play_sound"
+replace r"recordStart" "record_start"
+replace r"registerCodec" "register_codec"
+replace r"registerCodec" "register_codec"
+replace r"registerDSP" "register_dsp"
+replace r"registerDSP" "register_dsp"
+replace r"registerOutput" "register_output"
+replace r"registerOutput" "register_output"
+replace r"set3DAttributes" "set_3d_attributes"
+replace r"set3DCustomRolloff" "set_3d_custom_rolloff"
+replace r"set3DListenerAttributes" "set_3d_listener_attributes"
+replace r"set3DSpread" "set_3d_spread"
+replace r"setAdvancedSettings" "set_advanced_settings"
+replace r"setDSPBufferSize" "set_dsp_buffer_size"
+replace r"setDriver" "set_driver"
+replace r"setFileSystem" "set_file_system"
+replace r"setMixMatrix" "set_mix_matrix"
+replace r"setMode" "set_mode"
+replace r"setOutput" "set_output"
+replace r"setParameterData" "set_parameter_data"
+replace r"setProperties" "set_properties"
+replace r"setReverbProperties" "set_reverb_properties"
+replace r"setSoftwareFormat" "set_software_format"
+replace r"setStreamBufferSize" "set_stream_buffer_size"
 
 // be careful renaming these methods; they're used in non-Rust codeblocks
 replace ":mixerResume" ":mixer_resume"
