@@ -24,7 +24,6 @@ macro_rules! error_enum_struct {
 
         impl $Name {
             raw! {
-                #[allow(clippy::missing_safety_doc)]
                 pub const fn from_raw(raw: i32) -> Option<Self> {
                     match NonZeroI32::new(raw) {
                         Some(raw) => Some($Name { raw }),
@@ -38,13 +37,18 @@ macro_rules! error_enum_struct {
                 }
             }
 
+            // to clean up rustdoc, call this helper rather than inlining it
+            const fn cook(raw: i32) -> Self {
+                match Self::from_raw(raw) {
+                    Some(this) => this,
+                    None => panic!("provided zero-valued FMOD_RESULT (FMOD_OK) as an error"),
+                }
+            }
+
             $(
                 $(#[$vmeta])*
                 #[allow(non_upper_case_globals)]
-                pub const $Variant: Self = match Self::from_raw($value) {
-                    Some(this) => this,
-                    None => panic!("provided zero-valued FMOD_RESULT (FMOD_OK) as an error"),
-                };
+                pub const $Variant: Self = Self::cook($value);
             )*
         }
 
