@@ -11,3 +11,6 @@ pub mod macos {}
 
 #[doc = include_str!("Linux.md")]
 pub mod linux {}
+
+#[doc = include_str!("iOS.md")]
+pub mod ios {}
