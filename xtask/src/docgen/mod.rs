@@ -48,6 +48,17 @@ pub fn main(fmod_path: &Path) -> color_eyre::Result<()> {
             }
         }
 
+        for insertion in &job.insertions {
+            let mut pos = 0;
+            while let Some(m) = insertion.before.find_at(&*md, pos) {
+                pos = m.start();
+                let m_len = m.range().len();
+                md.insert_str(pos, &*insertion.value);
+                pos += insertion.value.len();
+                pos += m_len;
+            }
+        }
+
         let md_path =
             PathBuf::from_iter([env!("CARGO_MANIFEST_DIR"), "..", "crates", "fmod-rs", "src"])
                 .join(&job.to);
