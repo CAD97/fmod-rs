@@ -78,6 +78,7 @@ macro_rules! flags {
         )*}
     )*} => {$(
         $(#[$meta])*
+        #[repr(transparent)]
         #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         $vis struct $Name {
             raw: $Raw,
@@ -191,34 +192,38 @@ macro_rules! flags {
     {@stripdefault $($tt:tt)*} => { $($tt)* };
 }
 
-flags! {
-    /// Specify the requested information to be output when using the logging version of FMOD.
-    pub struct DebugFlags: u32 {
-        /// Disable all messages.
-        LevelNone          = FMOD_DEBUG_LEVEL_NONE,
-        /// Enable only error messages.
-        LevelError         = FMOD_DEBUG_LEVEL_ERROR,
-        /// Enable warning and error messages.
-        LevelWarning       = FMOD_DEBUG_LEVEL_WARNING,
-        #[default]
-        /// Enable informational, warning and error messages (default).
-        LevelLog           = FMOD_DEBUG_LEVEL_LOG,
-        /// Verbose logging for memory operations, only use this if you are debugging a memory related issue.
-        TypeMemory         = FMOD_DEBUG_TYPE_MEMORY,
-        /// Verbose logging for file access, only use this if you are debugging a file related issue.
-        TypeFile           = FMOD_DEBUG_TYPE_FILE,
-        /// Verbose logging for codec initialization, only use this if you are debugging a codec related issue.
-        TypeCodec          = FMOD_DEBUG_TYPE_CODEC,
-        /// Verbose logging for internal errors, use this for tracking the origin of error codes.
-        TypeTrace          = FMOD_DEBUG_TYPE_TRACE,
-        /// Display the time stamp of the log message in milliseconds.
-        DisplayTimestamps  = FMOD_DEBUG_DISPLAY_TIMESTAMPS,
-        /// Display the source code file and line number for where the message originated.
-        DisplayLinenumbers = FMOD_DEBUG_DISPLAY_LINENUMBERS,
-        /// Display the thread ID of the calling function that generated the message.
-        DisplayThread      = FMOD_DEBUG_DISPLAY_THREAD,
+raw! {
+    flags! {
+        /// Specify the requested information to be output when using the logging version of FMOD.
+        pub struct DebugFlags: u32 {
+            /// Disable all messages.
+            LevelNone          = FMOD_DEBUG_LEVEL_NONE,
+            /// Enable only error messages.
+            LevelError         = FMOD_DEBUG_LEVEL_ERROR,
+            /// Enable warning and error messages.
+            LevelWarning       = FMOD_DEBUG_LEVEL_WARNING,
+            #[default]
+            /// Enable informational, warning and error messages (default).
+            LevelLog           = FMOD_DEBUG_LEVEL_LOG,
+            /// Verbose logging for memory operations, only use this if you are debugging a memory related issue.
+            TypeMemory         = FMOD_DEBUG_TYPE_MEMORY,
+            /// Verbose logging for file access, only use this if you are debugging a file related issue.
+            TypeFile           = FMOD_DEBUG_TYPE_FILE,
+            /// Verbose logging for codec initialization, only use this if you are debugging a codec related issue.
+            TypeCodec          = FMOD_DEBUG_TYPE_CODEC,
+            /// Verbose logging for internal errors, use this for tracking the origin of error codes.
+            TypeTrace          = FMOD_DEBUG_TYPE_TRACE,
+            /// Display the time stamp of the log message in milliseconds.
+            DisplayTimestamps  = FMOD_DEBUG_DISPLAY_TIMESTAMPS,
+            /// Display the source code file and line number for where the message originated.
+            DisplayLinenumbers = FMOD_DEBUG_DISPLAY_LINENUMBERS,
+            /// Display the thread ID of the calling function that generated the message.
+            DisplayThread      = FMOD_DEBUG_DISPLAY_THREAD,
+        }
     }
+}
 
+flags! {
     /// Bitfields for memory allocation type being passed into FMOD memory callbacks.
     pub struct MemoryType: u32 {
         #[default]
@@ -361,44 +366,44 @@ flags! {
     /// If an explicit core affinity is given, i.e. [ThreadAffinity::Core11] and that core is unavailable a fatal error will be produced.
     ///
     /// Explicit core assignment up to [ThreadAffinity::Core(61)][Self::Core] is supported for platforms with that many cores.
-    pub struct ThreadAffinity: u64 {
+    pub struct ThreadAffinity: i64 {
         // Platform agnostic thread groupings
         #[default]
         /// For a given thread use the default listed below, i.e. [ThreadType::Mixer] uses [ThreadAffinity::Mixer].
-        GroupDefault = FMOD_THREAD_AFFINITY_GROUP_DEFAULT,
+        GroupDefault = FMOD_THREAD_AFFINITY_GROUP_DEFAULT as i64,
         /// Grouping A is recommended to isolate the mixer thread [ThreadType::Mixer].
-        GroupA       = FMOD_THREAD_AFFINITY_GROUP_A,
+        GroupA       = FMOD_THREAD_AFFINITY_GROUP_A as i64,
         /// Grouping B is recommended to isolate the Studio update thread [ThreadType::StudioUpdate].
-        GroupB       = FMOD_THREAD_AFFINITY_GROUP_B,
+        GroupB       = FMOD_THREAD_AFFINITY_GROUP_B as i64,
         /// Grouping C is recommended for all remaining threads.
-        GroupC       = FMOD_THREAD_AFFINITY_GROUP_C,
+        GroupC       = FMOD_THREAD_AFFINITY_GROUP_C as i64,
         // Thread defaults
         /// Default affinity for [ThreadType::Mixer].
-        Mixer            = FMOD_THREAD_AFFINITY_MIXER,
+        Mixer            = FMOD_THREAD_AFFINITY_MIXER as i64,
         /// Default affinity for [ThreadType::Feeder].
-        Feeder           = FMOD_THREAD_AFFINITY_FEEDER,
+        Feeder           = FMOD_THREAD_AFFINITY_FEEDER as i64,
         /// Default affinity for [ThreadType::Stream].
-        Stream           = FMOD_THREAD_AFFINITY_STREAM,
+        Stream           = FMOD_THREAD_AFFINITY_STREAM as i64,
         /// Default affinity for [ThreadType::File].
-        File             = FMOD_THREAD_AFFINITY_FILE,
+        File             = FMOD_THREAD_AFFINITY_FILE as i64,
         /// Default affinity for [ThreadType::NonBlocking].
-        NonBlocking      = FMOD_THREAD_AFFINITY_NONBLOCKING,
+        NonBlocking      = FMOD_THREAD_AFFINITY_NONBLOCKING as i64,
         /// Default affinity for [ThreadType::Record].
-        Record           = FMOD_THREAD_AFFINITY_RECORD,
+        Record           = FMOD_THREAD_AFFINITY_RECORD as i64,
         /// Default affinity for [ThreadType::Geometry].
-        Geometry         = FMOD_THREAD_AFFINITY_GEOMETRY,
+        Geometry         = FMOD_THREAD_AFFINITY_GEOMETRY as i64,
         /// Default affinity for [ThreadType::Profiler].
-        Profiler         = FMOD_THREAD_AFFINITY_PROFILER,
+        Profiler         = FMOD_THREAD_AFFINITY_PROFILER as i64,
         /// Default affinity for [ThreadType::StudioUpdate].
-        StudioUpdate     = FMOD_THREAD_AFFINITY_STUDIO_UPDATE,
+        StudioUpdate     = FMOD_THREAD_AFFINITY_STUDIO_UPDATE as i64,
         /// Default affinity for [ThreadType::StudioLoadBank].
-        StudioLoadBank   = FMOD_THREAD_AFFINITY_STUDIO_LOAD_BANK,
+        StudioLoadBank   = FMOD_THREAD_AFFINITY_STUDIO_LOAD_BANK as i64,
         /// Default affinity for [ThreadType::StudioLoadSample].
-        StudioLoadSample = FMOD_THREAD_AFFINITY_STUDIO_LOAD_SAMPLE,
+        StudioLoadSample = FMOD_THREAD_AFFINITY_STUDIO_LOAD_SAMPLE as i64,
         /// Default affinity for [ThreadType::Convolution1].
-        Convolution1     = FMOD_THREAD_AFFINITY_CONVOLUTION1,
+        Convolution1     = FMOD_THREAD_AFFINITY_CONVOLUTION1 as i64,
         /// Default affinity for [ThreadType::Convolution2].
-        Convolution2     = FMOD_THREAD_AFFINITY_CONVOLUTION2,
+        Convolution2     = FMOD_THREAD_AFFINITY_CONVOLUTION2 as i64,
         // Core mask, valid up to 1 << 62
         /// Assign to all cores.
         CoreAll = 0,

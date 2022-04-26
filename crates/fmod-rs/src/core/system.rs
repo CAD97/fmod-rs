@@ -1,15 +1,16 @@
 #[cfg(doc)]
 use fmod::*;
 use {
+    crate::utils::string_extend_utf8_lossy,
     fmod::{
         raw::*, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, OutputType,
-        Result, Sound, SpeakerMode, GLOBAL_SYSTEM_STATE,
+        Result, Sound, SpeakerMode, TimeUnit, GLOBAL_SYSTEM_STATE,
     },
     parking_lot::RwLockUpgradableReadGuard,
     std::{
         borrow::Cow,
         ffi::CStr,
-        mem,
+        mem::{self, MaybeUninit},
         os::raw::{c_char, c_int},
         ptr,
     },
@@ -20,6 +21,7 @@ opaque! {
     class System = FMOD_SYSTEM, FMOD_System_* (System::raw_release);
 }
 
+/// Lifetime management.
 impl System {
     /// Create an instance of the FMOD system.
     ///
@@ -156,6 +158,75 @@ impl System {
         Ok(Handle::new(raw))
     }
 
+    /// Initialize the system object and prepare FMOD for playback.
+    ///
+    /// Most API functions require an initialized System object before they will
+    /// succeed, otherwise they will return [Error::Uninitialized]. Some can
+    /// only be called before initialization. These are:
+    ///
+    /// - [Memory_Initialize]
+    /// - [System::set_software_format]
+    /// - [System::set_software_channels]
+    /// - [System::set_dsp_buffer_size]
+    ///
+    /// [System::set_output] / [System::set_output_by_plugin] can be called
+    /// before or after [System::init] on Android, GameCore, UWP, Windows and
+    /// Mac. Other platforms can only call this **before** [System::init].
+    ///
+    /// `max_channels` is the maximum number of [Channel] objects available for
+    /// playback, also known as virtual channels. Virtual channels will play
+    /// with minimal overhead, with a subset of 'real' voices that are mixed,
+    /// and selected based on priority and audibility. See the [Virtual Voices]
+    /// guide for more information.
+    ///
+    /// [Virtual Voices]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-virtual-voices.html
+    pub fn init(&self, max_channels: i32, flags: InitFlags) -> Result {
+        // I hope FMOD does the right thing for a nullptr driver data in all cases...
+        unsafe { self.init_ex(max_channels, flags, ptr::null()) }
+    }
+
+    /// Initialize the system object and prepare FMOD for playback.
+    ///
+    /// # Safety
+    ///
+    /// `extra_driver_data` must be correct. It represents additional output
+    /// specific initialization data. This will be passed to the output plugin.
+    /// See [OutputType] for descriptions of data that can be passed in, based
+    /// on the selected output mode.
+    pub unsafe fn init_ex(
+        &self,
+        max_channels: i32,
+        flags: InitFlags,
+        extra_driver_data: *const (),
+    ) -> Result {
+        let flags = InitFlags::into_raw(flags);
+        fmod_try!(FMOD_System_Init(
+            self.as_raw(),
+            max_channels,
+            flags,
+            extra_driver_data as *mut _
+        ));
+        Ok(())
+    }
+
+    // TODO: safe init_ex wrappers for WavWriter[Nrt], PulseAudio
+
+    /// Close the connection to the output and return to an uninitialized state
+    /// without releasing the object.
+    ///
+    /// All pre-initialize configuration settings will remain and the System can
+    /// be reinitialized as needed.
+    ///
+    /// # Safety
+    ///
+    /// Closing renders objects created with this System invalid. Make sure any
+    /// Sound, ChannelGroup, Geometry and DSP objects are released before
+    /// calling this.
+    pub unsafe fn close(&self) -> Result {
+        fmod_try!(FMOD_System_Close(self.as_raw()));
+        Ok(())
+    }
+
     unsafe fn raw_release(raw: *mut FMOD_SYSTEM) -> FMOD_RESULT {
         let mut system_count = GLOBAL_SYSTEM_STATE.write();
         let result = FMOD_System_Release(raw);
@@ -165,6 +236,72 @@ impl System {
         } else {
             result
         }
+    }
+
+    /// Updates the FMOD system.
+    ///
+    /// Should be called once per 'game' tick, or once per frame in your
+    /// application to perform actions such as:
+    ///
+    /// - Panning and reverb from 3D attributes changes.
+    /// - Virtualization of [Channel]s based on their audibility.
+    /// - Mixing for non-realtime output types. See comment below.
+    /// - Streaming if using [InitFlags::StreamFromUpdate].
+    /// - Mixing if using [InitFlags::MixFromUpdate].
+    /// - Firing callbacks that are deferred until Update.
+    ///
+    /// - DSP cleanup.
+    ///
+    /// If [OutputType::NoSoundNrt] or [OutputType::WavWriterNrt] output modes
+    /// are used, this function also drives the software / DSP engine, instead
+    /// of it running asynchronously in a thread as is the default behavior.  
+    /// This can be used for faster than realtime updates to the decoding or
+    /// DSP engine which might be useful if the output is the wav writer for
+    /// example.
+    ///
+    /// If [InitFlags::StreamFromUpdate] is used, this function will update the
+    /// stream engine. Combining this with the non realtime output will mean
+    /// smoother captured output.
+    pub fn update(&self) -> Result {
+        fmod_try!(FMOD_System_Update(self.as_raw()));
+        Ok(())
+    }
+
+    /// Suspend mixer thread and relinquish usage of audio hardware while
+    /// maintaining internal state.
+    ///
+    /// Used on mobile platforms when entering a backgrounded state to reduce
+    /// CPU to 0%.
+    ///
+    /// All internal state will be maintained, i.e. created sound and channels
+    /// will stay available in memory.
+    ///
+    /// # Safety
+    ///
+    /// No FMOD API calls may be made until [System::mixer_resume] is called.
+    pub unsafe fn mixer_suspend(&self) -> Result {
+        fmod_try!(FMOD_System_MixerSuspend(self.as_raw()));
+        Ok(())
+    }
+
+    /// Resume mixer thread and reacquire access to audio hardware.
+    ///
+    /// Used on mobile platforms when entering the foreground after being
+    /// suspended.
+    ///
+    /// All internal state will resume, i.e. created sound and channels are
+    /// still valid and playback will continue.
+    ///
+    /// HTML5 specific: Used to start audio from a user interaction event, like
+    /// a mouse click or screen touch event. Without this call audio may not
+    /// start on some browsers.
+    ///
+    /// # Safety
+    ///
+    /// Must be called on the same thread as [System::mixer_suspend].
+    pub unsafe fn mixer_resume(&self) -> Result {
+        fmod_try!(FMOD_System_MixerResume(self.as_raw()));
+        Ok(())
     }
 }
 
@@ -219,7 +356,7 @@ pub struct DspBufferSize {
     pub num_buffers: i32,
 }
 
-/// Setup functions.
+/// Device selection.
 impl System {
     /// Sets the type of output interface used to run the mixer.
     ///
@@ -263,7 +400,8 @@ impl System {
 
     // NB: we split get_driver_info/name into separate calls for two reasons:
     // getting *just* the name is common, and the name has extra retry
-    // requirements to validate non-truncation and UTF-8.
+    // requirements to validate non-truncation and UTF-8. This does, however,
+    // mean that getting all of the driver info requires an extra FFI call.
 
     /// Retrieves identification information about a sound device specified by
     /// its index, and specific to the selected output mode.
@@ -303,29 +441,50 @@ impl System {
     /// <dt>Range</dt><dd>[0, System::get_num_drivers]</dd>
     /// </dl>
     pub fn get_driver_name(&self, id: i32, name: &mut String) -> Result {
-        /// The multiple_system.cpp example uses a 256 byte buffer,
+        name.clear();
+
+        /// the multiple_system.cpp example uses a 256 byte buffer,
         /// so that's probably enough; try that size first
         const DEFAULT_NAME_CAPACITY: usize = 256;
 
-        name.clear();
+        // only read onto the stack buffer if provided heap buffer isn't larger
+        if name.capacity() < DEFAULT_NAME_CAPACITY {
+            let mut buffer: [MaybeUninit<u8>; DEFAULT_NAME_CAPACITY] =
+                unsafe { MaybeUninit::uninit().assume_init() };
+
+            // first try
+            let error = unsafe {
+                FMOD_System_GetDriverInfo(
+                    self.as_raw(),
+                    id,
+                    buffer.as_mut_ptr() as *mut c_char,
+                    name.capacity() as c_int,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                )
+            };
+
+            match Error::from_raw(error) {
+                None => {
+                    let cstr = unsafe { CStr::from_ptr(buffer.as_ptr() as *const _) };
+                    string_extend_utf8_lossy(name, cstr.to_bytes());
+                    return Ok(());
+                },
+                Some(Error::Truncated) => (), // continue
+                Some(error) => return Err(error),
+            }
+
+            // we'll keep trying with larger buffers I guess
+            name.reserve(DEFAULT_NAME_CAPACITY * 2);
+        }
+
         unsafe {
             let name = name.as_mut_vec();
-            let mut error = Some(fmod::Error::Truncated);
-            while let Some(terror) = error {
-                match terror {
-                    fmod::Error::Truncated => {
-                        if name.capacity() < DEFAULT_NAME_CAPACITY {
-                            name.reserve(DEFAULT_NAME_CAPACITY);
-                        } else {
-                            // try doubling the buffer size?
-                            name.reserve(name.len() * 2);
-                        }
-                    },
-                    error => return Err(error)?,
-                }
-
+            loop {
                 // try again
-                error = fmod::Error::from_raw(FMOD_System_GetDriverInfo(
+                let error = FMOD_System_GetDriverInfo(
                     self.as_raw(),
                     id,
                     name.as_mut_ptr() as *mut c_char,
@@ -334,10 +493,19 @@ impl System {
                     ptr::null_mut(),
                     ptr::null_mut(),
                     ptr::null_mut(),
-                ));
+                );
+
+                match Error::from_raw(error) {
+                    None => break,
+                    Some(fmod::Error::Truncated) => {
+                        // try doubling the buffer size again?
+                        name.reserve(name.len() * 2);
+                    },
+                    Some(error) => return Err(error),
+                }
             }
 
-            // now we need to set the string len and verify it's UTF-8
+            // now we need to set the string len and verify it's proper UTF-8
             name.set_len(CStr::from_ptr(name.as_ptr() as *const _).to_bytes().len());
             match String::from_utf8_lossy(name) {
                 Cow::Borrowed(_) => {}, // it's valid
@@ -375,7 +543,10 @@ impl System {
         fmod_try!(FMOD_System_GetDriver(self.as_raw(), &mut driver));
         Ok(driver)
     }
+}
 
+/// Setup.
+impl System {
     /// Sets the maximum number of software mixed channels possible.
     ///
     /// This function cannot be called after FMOD is already activated, it must
@@ -556,35 +727,57 @@ impl System {
         Ok((bufferlength, numbuffers))
     }
 
-    // pub fn set_file_system(
-    //     &self,
-    //     user_open: FMOD_FILE_OPEN_CALLBACK,
-    //     user_close: FMOD_FILE_CLOSE_CALLBACK,
-    //     user_read: FMOD_FILE_READ_CALLBACK,
-    //     user_seek: FMOD_FILE_SEEK_CALLBACK,
-    //     user_async_read: FMOD_FILE_ASYNCREAD_CALLBACK,
-    //     user_async_cancel: FMOD_FILE_ASYNCCANCEL_CALLBACK,
-    //     block_align: i32,
-    // ) -> Result {
-    // }
-
-    // pub fn attach_file_system(
-    //     &self,
-    //     user_open: FMOD_FILE_OPEN_CALLBACK,
-    //     user_close: FMOD_FILE_CLOSE_CALLBACK,
-    //     user_read: FMOD_FILE_READ_CALLBACK,
-    //     user_seek: FMOD_FILE_SEEK_CALLBACK,
-    // ) -> Result {
-    // }
-
-    // pub fn set_advanced_settings(&self, settings: FMOD_ADVANCEDSETTINGS) -> Result;
-    // pub fn get_advanced_settings(&self) -> Result<FMOD_ADVANCEDSETTINGS>;
-
-    // pub fn set_callback(
-    //     callback: FMOD_SYSTEM_CALLBACK,
-    //     callbackmask: FMOD_SYSTEM_CALLBACK_TYPE,
-    // ) -> Result {
-    // }
+    /// Sets the default file buffer size for newly opened streams.
+    ///
+    /// Valid units are [TimeUnit::Ms], [Pcm](TimeUnit::Pcm),
+    /// [PcmBytes](TimeUnit::PcmBytes), and [RawBytes](TimeUnit::RawBytes).
+    ///
+    /// The default value is 16384 [TimeUnit::RawBytes]. Larger values will
+    /// consume more memory, whereas smaller values may cause buffer under-run /
+    /// starvation / stuttering caused by large delays in disk access (ie
+    /// netstream), or CPU usage in slow machines, or by trying to play too many
+    /// streams at once.
+    ///
+    /// Does not affect streams created with [Mode::OpenUser], as the buffer
+    /// size is specified in [System::create_sound_ex].
+    ///
+    /// Does not affect latency of playback. All streams are pre-buffered
+    /// (unless opened with [Mode::OpenOnly]), so they will always start
+    /// immediately.
+    ///
+    /// Seek and Play operations can sometimes cause a reflush of this buffer.
+    ///
+    /// If [TimeUnit::RawBytes] is used, the memory allocated is two times the
+    /// size passed in, because fmod allocates a double buffer.
+    ///
+    /// If [TimeUnit::Ms], [TimeUnit::Pcm] or [TimeUnit::PcmBytes] is used, and
+    /// the stream is infinite (such as a shoutcast netstream), or VBR, then
+    /// FMOD cannot calculate an accurate compression ratio to work with when
+    /// the file is opened. This means it will then base the buffersize on
+    /// [TimeUnit::PcmBytes], or in other words the number of PCM bytes, but
+    /// this will be incorrect for some compressed formats. Use
+    /// [TimeUnit::RawBytes] for these type (infinite / undetermined length) of
+    /// streams for more accurate read sizes.
+    ///
+    /// To determine the actual memory usage of a stream, including sound buffer
+    /// and other overhead, use [memory::get_stats] before and after creating a
+    /// sound.
+    ///
+    /// Stream may still stutter if the codec uses a large amount of cpu time,
+    /// which impacts the smaller, internal 'decode' buffer. The decode buffer
+    /// size is changeable via [CreateSoundExInfo].
+    pub fn set_stream_buffer_size(
+        &self,
+        file_buffer_size: u32,
+        file_buffer_size_type: TimeUnit,
+    ) -> Result {
+        fmod_try!(FMOD_System_SetStreamBufferSize(
+            self.as_raw(),
+            file_buffer_size,
+            file_buffer_size_type.into_raw()
+        ));
+        Ok(())
+    }
 }
 
 #[repr(transparent)]
@@ -686,83 +879,8 @@ impl System {
     // pub fn register_codec(description: FMOD_OUTPUT_DESCRIPTION) -> Result<PluginHandle>;
 }
 
-/// Init/Close.
-impl System {
-    /// Initialize the system object and prepare FMOD for playback.
-    ///
-    /// Most API functions require an initialized System object before they will succeed, otherwise they will return [Error::Uninitialized]. Some can only be called before initialization. These are:
-    ///
-    /// - [memory_initialize]
-    /// - [System::set_software_format]
-    /// - [System::set_software_channels]
-    /// - [System::set_dsp_buffer_size]
-    ///
-    /// [System::set_output] / [System::set_output_by_plugin] can be called before or after [System::init] on Android, GameCore, UWP, Windows and Mac. Other platforms can only call this **before** [System::init].
-    ///
-    /// ## max_channels
-    ///
-    /// Maximum number of [Channel] objects available for playback, also known as virtual channels. Virtual channels will play with minimal overhead, with a subset of 'real' voices that are mixed, and selected based on priority and audibility. See the Virtual Voices guide for more information.
-    /// Range: [0, 4095]
-    ///
-    /// ## flags
-    ///
-    /// Initialization flags. More than one mode can be set at once by combining them with the OR operator.
-    pub fn init(&self, max_channels: i32, flags: InitFlags) -> Result {
-        // I hope FMOD does the right thing for a nullptr driver data in all cases...
-        unsafe { self.init_ex(max_channels, flags, ptr::null()) }
-    }
-
-    /// Initialize the system object and prepare FMOD for playback.
-    ///
-    /// # Safety
-    ///
-    /// `extra_driver_data` must be correct.
-    ///
-    /// ## extra_driver_data
-    ///
-    /// Additional output specific initialization data. This will be passed to the output plugin. See [OutputType] for descriptions of data that can be passed in, based on the selected output mode.
-    pub unsafe fn init_ex(
-        &self,
-        max_channels: i32,
-        flags: InitFlags,
-        extra_driver_data: *const (),
-    ) -> Result {
-        let flags = InitFlags::into_raw(flags);
-        fmod_try!(FMOD_System_Init(
-            self.as_raw(),
-            max_channels,
-            flags,
-            extra_driver_data as *mut _
-        ));
-        Ok(())
-    }
-
-    // TODO: safe init_ex wrappers for WavWriter[Nrt], PulseAudio
-
-    /// Close the connection to the output and return to an uninitialized state
-    /// without releasing the object.
-    ///
-    /// All pre-initialize configuration settings will remain and the System can
-    /// be reinitialized as needed.
-    ///
-    /// # Safety
-    ///
-    /// Closing renders objects created with this System invalid. Make sure any
-    /// Sound, ChannelGroup, Geometry and DSP objects are released before
-    /// calling this.
-    pub unsafe fn close(&self) -> Result {
-        fmod_try!(FMOD_System_Close(self.as_raw()));
-        Ok(())
-    }
-}
-
 /// General post-init system functions.
 impl System {
-    pub fn update(&self) -> Result {
-        fmod_try!(FMOD_System_Update(self.as_raw()));
-        Ok(())
-    }
-
     // snip
 }
 
