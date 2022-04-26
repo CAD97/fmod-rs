@@ -29,7 +29,7 @@ job "platforms-win.html" "platform/Windows.md" {
     replace r"(\n.*?)FMOD Core Engine library" "$1#### FMOD Core Engine library"
     replace r"(\n.*?)FMOD Studio Engine library" "$1#### FMOD Studio Engine library"
 
-    // C'mon FMOD you got this right on linux
+    // C'mon FMOD you got this right on every other platform
     replace "x64" "x86_64"
 
     // FMOD.rs notes
@@ -58,6 +58,68 @@ nor does it attempt to restrict system init to the UI thread. This is a
 concession to cross-platform usability over niche theoretical concern.
 </pre>
 
+"#
+}
+
+// platform/macOS.md
+job "platforms-mac.html" "platform/macOS.md" {
+    // More headings
+    replace r"(\n.*?)FMOD Core Engine library" "$1#### FMOD Core Engine library"
+    replace r"(\n.*?)FMOD Studio Engine library" "$1#### FMOD Studio Engine library"
+
+    // FMOD.rs notes
+    insert before="#### FMOD Studio Engine library" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>fmodL.dylib</code> or
+<code>fmod.dylib</code> depending on whether <code>cfg(debug_assertions)</code>
+is true or false, respectively.
+</pre>
+
+"#
+    insert before="### COM" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>fmodstudioL.dylib</code>
+or <code>fmodstudio.dylib</code> depending on whether
+<code>cfg(debug_assertions)</code> is true or false, respectively.
+</pre>
+
+"#
+    replace "(?s)``````````cpp\nAudioUnit audioUnit;.*?``````````" r#"
+```rust,ignore
+let audio_unit = system.get_output_handle() as *mut AudioUnit;
+
+let mut audio_device_id: AudioDeviceID = mem::zeroed();
+let mut audio_device_id_size = mem::size_of::<AudioDeviceID>();
+AudioToolbox::AudioUnitGetProperty(
+    audio_unit,
+    kAudioOutputUnitProperty_CurrentDevice,
+    kAudioUnitScope_Global,
+    0,
+    &mut audio_device_id,
+    &mut audio_device_id_size,
+);
+
+let mut bufer_frame_size: u32 = 256;
+CoreAudio::AudioDeviceSetProperty(
+    audio_device_id,
+    ptr::null(),
+    0,
+    false,
+    kAudioDevicePropertyBufferFrameSize,
+    mem::size_of::<u32>(),
+    &mut buffer_frame_size,
+);
+```
+
+<pre class="ignore" style="white-space:normal;font:inherit;">
+<a href="https://developer.apple.com/documentation/coreaudio/1580742-audiodevicesetproperty?language=objc"><code>AudioDeviceSetProperty</code></a>
+was deprecated in macOS 10.6 (2009, Snow Leopard) and never exposed to Swift.
+This is probably a bad idea. Using <a href="https://developer.apple.com/documentation/audiotoolbox/1440371-audiounitsetproperty/"><code>AudioUnitSetProperty</code></a>
+or <a href="https://developer.apple.com/documentation/avfaudio/avaudiosession/1616589-setpreferrediobufferduration"><code>setPreferredIOBufferDuration</code></a>
+may be preferable.
+</pre>
 "#
 }
 
