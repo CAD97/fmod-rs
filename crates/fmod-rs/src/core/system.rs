@@ -1,3 +1,5 @@
+#[cfg(doc)]
+use fmod::*;
 use {
     fmod::{
         raw::*, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, OutputType,
@@ -13,16 +15,16 @@ use {
     },
 };
 
-opaque!(class System = FMOD_SYSTEM, FMOD_System_* (System::raw_release));
+opaque! {
+    /// Management object from which all resources are created and played.
+    class System = FMOD_SYSTEM, FMOD_System_* (System::raw_release);
+}
 
 impl System {
     /// Create an instance of the FMOD system.
     ///
     /// Only a single system
-    #[cfg_attr(
-        feature = "studio",
-        doc = " (or [studio system][fmod::studio::System])"
-    )]
+    #[cfg_attr(feature = "studio", doc = " (or [studio system][studio::System])")]
     /// can exist safely at a time; further attempts to create a system will
     /// return an error. See [`new_unchecked`][Self::new_unchecked] for more
     /// information about why having multiple systems is unsafe.
@@ -168,7 +170,7 @@ impl System {
 
 /// Identification information about a sound device specified by its index,
 /// specific to the selected output mode.
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct DriverInfo {
     /// GUID that uniquely identifies the device.
     pub guid: Guid,
@@ -180,8 +182,8 @@ pub struct DriverInfo {
     pub speaker_mode_channels: i32,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-/// Output format for the software mixer
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+/// Output format for the software mixer.
 pub struct SoftwareFormat {
     /// Sample rate of the mixer.
     ///
@@ -198,6 +200,23 @@ pub struct SoftwareFormat {
     /// <dt>Range</dt><dd>[0, MAX_CHANNEL_WIDTH]</dd>
     /// </d>
     pub num_raw_speakers: i32,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+/// The buffer size for the FMOD software mixing engine.
+pub struct DspBufferSize {
+    /// The mixer engine block size. Use this to adjust mixer update
+    /// granularity. See below for more information on buffer length vs latency.
+    ///
+    /// <dl>
+    /// <dt>Units</dt><dd>Samples</dd>
+    /// <dt>Default</dt><dd>1024</dd>
+    /// </dl>
+    pub buffer_length: u32,
+    /// The mixer engine number of buffers used. Use this to adjust mixer
+    /// latency. See [System::setDSPBufferSize] for more information on number
+    /// of buffers vs latency.
+    pub num_buffers: i32,
 }
 
 /// Setup functions.
@@ -383,6 +402,25 @@ impl System {
         Ok(num_software_channels)
     }
 
+    /// Sets the output format for the software mixer.
+    ///
+    /// If loading Studio banks, this must be called with `speaker_mode`
+    /// corresponding to the project output format if there is a possibility of
+    /// the output audio device not matching the project format. Any differences
+    /// between the project format and speakermode will cause the mix to sound
+    /// wrong.
+    ///
+    /// By default `speaker_mode` will assume the setup the OS/output prefers.
+    ///
+    /// Altering the `sample_rate` from the OS/output preferred rate may incur
+    /// extra latency. Altering the `speaker_mode` from the OS/output preferred
+    /// mode may cause an upmix/downmix which can alter the sound.
+    ///
+    /// On lower power platforms such as mobile samplerate will default to 24KHz
+    /// to reduce CPU cost.
+    ///
+    /// This function must be called before [System::init], or after
+    /// [System::close].
     pub fn set_software_format(&self, format: SoftwareFormat) -> Result {
         let SoftwareFormat {
             sample_rate,
@@ -398,6 +436,7 @@ impl System {
         Ok(())
     }
 
+    /// Retrieves the output format for the software mixer.
     pub fn get_software_format(&self) -> Result<SoftwareFormat> {
         let mut sample_rate = 0;
         let mut speaker_mode = SpeakerMode::default();
@@ -415,7 +454,70 @@ impl System {
         })
     }
 
-    pub fn set_dsp_buffer_size(&self, buffer_length: u32, num_buffers: i32) -> Result {
+    /// Sets the buffer size for the FMOD software mixing engine.
+    ///
+    /// This function is used if you need to control mixer latency or
+    /// granularity. Smaller buffersizes lead to smaller latency, but can lead
+    /// to stuttering/skipping/unstable sound on slower machines or soundcards
+    /// with bad drivers.
+    ///
+    /// To get the `buffer_length` in milliseconds, divide it by the output rate
+    /// and multiply the result by 1000. For a `buffer_length` of 1024 and an
+    /// output rate of 48khz (see [System::set_software_format]), milliseconds =
+    /// 1024 / 48000 * 1000 = 21.33ms. This means the mixer updates every
+    /// 21.33ms.
+    ///
+    /// To get the total buffer size multiply the `buffer_length` by the
+    /// `num_buffers` value. By default this would be 41024 = 4096 samples, or
+    /// 421.33ms = 85.33ms. This would generally be the total latency of the
+    /// software mixer, but in reality due to one of the buffers being written
+    /// to constantly, and the cursor position of the buffer that is audible,
+    /// the latency is typically more like the (number of buffers - 1.5)
+    /// multiplied by the buffer length.
+    ///
+    /// To convert from milliseconds back to 'samples', simply multiply the
+    /// value in milliseconds by the sample rate of the output (ie 48000 if that
+    /// is what it is set to), then divide by 1000.
+    ///
+    /// The FMOD software mixer mixes to a ringbuffer. The size of this
+    /// ringbuffer is determined here. It mixes a block of sound data every
+    /// 'bufferlength' number of samples, and there are 'numbuffers' number of
+    /// these blocks that make up the entire ringbuffer. Adjusting these values
+    /// can lead to extremely low latency performance (smaller values), or
+    /// greater stability in sound output (larger values).
+    ///
+    /// Warning! The 'buffersize' is generally best left alone. Making the
+    /// granularity smaller will just increase CPU usage (cache misses and DSP
+    /// network overhead). Making it larger affects how often you hear commands
+    /// update such as volume/pitch/pan changes. Anything above 20ms will be
+    /// noticeable and sound parameter changes will be obvious instead of
+    /// smooth.
+    ///
+    /// FMOD chooses the most optimal size by default for best stability,
+    /// depending on the output type. It is not recommended changing this value
+    /// unless you really need to. You may get worse performance than the
+    /// default settings chosen by FMOD. If you do set the size manually, the
+    /// bufferlength argument must be a multiple of four, typically 256, 480,
+    /// 512, 1024 or 2048 depedning on your latency requirements.
+    ///
+    /// The values in milliseconds and average latency expected from the
+    /// settings can be calculated using the following code:
+    ///
+    /// ```rust,ignore
+    /// let DspBufferSize { buffer_length, num_buffers } = system.get_dsp_buffer_size()?;
+    /// let SoftwareFormat { sample_rate, .. } = system.get_software_format()?;
+    ///
+    /// let ms = buffer_size.buffer_length as f32 * 1000.0 / software_format.sample_rate as f32;
+    ///
+    /// println!("Mixer blocksize        = {:.02}", ms);
+    /// println!("Mixer Total buffersize = {:.02}", ms * num_buffers);
+    /// println!("Mixer Average Latency  = {:.02}", ms * (num_buffers as f32 - 1.5));
+    /// ```
+    pub fn set_dsp_buffer_size(&self, buffer_size: DspBufferSize) -> Result {
+        let DspBufferSize {
+            buffer_length,
+            num_buffers,
+        } = buffer_size;
         fmod_try!(FMOD_System_SetDSPBufferSize(
             self.as_raw(),
             buffer_length,
@@ -424,6 +526,25 @@ impl System {
         Ok(())
     }
 
+    /// Retrieves the buffer size settings for the FMOD software mixing engine.
+    ///
+    /// To get the `buffer_length` in milliseconds, divide it by the output rate
+    /// and multiply the result by 1000. For a `buffer_length` of 1024 and an
+    /// output rate of 48khz (see [System::set_software_format]), milliseconds =
+    /// 1024 / 48000 * 1000 = 21.33ms. This means the mixer updates every
+    /// 21.33ms.
+    ///
+    /// To get the total buffer size multiply the `buffer_length` by the
+    /// `num_buffers` value. By default this would be 41024 = 4096 samples, or
+    /// 421.33ms = 85.33ms. This would generally be the total latency of the
+    /// software mixer, but in reality due to one of the buffers being written
+    /// to constantly, and the cursor position of the buffer that is audible,
+    /// the latency is typically more like the (number of buffers - 1.5)
+    /// multiplied by the buffer length.
+    ///
+    /// To convert from milliseconds back to 'samples', simply multiply the
+    /// value in milliseconds by the sample rate of the output (ie 48000 if that
+    /// is what it is set to), then divide by 1000.
     pub fn get_dsp_buffer_size(&self) -> Result<(u32, i32)> {
         let mut bufferlength = 0;
         let mut numbuffers = 0;
@@ -467,7 +588,7 @@ impl System {
 }
 
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct PluginHandle {
     raw: u32,
 }
@@ -617,6 +738,22 @@ impl System {
     }
 
     // TODO: safe init_ex wrappers for WavWriter[Nrt], PulseAudio
+
+    /// Close the connection to the output and return to an uninitialized state
+    /// without releasing the object.
+    ///
+    /// All pre-initialize configuration settings will remain and the System can
+    /// be reinitialized as needed.
+    ///
+    /// # Safety
+    ///
+    /// Closing renders objects created with this System invalid. Make sure any
+    /// Sound, ChannelGroup, Geometry and DSP objects are released before
+    /// calling this.
+    pub unsafe fn close(&self) -> Result {
+        fmod_try!(FMOD_System_Close(self.as_raw()));
+        Ok(())
+    }
 }
 
 /// General post-init system functions.

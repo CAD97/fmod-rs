@@ -839,6 +839,7 @@ raw! {
 }
 
 enum_struct! {
+    /// Port types available for routing audio.
     pub enum PortType: i32 {
         Music          = FMOD_PORT_TYPE_MUSIC,
         CopyrightMusic = FMOD_PORT_TYPE_COPYRIGHT_MUSIC,

@@ -39,9 +39,9 @@ macro_rules! opaque {
         }
     };
 
-    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident* ($release:expr)) => {
+    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident* ($release:expr) $(;)?) => {
         opaque! {
-            $(#[$meta:meta])*
+            $(#[$meta])*
             class $Name {
                 type Raw = $Raw;
                 fn release = $release;
@@ -49,12 +49,12 @@ macro_rules! opaque {
         }
     };
 
-    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident*) => {
-        opaque! { $(#[$meta:meta])* class $Name = $Raw, $raw* (paste::paste!([<$raw Release>])) }
+    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident* $(;)?) => {
+        opaque! { $(#[$meta])* class $Name = $Raw, $raw* (paste::paste!([<$raw Release>])) }
     };
 
-    ($(#[$meta:meta])* weak class $Name:ident = $Raw:ident, $raw:ident*) => {
-        opaque! { $(#[$meta:meta])* class $Name = $Raw, $raw* (|_| FMOD_OK) }
+    ($(#[$meta:meta])* weak class $Name:ident = $Raw:ident, $raw:ident* $(;)?) => {
+        opaque! { $(#[$meta])* class $Name = $Raw, $raw* (|_| FMOD_OK) }
     };
 }
 
