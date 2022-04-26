@@ -85,7 +85,7 @@ is true or false, respectively.
 </pre>
 
 "#
-    insert before="### COM" r#"
+    insert before="### Latency" r#"
 <pre class="ignore" style="white-space:normal;font:inherit;">
 FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
 using Cargo standard search path manipulation for <code>fmodstudioL.dylib</code>
@@ -131,6 +131,32 @@ may be preferable.
 "#
 }
 
+// platform/macOS.md
+job "platforms-linux.html" "platform/Linux.md" {
+    // More headings
+    replace r"(\n.*?)FMOD Core Engine library" "$1#### FMOD Core Engine library"
+    replace r"(\n.*?)FMOD Studio Engine library" "$1#### FMOD Studio Engine library"
+
+    // FMOD.rs notes
+    insert before="#### FMOD Studio Engine library" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>libfmodL.so</code> or
+<code>libfmod.so</code> depending on whether <code>cfg(debug_assertions)</code>
+is true or false, respectively.
+</pre>
+
+"#
+    insert before="### Device Selection" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>libfmodstudioL.so</code>
+or <code>libfmodstudio.so</code> depending on whether
+<code>cfg(debug_assertions)</code> is true or false, respectively.
+</pre>
+
+"#
+}
 
 
 // fix code block indentation
@@ -158,6 +184,7 @@ replace "FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES" "raw::FMOD_DSP_PARAMETER_DAT
 replace "FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI" "raw::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI"
 replace "FMOD_DSP_TYPE" "DspType"
 replace "FMOD_DSP_TYPE_CONVOLUTIONREVERB" "DspType::ConvolutionReverb"
+replace "FMOD_ERR_PLUGIN_MISSING" "Error::PluginMissing"
 replace "FMOD_INIT_3D_RIGHTHANDED" "InitFlags::RightHanded3d"
 replace "FMOD_INIT_PREFER_DOLBY_DOWNMIX" "InitFlags::PreferDolbyDownmix"
 replace "FMOD_NONBLOCKING" "Mode::NonBlocking"
@@ -212,6 +239,7 @@ replace "setDriver" "set_driver"
 replace "setFileSystem" "set_file_system"
 replace "setMixMatrix" "set_mix_matrix"
 replace "setMode" "set_mode"
+replace "setOutput" "set_output"
 replace "setParameterData" "set_parameter_data"
 replace "setProperties" "set_properties"
 replace "setReverbProperties" "set_reverb_properties"

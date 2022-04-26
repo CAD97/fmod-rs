@@ -35,7 +35,15 @@ is true or false, respectively.
   - **/api/studio/lib/libfmodstudio.dylib** - Release binary for production code.
  - **/api/studio/lib/libfmodstudioL.dylib** - Release binary with logging enabled for development.
  
- ### Latency
+ 
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
+using Cargo standard search path manipulation for <code>fmodstudioL.dylib</code>
+or <code>fmodstudio.dylib</code> depending on whether
+<code>cfg(debug_assertions)</code> is true or false, respectively.
+</pre>
+
+### Latency
 
  The default latency introduced by FMOD for this platform is 4 blocks of 512 samples at a sample rate of 48KHz, which equates to approximately 43ms. You are free to change this using two APIs, [`System::setDSPBufferSize`](System::setDSPBufferSize "Sets the buffer size for the FMOD software mixing engine.") and [`System::set_software_format`](System::set_software_format "Sets the output format for the software mixer.") but there are some important considerations.
 
