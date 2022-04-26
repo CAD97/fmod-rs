@@ -265,7 +265,7 @@ impl fmt::Display for Error {
 pub(crate) fn debug_initialize_once() {
     #[cfg(feature = "fmod_debug_is_tracing")]
     {
-        use std::sync::Once;
+        use parking_lot::Once;
         static ONCE: Once = Once::new();
         ONCE.call_once(fmod_debug_install_tracing);
     }

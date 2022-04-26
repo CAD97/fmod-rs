@@ -94,6 +94,29 @@ pub fn string_from_utf16be_lossy(v: &[u8]) -> String {
     }
 }
 
+pub fn string_extend_utf8_lossy(s: &mut String, mut v: &[u8]) {
+    s.reserve(v.len());
+    loop {
+        match std::str::from_utf8(v) {
+            Ok(rest) => {
+                s.push_str(rest);
+                break;
+            },
+            Err(err) => {
+                let valid_up_to = err.valid_up_to();
+                let valid =
+                    unsafe { std::str::from_utf8_unchecked(v.get_unchecked(..valid_up_to)) };
+                s.push_str(valid);
+                s.push(char::REPLACEMENT_CHARACTER);
+                match err.error_len() {
+                    None => break,
+                    Some(len) => v = unsafe { v.get_unchecked(valid_up_to + len..) },
+                }
+            },
+        }
+    }
+}
+
 /// Decode [Simple Binary Coded Decimal](https://en.wikipedia.org/wiki/Binary-coded_decimal).
 #[allow(clippy::erasing_op, clippy::identity_op)]
 pub const fn decode_sbcd_u8(encoded: u8) -> u8 {
