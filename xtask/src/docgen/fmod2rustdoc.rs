@@ -234,6 +234,15 @@ impl Converter<'_> {
                                 self.out.push_str("``````````\n\n");
                                 Ok(())
                             },
+                            "highlight language-objective-c" => {
+                                let text = get_text_transitively(children.iter().cloned());
+                                self.out.push_str("``````````objective-c\n");
+                                for child in text {
+                                    self.out.push_str(&*child);
+                                }
+                                self.out.push_str("``````````\n\n");
+                                Ok(())
+                            },
                             "toc" => {
                                 // skip
                                 Ok(())
@@ -267,7 +276,7 @@ impl Converter<'_> {
                                 ));
                             }
                         } else {
-                            let link_base = if href.starts_with("https://") {
+                            let link_base = if href.starts_with("http") {
                                 ""
                             } else {
                                 &*self.config.link_base
