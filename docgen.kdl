@@ -51,11 +51,19 @@ or <code>fmodstudio.lib</code> depending on whether
 </pre>
 
 "#
+    insert before="To ensure correct behavior FMOD assumes" r#"
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs does not handle COM initialization (it relies on the above on-demand
+initialization done by the FMOD Engine), so if you want to silence this warning,
+you will need to initialize COM yourself.
+</pre>
+
+"#
     insert before="### Thread Affinity" r#"
 <pre class="ignore" style="white-space:normal;font:inherit;">
-FMOD.rs does not handle COM initialization (it relies on the above behavior),
-nor does it attempt to restrict system init to the UI thread. This is a
-concession to cross-platform usability over niche theoretical concern.
+FMOD.rs does not attempt to restrict the first use of these functions to the UI
+thread. This is a concession to cross-platform usability rather than a niche
+theoretical concern on an out-of-mainstream-support Windows.
 </pre>
 
 "#
@@ -135,6 +143,7 @@ replace r"# (?:\d+\.?){1,3} " "# "
 replace "Studio::" "studio::"
 
 // map fmod.cpp names to fmod.rs names
+// keep this list alphabetized
 replace "FMOD_3D" "Mode::D3"
 replace "FMOD_3D_ROLLOFF_CALLBACK" "raw::FMOD_3D_ROLLOFF_CALLBACK"
 replace "FMOD_ADVANCEDSETTINGS" "AdvancedSettings"
@@ -158,7 +167,15 @@ replace "FMOD_SOUND_TYPE" "SoundType"
 replace "FMOD_SPEAKER" "Speaker"
 replace "FMOD_SPEAKERMODE" "SpeakerMode"
 replace "FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED" "raw::FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED"
-replace "Memory_Initialize" "raw::Memory_Initialize"
+replace "FMOD_THREAD_AFFINITY_CORE_ALL" "ThreadAffinity::CoreAll"
+replace "FMOD_THREAD_PRIORITY_CRITICAL" "ThreadPriority::Critical"
+replace "FMOD_THREAD_PRIORITY_EXTREME" "ThreadPriority::Extreme"
+replace "FMOD_THREAD_PRIORITY_HIGH" "ThreadPriority::High"
+replace "FMOD_THREAD_PRIORITY_LOW" "ThreadPriority::Low"
+replace "FMOD_THREAD_PRIORITY_MEDIUM" "ThreadPriority::Medium"
+replace "FMOD_THREAD_PRIORITY_VERY_HIGH" "ThreadPriority::VeryHigh"
+replace "Memory_Initialize" "raw::FMOD_Memory_Initialize"
+replace "Thread_SetAttributes" "raw::FMOD_Thread_SetAttributes"
 replace "addDSP" "add_dsp"
 replace "addInput" "add_input"
 replace "addPolygon" "add_polygon"
@@ -172,7 +189,9 @@ replace "createStream" "create_stream"
 replace "decodeBufferSize" "decode_buffer_size"
 replace "defaultDecodeBufferSize" "default_decode_buffer_size"
 replace "disconnectFrom" "disconnect_from"
+replace "getDriverInfo" "get_driver_info"
 replace "getMasterChannelGroup" "get_master_channel_group"
+replace "getNumDrivers" "get_num_drivers"
 replace "getSubSound" "get_sub_sound"
 replace "loadPlugin" "load_plugin"
 replace "loadPlugin" "load_plugin"

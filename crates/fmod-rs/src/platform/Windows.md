@@ -58,32 +58,39 @@ or <code>fmodstudio.lib</code> depending on whether
 
  If you fail to initialize COM, FMOD will perform this on-demand for you issuing a warning. FMOD will not uninitialize COM in this case so it will be considered a memory leak.
 
- To ensure correct behavior FMOD assumes when using the WASAPI output mode (default for Windows Vista and newer) that you call [`System::getNumDrivers`](System::getNumDrivers "Retrieves the number of output drivers available for the selected output type."), [`System::getDriverInfo`](System::getDriverInfo "Retrieves identification information about a sound device specified by its index, and specific to the selected output mode.") and [`System::init`](System::init "Initialize the system object and prepare FMOD for playback.") from your UI thread. This ensures that any platform specific dialogs that need to be presented can do so. This recommendation comes from the [IAudioClient](<https://fmod.com/resources/documentation-api?version=2.02&page=https://msdn.microsoft.com/en-us/library/windows/desktop/dd370865.aspx>) interface docs on MSDN which state:
+ 
+<pre class="ignore" style="white-space:normal;font:inherit;">
+FMOD.rs does not handle COM initialization (it relies on the above on-demand
+initialization done by the FMOD Engine), so if you want to silence this warning,
+you will need to initialize COM yourself.
+</pre>
+
+To ensure correct behavior FMOD assumes when using the WASAPI output mode (default for Windows Vista and newer) that you call [`System::get_num_drivers`](System::get_num_drivers "Retrieves the number of output drivers available for the selected output type."), [`System::get_driver_info`](System::get_driver_info "Retrieves identification information about a sound device specified by its index, and specific to the selected output mode.") and [`System::init`](System::init "Initialize the system object and prepare FMOD for playback.") from your UI thread. This ensures that any platform specific dialogs that need to be presented can do so. This recommendation comes from the [IAudioClient](<https://msdn.microsoft.com/en-us/library/windows/desktop/dd370865.aspx>) interface docs on MSDN which state:
 
   > In Windows 8, the first use of IAudioClient to access the audio device should be on the STA thread. Calls from an MTA thread may result in undefined behavior.
 > 
  
  
 <pre class="ignore" style="white-space:normal;font:inherit;">
-FMOD.rs does not handle COM initialization (it relies on the above behavior),
-nor does it attempt to restrict system init to the UI thread. This is a
-concession to cross-platform usability over niche theoretical concern.
+FMOD.rs does not attempt to restrict the first use of these functions to the UI
+thread. This is a concession to cross-platform usability rather than a niche
+theoretical concern on an out-of-mainstream-support Windows.
 </pre>
 
 ### Thread Affinity
 
- All threads will default to [`FMOD_THREAD_AFFINITY_CORE_ALL`](FMOD_THREAD_AFFINITY_CORE_ALL ""), this is recommended due to the wide variety of PC hardware but can be customized with [`Thread_SetAttributes`](Thread_SetAttributes "Specify the affinity, priority and stack size for all FMOD created threads.").
+ All threads will default to [`ThreadAffinity::CoreAll`](ThreadAffinity::CoreAll ""), this is recommended due to the wide variety of PC hardware but can be customized with [`raw::FMOD_Thread_SetAttributes`](raw::FMOD_Thread_SetAttributes "Specify the affinity, priority and stack size for all FMOD created threads.").
 
  ### Thread Priority
 
  The relationship between FMOD platform agnostic thread priority and the platform specific values is as follows:
 
-  - [`FMOD_THREAD_PRIORITY_LOW`](FMOD_THREAD_PRIORITY_LOW "") ~ THREAD_PRIORITY_BELOW_NORMAL
- - [`FMOD_THREAD_PRIORITY_MEDIUM`](FMOD_THREAD_PRIORITY_MEDIUM "") ~ THREAD_PRIORITY_NORMAL
- - [`FMOD_THREAD_PRIORITY_HIGH`](FMOD_THREAD_PRIORITY_HIGH "") ~ THREAD_PRIORITY_ABOVE_NORMAL
- - [`FMOD_THREAD_PRIORITY_VERY_HIGH`](FMOD_THREAD_PRIORITY_VERY_HIGH "") ~ THREAD_PRIORITY_HIGHEST
- - [`FMOD_THREAD_PRIORITY_EXTREME`](FMOD_THREAD_PRIORITY_EXTREME "") ~ THREAD_PRIORITY_TIME_CRITICAL
- - [`FMOD_THREAD_PRIORITY_CRITICAL`](FMOD_THREAD_PRIORITY_CRITICAL "") ~ THREAD_PRIORITY_TIME_CRITICAL
+  - [`ThreadPriority::Low`](ThreadPriority::Low "") ~ THREAD_PRIORITY_BELOW_NORMAL
+ - [`ThreadPriority::Medium`](ThreadPriority::Medium "") ~ THREAD_PRIORITY_NORMAL
+ - [`ThreadPriority::High`](ThreadPriority::High "") ~ THREAD_PRIORITY_ABOVE_NORMAL
+ - [`ThreadPriority::VeryHigh`](ThreadPriority::VeryHigh "") ~ THREAD_PRIORITY_HIGHEST
+ - [`ThreadPriority::Extreme`](ThreadPriority::Extreme "") ~ THREAD_PRIORITY_TIME_CRITICAL
+ - [`ThreadPriority::Critical`](ThreadPriority::Critical "") ~ THREAD_PRIORITY_TIME_CRITICAL
  
  ## Performance Reference
 

@@ -45,10 +45,12 @@ mod macros;
 
 extern crate self as fmod;
 
+#[doc = include_str!("core/README.md")]
 pub mod core;
 #[cfg(doc)]
 pub mod platform;
 #[cfg(feature = "studio")]
+#[doc = include_str!("studio/README.md")]
 pub mod studio;
 
 mod error;

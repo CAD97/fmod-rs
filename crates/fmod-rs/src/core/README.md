@@ -324,7 +324,7 @@
 
  An async read callback can immediately return without supplying data, then when the application supplies data at a later time, even in a different thread, it can set the 'done' flag in the [`AsyncReadInfo`](AsyncReadInfo "Information about a single asynchronous file operation.") structure to get FMOD to consume it. Consideration has to be made to not wait too long or increase stream buffer sizes, so that streams don't audibly stutter/skip.
 
- To set up a custom memory allocator is done by calling [`raw::Memory_Initialize`](raw::Memory_Initialize "Specifies a method for FMOD to allocate and free memory, either through user supplied callbacks or through a user supplied memory buffer with a fixed size."). This is not an FMOD class member function because it needs to be called before any FMOD objects are created, including the System object.
+ To set up a custom memory allocator is done by calling [`raw::FMOD_Memory_Initialize`](raw::FMOD_Memory_Initialize "Specifies a method for FMOD to allocate and free memory, either through user supplied callbacks or through a user supplied memory buffer with a fixed size."). This is not an FMOD class member function because it needs to be called before any FMOD objects are created, including the System object.
 
  To read more about setting up memory pools or memory environments, refer to the [Memory Management](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-memory-management.html>) white paper.
 
