@@ -1,5 +1,5 @@
 #[cfg(doc)]
-use fmod::{Mode, System};
+use fmod::*;
 use {
     fmod::raw::*,
     std::{error::Error as _, ffi::CStr, fmt, num::NonZeroI32},
