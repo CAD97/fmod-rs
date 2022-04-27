@@ -1,4 +1,5 @@
 mod channel;
+mod channel_control;
 mod channel_group;
 mod common;
 mod dsp;
@@ -11,6 +12,6 @@ mod sound_group;
 mod system;
 
 pub use self::{
-    channel::*, channel_group::*, common::*, dsp::*, dsp_connection::*, geometry::*, globals::*,
-    reverb_3d::*, sound::*, sound_group::*, system::*,
+    channel::*, channel_control::*, channel_group::*, common::*, dsp::*, dsp_connection::*,
+    geometry::*, globals::*, reverb_3d::*, sound::*, sound_group::*, system::*,
 };
