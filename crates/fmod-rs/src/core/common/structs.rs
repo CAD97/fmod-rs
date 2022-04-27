@@ -16,7 +16,7 @@ macro_rules! fmod_struct {
     )*} => {$(
         #[repr(C)]
         $(#[$meta])*
-        #[derive(Debug, Clone, Copy, Default, PartialEq)]
+        #[derive(Debug, Clone, Copy, SmartDefault, PartialEq)]
         pub struct $Name {
             $($body)*
         }
@@ -134,159 +134,159 @@ fmod_struct! {
 
 // FMOD_PLUGINLIST
 
-/// Advanced configuration settings.
-///
-/// Structure to allow configuration of lesser used system level settings.
-/// These tweaks generally allow the user to set resource limits and
-/// customize settings to better fit their application.
-///
-/// 0 means to not change the setting (and this is provided by `default()`),
-/// so setting only a few members is a common use pattern.
-///
-/// Specifying one of the codec maximums will help determine the maximum CPU
-/// usage of playing [Mode::CreateCompressedSample] Sounds of that type as well
-/// as the memory requirements. Memory will be allocated for 'up front' (during
-/// [System::init]) if these values are specified as non zero. If any are zero,
-/// it allocates memory for the codec whenever a file of the type in question is
-/// loaded. So if `max_mpeg_codecs` is 0 for example, it will allocate memory
-/// for the MPEG codecs the first time an MP3 is loaded or an MP3 based .FSB
-/// file is loaded.
-///
-/// Setting `dsp_buffer_pool_size` will pre-allocate memory for the FMOD DSP
-/// network. See [DSP architecture guide]. By default 8 buffers are created up
-/// front. A large network might require more if the aim is to avoid real-time
-/// allocations from the FMOD mixer thread.
-///
-/// [DSP architecture guide]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-dsp-architecture.html
-#[repr(C)]
-#[derive(Debug, SmartDefault)]
-pub struct AdvancedSettings {
-    /// Size of this structure. Must be set to size_of::<AdvancedSettings>().
-    #[default(mem::size_of::<Self>() as i32)]
-    size: i32,
-    /// Maximum MPEG Sounds created as [Mode::CreateCompressedSample].
-    /// <dl>
-    /// <dt>Default</dt><dd>32</dd>
-    /// <dt>Range</dt><dd>[0, 256]</dd>
-    /// </dl>
-    pub max_mpeg_codecs: i32,
-    /// Maximum IMA-ADPCM Sounds created as [Mode::CreateCompressedSample].
-    /// <dl>
-    /// <dt>Default</dt><dd>32</dd>
-    /// <dt>Range</dt><dd>[0, 256]</dd>
-    /// </dl>
-    pub max_adpcm_codecs: i32,
-    /// Maximum XMA Sounds created as [Mode::CreateCompressedSample].
-    /// <dl>
-    /// <dt>Default</dt><dd>32</dd>
-    /// <dt>Range</dt><dd>[0, 256]</dd>
-    /// </dl>
-    pub max_xma_codecs: i32,
-    /// Maximum Vorbis Sounds created as [Mode::CreateCompressedSample].
-    /// <dl>
-    /// <dt>Default</dt><dd>32</dd>
-    /// <dt>Range</dt><dd>[0, 256]</dd>
-    /// </dl>
-    pub max_vorbix_codecs: i32,
-    /// Maximum AT9 Sounds created as [Mode::CreateCompressedSample].
-    /// <dl>
-    /// <dt>Default</dt><dd>32</dd>
-    /// <dt>Range</dt><dd>[0, 256]</dd>
-    /// </dl>
-    pub max_at9_codecs: i32,
-    /// Maximum FADPCM Sounds created as [Mode::CreateCompressedSample].
-    /// <dl>
-    /// <dt>Default</dt><dd>32</dd>
-    /// <dt>Range</dt><dd>[0, 256]</dd>
-    /// </dl>
-    pub max_fadpcm_codecs: i32,
-    /// Deprecated.
-    max_pcm_codecs: i32,
-    /// Number of elements in `asio_speaker_list` on input, number of elements
-    /// in `asio_channel_list` on output.
-    /// <dl>
-    /// <dt>Range</dt><dd>[0, 256]</dd>
-    /// </dl>
-    asio_num_channels: i32,
-    /// Read only list of strings representing ASIO channel names, count is
-    /// defined by `asio_num_channels`. Only valid after [System::init].
-    #[default(ptr::null_mut())]
-    asio_channel_list: *mut *mut c_char,
-    /// List of speakers that represent each ASIO channel used for remapping,
-    /// count is defined by `asio_num_channels`. Use [Speaker::None] to indicate
-    /// no output for a given speaker.
-    #[default(ptr::null_mut())]
-    asio_speaker_list: *mut FMOD_SPEAKER,
-    /// For use with [InitFlags::Vol0BecomesVirtual], [Channel]s with audibility
-    /// below this will become virtual. See the [Virtual Voices] guide for more
-    /// information.
+fmod_struct! {
+    /// Advanced configuration settings.
     ///
-    /// [Virtual Voices]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-virtual-voices.html
-    /// <dl>
-    /// <dt>Units</dt><dd>Linear</dd>
-    /// <dt>Default</dt><dd>0</dd>
-    /// </dl>
-    pub vol_0_virtual_vol: i32,
-    /// For use with Streams, the default size of the double buffer.
-    /// <dl>
-    /// <dt>Units</dt><dd>Milliseconds</dd>
-    /// <dt>Default</dt><dd>400</dd>
-    /// <dt>Range</dt><dd>[0, 30000]</dd>
-    /// </dl>
-    pub default_decode_buffer_size: u32,
-    /// For use with [InitFlags::ProfileEnable], specify the port to listen on
-    /// for connections by FMOD Studio or FMOD Profiler.
-    /// <dl>
-    /// <dt>Default</dt><dd>9264</dd>
-    /// </dl>
-    pub profile_port: u16,
-    /// For use with [Geometry], the maximum time it takes for a [Channel] to
-    /// fade to the new volume level when its occlusion changes.
-    /// <dl>
-    /// <dt>Units</dt><dd>Milliseconds</dd>
-    /// <dt>Default</dt><dd>500</dd>
-    /// </dl>
-    pub geometry_max_fade_time: u16,
-    /// For use with [InitFlags::ChannelDistanceFilter], the default center
-    /// frequency for the distance filtering effect.
-    /// <dl>
-    /// <dt>Units</dt><dd>Hertz</dd>
-    /// <dt>Default</dt><dd>1500</dd>
-    /// <dt>Range</dt><dd>[10, 22050]</dd>
-    pub distance_filter_center_freq: f32,
-    /// For use with [Reverb3D], selects which global reverb instance to use.
-    /// <dl>
-    /// <dt>Range</dt><dd>[0, MAX_INSTANCES]</dd>
-    /// </dl>
-    pub reverb_3d_instance: i32,
-    /// Number of intermediate mixing buffers in the 'DSP buffer pool'. Each
-    /// buffer in bytes will be `buffer_length` (See [System::get_dsp_buffer_size])
-    /// × `size_of::<f32>()` × output mode speaker count (See [SpeakerMode]).
-    /// ie 7.1 @ 1024 DSP block size = 1024 × 4 × 8 = 32KB.
-    /// <dl>
-    /// <dt>Default</dt><dd>8</dd>
-    /// </dl>
-    pub dsp_buffer_pool_size: i32,
-    /// Resampling method used by [Channel]s.
-    pub resampler_method: DspResampler,
-    /// Seed value to initialize the internal random number generator.
-    pub random_seed: u32,
-    /// Maximum number of CPU threads to use for [DspType::Convolutionreverb]
-    /// effect. 1 = effect is entirely processed inside the [ThreadType::Mixer]
-    /// thread. 2 and 3 offloads different parts of the convolution processing
-    /// into different threads ([ThreadType::Convolution1] and
-    /// [ThreadType::Convolution2] to increase throughput.
-    /// <dl>
-    /// <dt>Default</dt><dd>3</dd>
-    /// <dt>Range</dt><dd>[0, 3]</dd>
-    /// </dl>
-    pub max_convolution_threads: i32,
-    /// Maximum Opus Sounds created as [Mode::CreateCompressedSample].
-    /// <dl>
-    /// <dt>Default</dt><dd>32</dd>
-    /// <dt>Range</dt><dd>[0, 256]</dd>
-    /// </dl>
-    pub max_opus_codecs: i32,
+    /// Structure to allow configuration of lesser used system level settings.
+    /// These tweaks generally allow the user to set resource limits and
+    /// customize settings to better fit their application.
+    ///
+    /// 0 means to not change the setting (and this is provided by `default()`),
+    /// so setting only a few members is a common use pattern.
+    ///
+    /// Specifying one of the codec maximums will help determine the maximum CPU
+    /// usage of playing [Mode::CreateCompressedSample] Sounds of that type as well
+    /// as the memory requirements. Memory will be allocated for 'up front' (during
+    /// [System::init]) if these values are specified as non zero. If any are zero,
+    /// it allocates memory for the codec whenever a file of the type in question is
+    /// loaded. So if `max_mpeg_codecs` is 0 for example, it will allocate memory
+    /// for the MPEG codecs the first time an MP3 is loaded or an MP3 based .FSB
+    /// file is loaded.
+    ///
+    /// Setting `dsp_buffer_pool_size` will pre-allocate memory for the FMOD DSP
+    /// network. See [DSP architecture guide]. By default 8 buffers are created up
+    /// front. A large network might require more if the aim is to avoid real-time
+    /// allocations from the FMOD mixer thread.
+    ///
+    /// [DSP architecture guide]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-dsp-architecture.html
+    pub struct AdvancedSettings = FMOD_ADVANCEDSETTINGS {
+        /// Size of this structure. Must be set to size_of::<AdvancedSettings>().
+        #[default(mem::size_of::<Self>() as i32)]
+        size: i32,
+        /// Maximum MPEG Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_mpeg_codecs: i32,
+        /// Maximum IMA-ADPCM Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_adpcm_codecs: i32,
+        /// Maximum XMA Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_xma_codecs: i32,
+        /// Maximum Vorbis Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_vorbix_codecs: i32,
+        /// Maximum AT9 Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_at9_codecs: i32,
+        /// Maximum FADPCM Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_fadpcm_codecs: i32,
+        /// Deprecated.
+        max_pcm_codecs: i32,
+        /// Number of elements in `asio_speaker_list` on input, number of elements
+        /// in `asio_channel_list` on output.
+        /// <dl>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        asio_num_channels: i32,
+        /// Read only list of strings representing ASIO channel names, count is
+        /// defined by `asio_num_channels`. Only valid after [System::init].
+        #[default(ptr::null_mut())]
+        asio_channel_list: *mut *mut c_char,
+        /// List of speakers that represent each ASIO channel used for remapping,
+        /// count is defined by `asio_num_channels`. Use [Speaker::None] to indicate
+        /// no output for a given speaker.
+        #[default(ptr::null_mut())]
+        asio_speaker_list: *mut FMOD_SPEAKER,
+        /// For use with [InitFlags::Vol0BecomesVirtual], [Channel]s with audibility
+        /// below this will become virtual. See the [Virtual Voices] guide for more
+        /// information.
+        ///
+        /// [Virtual Voices]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-virtual-voices.html
+        /// <dl>
+        /// <dt>Units</dt><dd>Linear</dd>
+        /// <dt>Default</dt><dd>0</dd>
+        /// </dl>
+        pub vol_0_virtual_vol: f32,
+        /// For use with Streams, the default size of the double buffer.
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Default</dt><dd>400</dd>
+        /// <dt>Range</dt><dd>[0, 30000]</dd>
+        /// </dl>
+        pub default_decode_buffer_size: u32,
+        /// For use with [InitFlags::ProfileEnable], specify the port to listen on
+        /// for connections by FMOD Studio or FMOD Profiler.
+        /// <dl>
+        /// <dt>Default</dt><dd>9264</dd>
+        /// </dl>
+        pub profile_port: u16,
+        /// For use with [Geometry], the maximum time it takes for a [Channel] to
+        /// fade to the new volume level when its occlusion changes.
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Default</dt><dd>500</dd>
+        /// </dl>
+        pub geometry_max_fade_time: u32,
+        /// For use with [InitFlags::ChannelDistanceFilter], the default center
+        /// frequency for the distance filtering effect.
+        /// <dl>
+        /// <dt>Units</dt><dd>Hertz</dd>
+        /// <dt>Default</dt><dd>1500</dd>
+        /// <dt>Range</dt><dd>[10, 22050]</dd>
+        pub distance_filter_center_freq: f32,
+        /// For use with [Reverb3D], selects which global reverb instance to use.
+        /// <dl>
+        /// <dt>Range</dt><dd>[0, MAX_INSTANCES]</dd>
+        /// </dl>
+        pub reverb_3d_instance: i32,
+        /// Number of intermediate mixing buffers in the 'DSP buffer pool'. Each
+        /// buffer in bytes will be `buffer_length` (See [System::get_dsp_buffer_size])
+        /// × `size_of::<f32>()` × output mode speaker count (See [SpeakerMode]).
+        /// ie 7.1 @ 1024 DSP block size = 1024 × 4 × 8 = 32KB.
+        /// <dl>
+        /// <dt>Default</dt><dd>8</dd>
+        /// </dl>
+        pub dsp_buffer_pool_size: i32,
+        /// Resampling method used by [Channel]s.
+        pub resampler_method: DspResampler,
+        /// Seed value to initialize the internal random number generator.
+        pub random_seed: u32,
+        /// Maximum number of CPU threads to use for [DspType::Convolutionreverb]
+        /// effect. 1 = effect is entirely processed inside the [ThreadType::Mixer]
+        /// thread. 2 and 3 offloads different parts of the convolution processing
+        /// into different threads ([ThreadType::Convolution1] and
+        /// [ThreadType::Convolution2] to increase throughput.
+        /// <dl>
+        /// <dt>Default</dt><dd>3</dd>
+        /// <dt>Range</dt><dd>[0, 3]</dd>
+        /// </dl>
+        pub max_convolution_threads: i32,
+        /// Maximum Opus Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_opus_codecs: i32,
+    }
 }
 
 /// Tag data / metadata description.
@@ -357,97 +357,109 @@ fmod_struct! {
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Milliseconds</dd>
-        /// <dt>Generic</dt><dd>1500</dd>
+        /// <dt>Default</dt><dd>1500</dd>
         /// <dt>Range</dt><dd>[0, 20000]</dd>
         /// </dl>
+        #[default(1500.0)]
         pub decay_time: f32,
         /// Initial reflection delay time.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Milliseconds</dd>
-        /// <dt>Generic</dt><dd>7</dd>
+        /// <dt>Default</dt><dd>7</dd>
         /// <dt>Range</dt><dd>[0, 300]</dd>
         /// </dl>
+        #[default(7.0)]
         pub early_delay: f32,
         /// Late reverberation delay time relative to initial reflection.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Milliseconds</dd>
-        /// <dt>Generic</dt><dd>11</dd>
+        /// <dt>Default</dt><dd>11</dd>
         /// <dt>Range</dt><dd>[0, 100]</dd>
         /// </dl>
+        #[default(11.0)]
         pub late_delay: f32,
         /// Reference high frequency.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Hertz</dd>
-        /// <dt>Generic</dt><dd>5000</dd>
+        /// <dt>Default</dt><dd>5000</dd>
         /// <dt>Range</dt><dd>[20, 20000]</dd>
         /// </dl>
+        #[default(5000.0)]
         pub hf_reference: f32,
         /// High-frequency to mid-frequency decay time ratio.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Percent</dd>
-        /// <dt>Generic</dt><dd>50,</dd>
+        /// <dt>Default</dt><dd>50</dd>
         /// <dt>Range</dt><dd>[10, 100]</dd>
         /// </dl>
+        #[default(50.0)]
         pub hf_decay_ratio: f32,
         /// Value that controls the echo density in the late reverberation decay.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Percent</dd>
-        /// <dt>Generic</dt><dd>50</dd>
+        /// <dt>Default</dt><dd>50</dd>
         /// <dt>Range</dt><dd>[10, 100]</dd>
         /// </dl>
+        #[default(50.0)]
         pub diffusion: f32,
         /// Value that controls the modal density in the late reverberation decay.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Percent</dd>
-        /// <dt>Generic</dt><dd>100</dd>
+        /// <dt>Default</dt><dd>100</dd>
         /// <dt>Range</dt><dd>[0, 100]</dd>
         /// </dl>
+        #[default(100.0)]
         pub density: f32,
         /// Reference low frequency
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Hertz</dd>
-        /// <dt>Generic</dt><dd>250</dd>
+        /// <dt>Default</dt><dd>250</dd>
         /// <dt>Range</dt><dd>[20, 1000]</dd>
         /// </dl>
+        #[default(250.0)]
         pub low_shelf_frequency: f32,
         /// Relative room effect level at low frequencies.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Decibels</dd>
-        /// <dt>Generic</dt><dd>0</dd>
+        /// <dt>Default</dt><dd>0</dd>
         /// <dt>Range</dt><dd>[-36, 12]</dd>
         /// </dl>
+        #[default(0.0)]
         pub low_shelf_gain: f32,
         /// Relative room effect level at high frequencies.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Hertz</dd>
-        /// <dt>Generic</dt><dd>200000</dd>
+        /// <dt>Default</dt><dd>200000</dd>
         /// <dt>Range</dt><dd>[0, 20000]</dd>
         /// </dl>
+        #[default(200000.0)]
         pub high_cut: f32,
         /// Early reflections level relative to room effect.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Percent</dd>
-        /// <dt>Generic</dt><dd>50</dd>
+        /// <dt>Default</dt><dd>50</dd>
         /// <dt>Range</dt><dd>[0, 100]</dd>
         /// </dl>
+        #[default(50.0)]
         pub early_late_mix: f32,
         /// Room effect level at mid frequencies.
         ///
         /// <dl>
         /// <dt>Units</dt><dd>Decibels</dd>
-        /// <dt>Generic</dt><dd>-6</dd>
+        /// <dt>Default</dt><dd>-6</dd>
         /// <dt>Range</dt><dd>[-80, 20]</dd>
         /// </dl>
+        #[default(-6.0)]
         pub wet_level: f32,
     }
 }
