@@ -267,7 +267,7 @@ pub mod memory {
     /// `Layout` to be given on `dealloc`, so filling an ANSI `free` shaped hole
     /// with Rust's `dealloc` requires storing size information somewhere.
     ///
-    /// This function takes the traditional approach used by allocators and
+    /// This bridge takes the traditional approach used by allocators and
     /// over-allocates from what was requested to store the layout information
     /// in the allocation. Unfortunately, since most general purpose allocators
     /// have an ANSI-compatible interface, this is purely a waste in most
