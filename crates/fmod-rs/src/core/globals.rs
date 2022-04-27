@@ -1,10 +1,12 @@
 pub mod memory {
     use {
+        crate::utils::catch_user_unwind,
         fmod::{raw::*, *},
         std::{
             alloc::{alloc, dealloc, realloc, Layout},
+            ffi::CStr,
             mem::{self, MaybeUninit},
-            os::raw::{c_char, c_void},
+            os::raw::{c_char, c_uint, c_void},
             ptr,
         },
     };
@@ -52,9 +54,8 @@ pub mod memory {
     /// Specifies that FMOD should use its default method to allocate and free
     /// memory.
     ///
-    /// To specify a custom memory management strategy, use
-    /// [`memory::initialize_pool`], [`memory::initialize_alloc`], or
-    /// [`memory::initialize_rust_global_alloc`].
+    /// To specify a custom memory management strategy, use a different
+    /// `initialize` in [this module][memory].
     ///
     /// # Safety
     ///
@@ -101,79 +102,159 @@ pub mod memory {
         Ok(())
     }
 
-    /// Callback to allocate a block of memory.
+    /// User callbacks for FMOD to allocate and free memory.
     ///
-    /// Returning an aligned pointer, of 16 byte alignment is recommended for
-    /// performance reasons.
-    ///
-    /// <dl>
-    /// <dt>size</dt><dd>Size in bytes of the memory block to be allocated and
-    /// returned.</dd>
-    /// <dt>kind</dt><dd>Type of memory allocation.</dd>
-    /// <dt>source</dt><dd>String with the FMOD source code filename and line
-    /// number in it. Only valid in logging versions of FMOD.</dd>
-    /// </dl>
-    pub type Alloc =
-        unsafe extern "C" fn(size: u32, kind: MemoryType, source: *const c_char) -> *mut c_void;
+    /// Callback implementations must be thread safe.
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe trait FmodAlloc {
+        /// Memory allocation callback compatible with ANSI malloc.
+        ///
+        /// Returning an aligned pointer, of 16 byte alignment is recommended
+        /// for performance reasons.
+        ///
+        /// <dl>
+        /// <dt>size</dt><dd>Size in bytes of the memory block to be allocated
+        /// and returned.</dd>
+        /// <dt>kind</dt><dd>Type of memory allocation.</dd>
+        /// <dt>source</dt><dd>String with the FMOD source code filename and
+        /// line number in it. Only provided in logging versions of FMOD.</dd>
+        /// </dl>
+        fn alloc(size: u32, kind: MemoryType, source: Option<&str>) -> *mut u8;
 
-    /// Callback to re-allocate a block of memory to a different size.
-    ///
-    /// When allocating new memory, the contents of the old memory block must be
-    /// preserved.
-    ///
-    /// Returning an aligned pointer, of 16 byte alignment is recommended for
-    /// performance reasons.
-    ///
-    /// <dl>
-    /// <dt>ptr</dt><dd>Block of memory to be resized. If this is null, then a
-    /// new block of memory is allocated and no memory is freed.</dd>
-    /// <dt>size</dt><dd>Size in bytes of the memory block to be reallocated.</dd>
-    /// <dt>kind</dt><dd>Memory allocation type.</dd>
-    /// <dt>source</dt><dd>String with the FMOD source code filename and line
-    /// number in it. Only valid in logging versions of FMOD.</dd>
-    /// </dl>
-    pub type Realloc = unsafe extern "C" fn(
-        ptr: *mut c_void,
-        size: u32,
-        kind: MemoryType,
+        /// Memory free callback compatible with ANSI free.
+        ///
+        /// <dl>
+        /// <dt>ptr</dt><dd>Pre-existing block of memory to be freed.</dd>
+        /// <dt>kind</dt><dd>Type of memory to be freed.</dd>
+        /// <dt>source</dt><dd>String with the FMOD source code filename and
+        /// line number in it. Only provided in logging versions of FMOD.</dd>
+        /// </dl>
+        unsafe fn free(ptr: *mut u8, kind: MemoryType, source: Option<&str>);
+    }
+
+    /// User callbacks for FMOD to allocate and free memory.
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe trait FmodRealloc: FmodAlloc {
+        /// Memory reallocation callback compatible with ANSI realloc.
+        ///
+        /// When allocating new memory, the contents of the old memory block
+        /// must be preserved.
+        ///
+        /// Returning an aligned pointer, of 16 byte alignment is recommended
+        /// for performance reasons.
+        ///
+        /// <dl>
+        /// <dt>ptr</dt><dd>Block of memory to be resized. If this is null, then
+        /// a new block of memory is allocated and no memory is freed.</dd>
+        /// <dt>size</dt><dd>Size of the memory to be reallocated.</dd>
+        /// <dt>source</dt><dd>String with the FMOD source code filename and
+        /// line number in it. Only provided in logging versions of FMOD.</dd>
+        /// </dl>
+        unsafe fn realloc(
+            ptr: *mut u8,
+            size: u32,
+            kind: MemoryType,
+            source: Option<&str>,
+        ) -> *mut u8;
+    }
+
+    unsafe extern "C" fn useralloc<A: FmodAlloc>(
+        size: c_uint,
+        kind: FMOD_MEMORY_TYPE,
         source: *const c_char,
-    ) -> *mut c_void;
+    ) -> *mut c_void {
+        catch_user_unwind(|| {
+            let source = if source.is_null() {
+                None
+            } else {
+                // SAFETY: these strings are FMOD source filenames, so they
+                // should *actually* be guaranteed to be UTF-8 like FMOD claims.
+                Some(CStr::from_ptr(source).to_str().unwrap_unchecked())
+            };
+            A::alloc(size, MemoryType::from_raw(kind), source).cast()
+        })
+        .unwrap_or(ptr::null_mut())
+    }
 
-    /// Callback to free a block of memory.
-    ///
-    /// <dl>
-    /// <dt>ptr</dt><dd>Pre-existing block of memory to be freed.</dd>
-    /// <dt>kind</dt><dd>Type of memory to be freed.</dd>
-    /// <dt>source</dt><dd>String with the FMOD source code filename and line
-    /// number in it. Only valid in logging versions of FMOD.</dd>
-    /// </dl>
-    pub type Free = unsafe extern "C" fn(ptr: *mut c_void, kind: MemoryType, source: *const c_char);
+    unsafe extern "C" fn userrealloc<A: FmodRealloc>(
+        ptr: *mut c_void,
+        size: c_uint,
+        kind: FMOD_MEMORY_TYPE,
+        source: *const c_char,
+    ) -> *mut c_void {
+        catch_user_unwind(|| {
+            let source = if source.is_null() {
+                None
+            } else {
+                // SAFETY: these strings are FMOD source filenames, so they
+                // should *actually* be guaranteed to be UTF-8 like FMOD claims.
+                Some(CStr::from_ptr(source).to_str().unwrap_unchecked())
+            };
+            A::realloc(ptr.cast(), size, MemoryType::from_raw(kind), source).cast()
+        })
+        .unwrap_or(ptr::null_mut())
+    }
+
+    unsafe extern "C" fn userfree<A: FmodAlloc>(
+        ptr: *mut c_void,
+        kind: FMOD_MEMORY_TYPE,
+        source: *const c_char,
+    ) {
+        catch_user_unwind(|| {
+            let source = if source.is_null() {
+                None
+            } else {
+                // SAFETY: these strings are FMOD source filenames, so they
+                // should *actually* be guaranteed to be UTF-8 like FMOD claims.
+                Some(CStr::from_ptr(source).to_str().unwrap_unchecked())
+            };
+            A::free(ptr.cast(), MemoryType::from_raw(kind), source)
+        })
+        .unwrap_or_default()
+    }
 
     /// Specifies for FMOD to allocate and free memory through user supplied
     /// callbacks.
     ///
-    /// Callback implementations must be thread safe. Callbacks will be used
-    /// only for memory types specified by the `mem_type_flags` parameter.
+    /// Callbacks will be used only for memory types specified by the
+    /// `mem_type_flags` parameter.
     ///
-    /// If `alloc` and `free` are provided without `realloc` the reallocation is
-    /// implemented via an allocation of the new size, copy from old address to
-    /// new, then a free of the old address.
+    /// `realloc` is implemented via an allocation of the new size, copy from
+    /// old address to new, then a free of the old address.
     ///
     /// # Safety
     ///
     /// This function must be called before any FMOD [System] object is created.
-    pub unsafe fn initialize_alloc(
-        alloc: Alloc,
-        realloc: Option<Realloc>,
-        free: Free,
-        mem_type_flags: MemoryType,
-    ) -> Result {
+    pub unsafe fn initialize_alloc<A: FmodAlloc>(mem_type_flags: MemoryType) -> Result {
         fmod_try!(FMOD_Memory_Initialize(
             ptr::null_mut(),
             0,
-            mem::transmute(alloc),
-            mem::transmute(realloc),
-            mem::transmute(free),
+            Some(useralloc::<A>),
+            None,
+            Some(userfree::<A>),
+            mem_type_flags.into_raw(),
+        ));
+        Ok(())
+    }
+
+    /// Specifies for FMOD to allocate and free memory through user supplied
+    /// callbacks.
+    ///
+    /// Callbacks will be used only for memory types specified by the
+    /// `mem_type_flags` parameter.
+    ///
+    /// # Safety
+    ///
+    /// This function must be called before any FMOD [System] object is created.
+    //
+    // FEAT(specialization): automatically do this via specialization
+    pub unsafe fn initialize_realloc<A: FmodRealloc>(mem_type_flags: MemoryType) -> Result {
+        fmod_try!(FMOD_Memory_Initialize(
+            ptr::null_mut(),
+            0,
+            Some(useralloc::<A>),
+            Some(userrealloc::<A>),
+            Some(userfree::<A>),
             mem_type_flags.into_raw(),
         ));
         Ok(())
@@ -196,57 +277,44 @@ pub mod memory {
     /// In most cases, you should prefer leaving the defaults (FMOD will use the
     /// system allocator) or one of the other [`memory::initialize`] variants
     /// which don't require this overhead.
-    ///
-    /// # Safety
-    ///
-    /// This function must be called before any FMOD [System] object is created.
     #[cfg(feature = "rust_alloc_bridge")]
-    pub unsafe fn initialize_rust_global_alloc() -> Result {
-        const _: u8 = [0u8; 17][mem::size_of::<Layout>()];
+    pub enum FmodAllocViaRust {}
 
-        unsafe extern "C" fn fmod_rust_alloc(
-            size: u32,
-            _: MemoryType,
-            _: *const c_char,
-        ) -> *mut c_void {
-            let layout = Layout::from_size_align_unchecked(size as usize + 16, 16);
-            let ptr = alloc(layout);
-            if ptr.is_null() {
-                return ptr::null_mut(); // let FMOD handle it, it'll be *fine*
+    #[cfg(feature = "rust_alloc_bridge")]
+    unsafe impl FmodAlloc for FmodAllocViaRust {
+        fn alloc(size: u32, _: MemoryType, _: Option<&str>) -> *mut u8 {
+            unsafe {
+                let layout = Layout::from_size_align_unchecked(size as usize + 16, 16);
+                let ptr = alloc(layout);
+                if ptr.is_null() {
+                    return ptr;
+                }
+                const _: u8 = [0u8; 16 + 1][mem::size_of::<Layout>()];
+                ptr.cast::<Layout>().write(layout);
+                ptr.add(16)
             }
-            ptr.cast::<Layout>().write(layout);
-            ptr.add(16).cast()
         }
 
-        unsafe extern "C" fn fmod_rust_realloc(
-            ptr: *mut c_void,
-            size: u32,
-            _: MemoryType,
-            _: *const c_char,
-        ) -> *mut c_void {
-            let new_layout = Layout::from_size_align_unchecked(size as usize + 16, 16);
-            let ptr = ptr.cast::<u8>().sub(16);
-            let old_layout = ptr.cast::<Layout>().read();
-            let ptr = realloc(ptr, old_layout, new_layout.size());
-            if ptr.is_null() {
-                return ptr::null_mut(); // let FMOD handle it, it'll be *fine*
-            }
-            ptr.cast::<Layout>().write(new_layout);
-            ptr.add(16).cast()
-        }
-
-        unsafe extern "C" fn fmod_rust_free(ptr: *mut c_void, _: MemoryType, _: *const c_char) {
-            let ptr = ptr.cast::<u8>().sub(16);
+        unsafe fn free(ptr: *mut u8, _: MemoryType, _: Option<&str>) {
+            let ptr = ptr.sub(16);
             let layout = ptr.cast::<Layout>().read();
             dealloc(ptr, layout)
         }
+    }
 
-        initialize_alloc(
-            fmod_rust_alloc,
-            Some(fmod_rust_realloc),
-            fmod_rust_free,
-            MemoryType::All,
-        )
+    #[cfg(feature = "rust_alloc_bridge")]
+    unsafe impl FmodRealloc for FmodAllocViaRust {
+        unsafe fn realloc(ptr: *mut u8, size: u32, _: MemoryType, _: Option<&str>) -> *mut u8 {
+            let new_layout = Layout::from_size_align_unchecked(size as usize + 16, 16);
+            let ptr = ptr.sub(16);
+            let old_layout = ptr.cast::<Layout>().read();
+            let ptr = realloc(ptr, old_layout, new_layout.size());
+            if ptr.is_null() {
+                return ptr;
+            }
+            ptr.cast::<Layout>().write(new_layout);
+            ptr.add(16)
+        }
     }
 }
 

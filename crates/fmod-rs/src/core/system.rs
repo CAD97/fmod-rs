@@ -976,6 +976,13 @@ impl System {
     }
 }
 
+/// File system setup.
+impl System {
+    // TODO: set_file_system (sync, async, default) and attach_file_system
+    // Strategy: trait FileSystem with associated functions for functionality,
+    // bridge function with a type parameter matching FMOD callback type.
+}
+
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct PluginHandle {
@@ -1075,11 +1082,6 @@ impl System {
     // pub fn register_codec(description: FMOD_OUTPUT_DESCRIPTION) -> Result<PluginHandle>;
 }
 
-/// General post-init system functions.
-impl System {
-    // snip
-}
-
 /// System information functions.
 impl System {
     // snip
@@ -1166,40 +1168,5 @@ impl System {
         Ok(unsafe { Handle::new(channel) })
     }
 
-    // snip
-}
-
-/// Routing to ports.
-impl System {
-    // snip
-}
-
-/// Reverb API.
-impl System {
-    // snip
-}
-
-/// System level DSP functionality.
-impl System {
-    // snip
-}
-
-/// Recording API.
-impl System {
-    // snip
-}
-
-/// Geometry API.
-impl System {
-    // snip
-}
-
-/// Network functions.
-impl System {
-    // snip
-}
-
-/// Userdata set/get.
-impl System {
     // snip
 }
