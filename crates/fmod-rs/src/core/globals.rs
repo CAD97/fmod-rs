@@ -77,9 +77,8 @@ pub mod memory {
     ///
     /// The buffer is truncated to a multiple of 512 bytes.
     ///
-    /// To find out the required fixed size call [memory::initialize_pool] with
-    /// an overly large pool size (or no pool) and find out the maximum RAM
-    /// usage at any one time with [memory::get_stats].
+    /// To find out the required fixed size find out the maximum RAM usage at
+    /// any one time with [memory::get_stats].
     ///
     /// If you specify a fixed size pool that is too small, FMOD will return
     /// [Error::Memory] when the limit of the fixed size pool is exceeded. At
