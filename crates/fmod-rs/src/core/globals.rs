@@ -52,7 +52,9 @@ pub mod memory {
     }
 
     /// Specifies that FMOD should use its default method to allocate and free
-    /// memory. To specify a custom memory management strategy, use
+    /// memory.
+    ///
+    /// To specify a custom memory management strategy, use
     /// [`memory::initialize_pool`], [`memory::initialize_alloc`], or
     /// [`memory::initialize_rust_global_alloc`].
     ///
@@ -71,8 +73,8 @@ pub mod memory {
         Ok(())
     }
 
-    /// Specifies for FMOD to allocate and free memory in a user supplied memory
-    /// buffer with a fixed size.
+    /// Specifies for FMOD to allocate and free memory in a user supplied
+    /// buffer.
     ///
     /// The buffer is truncated to a multiple of 512 bytes.
     ///
@@ -180,11 +182,12 @@ pub mod memory {
     }
 
     /// Specifies for FMOD to allocate and free memory via the Rust global
-    /// allocator. *This has overhead:* FMOD expects an ANSI `malloc`/`free`
-    /// interface without a size parameter to `free`. Rust's global allocator
-    /// requires `Layout` to be given on `dealloc`, so filling an ANSI `free`
-    /// shaped hole with Rust's `dealloc` requires storing size information
-    /// somewhere.
+    /// allocator.
+    ///
+    /// *This has overhead:* FMOD expects an ANSI `malloc`/`free` interface
+    /// without a size parameter to `free`. Rust's global allocator requires
+    /// `Layout` to be given on `dealloc`, so filling an ANSI `free` shaped hole
+    /// with Rust's `dealloc` requires storing size information somewhere.
     ///
     /// This function takes the traditional approach used by allocators and
     /// over-allocates from what was requested to store the layout information

@@ -3,8 +3,8 @@ use fmod::*;
 use {
     crate::utils::string_extend_utf8_lossy,
     fmod::{
-        raw::*, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode, OutputType,
-        Result, Sound, SpeakerMode, TimeUnit, GLOBAL_SYSTEM_STATE,
+        raw::*, AdvancedSettings, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode,
+        OutputType, Result, Sound, SpeakerMode, TimeUnit, GLOBAL_SYSTEM_STATE,
     },
     parking_lot::RwLockUpgradableReadGuard,
     std::{
@@ -777,6 +777,21 @@ impl System {
             file_buffer_size_type.into_raw()
         ));
         Ok(())
+    }
+
+    /// Retrieves the default file buffer size for newly opened streams.
+    ///
+    /// Valid units are [TimeUnit::Ms], [Pcm](TimeUnit::Pcm),
+    /// [PcmBytes](TimeUnit::PcmBytes), and [RawBytes](TimeUnit::RawBytes).
+    pub fn get_stream_buffer_size(&self) -> Result<(u32, TimeUnit)> {
+        let mut file_buffer_size = 0;
+        let mut file_buffer_size_type = TimeUnit::zeroed();
+        fmod_try!(FMOD_System_GetStreamBufferSize(
+            self.as_raw(),
+            &mut file_buffer_size,
+            file_buffer_size_type.as_raw_mut()
+        ));
+        Ok((file_buffer_size, file_buffer_size_type))
     }
 }
 
