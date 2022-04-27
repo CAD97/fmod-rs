@@ -1,3 +1,5 @@
+use {cfg_if::cfg_if, std::panic::UnwindSafe};
+
 /// Decode a UTF-16LE–encoded slice `v` into a `String`, replacing
 /// invalid data with [the replacement character (`U+FFFD`)][U+FFFD].
 ///
@@ -124,4 +126,42 @@ pub const fn decode_sbcd_u8(encoded: u8) -> u8 {
     const SHIFT: u8 = 4;
     000 + (((encoded >> (SHIFT * 0)) & MASK) * 1) //-
         + (((encoded >> (SHIFT * 1)) & MASK) * 10)
+}
+
+pub fn catch_user_unwind<F, R>(f: F) -> Option<R>
+where
+    F: UnwindSafe + FnOnce() -> R,
+{
+    match std::panic::catch_unwind(f) {
+        Ok(x) => Some(x),
+        Err(err) => {
+            let callback = std::any::type_name::<F>();
+            if let Some(e) = cool_asserts::get_panic_message(&err) {
+                cfg_if! {
+                    if #[cfg(feature = "tracing")] {
+                        tracing::error!(
+                            parent: crate::span(),
+                            callback,
+                            "FMOD.rs panicked in a callback: {e}",
+                        );
+                    } else {
+                        eprintln!("FMOD.rs panicked in {callback}: {e}");
+                    }
+                }
+            } else {
+                cfg_if! {
+                    if #[cfg(feature = "tracing")] {
+                        tracing::error!(
+                            parent: crate::span(),
+                            callback,
+                            "FMOD.rs panicked in a callback",
+                        );
+                    } else {
+                        eprintln!("FMOD.rs panicked in {callback}: {e}");
+                    }
+                }
+            }
+            None
+        },
+    }
 }
