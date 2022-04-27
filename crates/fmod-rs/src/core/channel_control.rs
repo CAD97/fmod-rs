@@ -1,4 +1,4 @@
-use super::{Channel, ChannelGroup};
+use fmod::{raw::*, *};
 
 /// A trait for the shared functionality between [Channel] and [ChannelGroup].
 pub trait ChannelControl: Sealed {}

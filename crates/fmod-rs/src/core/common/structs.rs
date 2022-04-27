@@ -1,8 +1,6 @@
-#[cfg(doc)]
-use fmod::*;
 use {
     crate::utils::{decode_sbcd_u8, string_from_utf16be_lossy, string_from_utf16le_lossy},
-    fmod::{raw::*, DspResampler, Error, Result, TagDataType, TagType},
+    fmod::{raw::*, *},
     smart_default::SmartDefault,
     std::{borrow::Cow, ffi::CStr, mem, os::raw::c_char, ptr, slice},
 };

@@ -1,7 +1,5 @@
-#[cfg(doc)]
-use fmod::{Mode, OutputType, SpeakerMode, System, ThreadType};
 use {
-    fmod::raw::*,
+    fmod::{raw::*, *},
     std::{
         fmt,
         ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not},
@@ -315,6 +313,79 @@ flags! {
         OutputUnderrun         = FMOD_SYSTEM_CALLBACK_OUTPUTUNDERRUN,
         /// Mask representing all callback types.
         All                    = FMOD_SYSTEM_CALLBACK_ALL,
+    }
+
+    /// Sound description bitfields, bitwise OR them together for loading and describing sounds.
+    ///
+    /// By default a sound will open as a static sound that is decompressed fully into memory to PCM. (ie equivalent of [Mode::CreateSample]) To have a sound stream instead, use [Mode::CreateStream], or use the wrapper function [System::create_stream].
+    ///
+    /// Some opening modes (ie [Mode::OpenUser], [Mode::OpenMemory], [Mode::OpenMemoryPoint], [Mode::OpenRaw]) will need extra information. This can be provided using the [CreateSoundExInfo] structure.
+    ///
+    /// Specifying [Mode::OpenMemoryPoint] will POINT to your memory rather allocating its own sound buffers and duplicating it internally. This means you cannot free the memory while FMOD is using it, until after the sound is released.
+    ///
+    /// With [Mode::OpemMemoryPoint], for PCM formats, only WAV, FSB, and RAW are supported. For compressed formats, only those formats supported by [Mode::CreateCompressedSample] are supported.
+    ///
+    /// With [Mode::OpenMemoryPoint] and [Mode::OpenRaw] or PCM, if using them together, note that you must pad the data on each side by 16 bytes. This is so fmod can modify the ends of the data for looping / interpolation / mixing purposes. If a wav file, you will need to insert silence, and then reset loop points to stop the playback from playing that silence.
+    pub struct Mode: u32 {
+        #[default]
+        /// Default for all modes listed below. [Mode::LoopOff], [Mode::D2], [Mode::WorldRelative3d], [Mode::InverseRolloff3d]
+        Default                 = FMOD_DEFAULT,
+        /// For non looping sounds. (DEFAULT). Overrides [Mode::LoopNormal] / [Mode::LoopBidi].
+        LoopOff                 = FMOD_LOOP_OFF,
+        /// For forward looping sounds.
+        LoopNormal              = FMOD_LOOP_NORMAL,
+        /// For bidirectional looping sounds. (only works on software mixed static sounds).
+        LoopBidi                = FMOD_LOOP_BIDI,
+        /// Ignores any 3d processing. (DEFAULT).
+        D2                      = FMOD_2D,
+        /// Makes the sound positionable in 3D. Overrides [Mode::D3].
+        D3                      = FMOD_3D,
+        /// Decompress at runtime, streaming from the source provided (ie from disk). Overrides [Mode::CreateSample] and [Mode::CreateCompressedSample]. Note a stream can only be played once at a time due to a stream only having 1 stream buffer and file handle. Open multiple streams to have them play concurrently.
+        CreateStream            = FMOD_CREATESTREAM,
+        /// Decompress at loadtime, decompressing or decoding whole file into memory as the target sample format (ie PCM). Fastest for playback and most flexible.
+        CreateSample            = FMOD_CREATESAMPLE,
+        /// Load MP2/MP3/FADPCM/IMAADPCM/Vorbis/AT9 or XMA into memory and leave it compressed. Vorbis/AT9/FADPCM encoding only supported in the .FSB container format. During playback the FMOD software mixer will decode it in realtime as a 'compressed sample'. Overrides [Mode::CreateSample]. If the sound data is not one of the supported formats, it will behave as if it was created with [Mode::CreateSample] and decode the sound into PCM.
+        CreateCompressedSample  = FMOD_CREATECOMPRESSEDSAMPLE,
+        /// Opens a user created static sample or stream. Use [CreateSoundExInfo] to specify format, defaultfrequency, numchannels, and optionally a read callback. If a user created 'sample' is created with no read callback, the sample will be empty. Use [Sound::lock] and [Sound::unlock] to place sound data into the sound if this is the case.
+        OpenUser                = FMOD_OPENUSER,
+        /// "name_or_data" will be interpreted as a pointer to memory instead of filename for creating sounds. Use [CreateSoundExInfo] to specify length. If used with [Mode::CreateSample] or [Mode::CreateCompressedSample], FMOD duplicates the memory into its own buffers. Your own buffer can be freed after open, unless you are using [Mode::NonBlocking] then wait until the Sound is in the [OpenState::Ready] state. If used with [Mode::CreateStream], FMOD will stream out of the buffer whose pointer you passed in. In this case, your own buffer should not be freed until you have finished with and released the stream.
+        OpenMemory              = FMOD_OPENMEMORY,
+        /// "name_or_data" will be interpreted as a pointer to memory instead of filename for creating sounds. Use [CreateSoundExInfo] to specify length. This differs to [Mode::OpenMemory] in that it uses the memory as is, without duplicating the memory into its own buffers. Cannot be freed after open, only after the sound is released. Will not work if the data is compressed and [Mode::CreateCompressedSample] is not used. Cannot be used in conjunction with [CreateSoundExInfo::encryption_key].
+        OpenMemoryPoint         = FMOD_OPENMEMORY_POINT,
+        /// Will ignore file format and treat as raw pcm. Use [CreateSoundExInfo] to specify format. Requires at least default_frequency, num_channels and format to be specified before it will open. Must be little endian data.
+        OpenRaw                 = FMOD_OPENRAW,
+        /// Just open the file, dont prebuffer or read. Good for fast opens for info, or when [Sound::read_data] is to be used.
+        OpenOnly                = FMOD_OPENONLY,
+        /// For [System::create_sound] - for accurate [Sound::get_length] / [Channel::set_position] on VBR MP3, and MOD/S3M/XM/IT/MIDI files. Scans file first, so takes longer to open. [Mode::OpenOnly] does not affect this.
+        AccurateTime            = FMOD_ACCURATETIME,
+        /// For corrupted / bad MP3 files. This will search all the way through the file until it hits a valid MPEG header. Normally only searches for 4k.
+        MpegSearch              = FMOD_MPEGSEARCH,
+        /// For opening sounds and getting streamed subsounds (seeking) asynchronously. Use [Sound::get_open_state] to poll the state of the sound as it opens or retrieves the subsound in the background.
+        NonBlocking             = FMOD_NONBLOCKING,
+        /// Unique sound, can only be played one at a time
+        Unique                  = FMOD_UNIQUE,
+        /// Make the sound's position, velocity and orientation relative to the listener.
+        HeadRelative3d          = FMOD_3D_HEADRELATIVE,
+        /// Make the sound's position, velocity and orientation absolute (relative to the world). (DEFAULT)
+        WorldRelative3d         = FMOD_3D_WORLDRELATIVE,
+        /// This sound will follow the inverse rolloff model where mindistance = full volume, maxdistance = where sound stops attenuating, and rolloff is fixed according to the global rolloff factor. (DEFAULT)
+        InverseRolloff3d        = FMOD_3D_INVERSEROLLOFF,
+        /// This sound will follow a linear rolloff model where mindistance = full volume, maxdistance = silence.
+        LinearRolloff3d         = FMOD_3D_LINEARROLLOFF,
+        /// This sound will follow a linear-square rolloff model where mindistance = full volume, maxdistance = silence.
+        LinearSquareRolloff3d   = FMOD_3D_LINEARSQUAREROLLOFF,
+        /// This sound will follow the inverse rolloff model at distances close to mindistance and a linear-square rolloff close to maxdistance.
+        InverseTaperedRolloff3d = FMOD_3D_INVERSETAPEREDROLLOFF,
+        /// This sound will follow a rolloff model defined by [Sound::set_3d_custom_rolloff] / [Channel::set_3d_custom_rolloff].
+        CustomRolloff3d         = FMOD_3D_CUSTOMROLLOFF,
+        /// Is not affect by geometry occlusion. If not specified in [Sound::set_mode], or [Channel::set_mode], the flag is cleared and it is affected by geometry again.
+        IgnoreGeometry3d        = FMOD_3D_IGNOREGEOMETRY,
+        /// Skips id3v2/asf/etc tag checks when opening a sound, to reduce seek/read overhead when opening files.
+        IgnoreTags              = FMOD_IGNORETAGS,
+        /// Removes some features from samples to give a lower memory overhead, like [Sound::get_name].
+        LowMem                  = FMOD_LOWMEM,
+        /// For sounds that start virtual (due to being quiet or low importance), instead of swapping back to audible, and playing at the correct offset according to time, this flag makes the sound play from the start.
+        VirtualPlayFromStart    = FMOD_VIRTUAL_PLAYFROMSTART,
     }
 
     /// Flags that describe the speakers present in a given signal.

@@ -1,4 +1,4 @@
-use crate::{raw::*, Mode, Result, TimeUnit};
+use fmod::{raw::*, *};
 
 opaque!(class Sound = FMOD_SOUND, FMOD_Sound_*);
 

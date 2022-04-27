@@ -1,12 +1,8 @@
-#[cfg(doc)]
-use fmod::*;
 use {
     crate::utils::string_extend_utf8_lossy,
-    fmod::{
-        raw::*, AdvancedSettings, Channel, ChannelGroup, Dsp, Error, Guid, Handle, InitFlags, Mode,
-        OutputType, Result, Sound, SpeakerMode, TimeUnit, GLOBAL_SYSTEM_STATE,
-    },
+    fmod::{raw::*, *},
     parking_lot::RwLockUpgradableReadGuard,
+    smart_default::SmartDefault,
     std::{
         borrow::Cow,
         ffi::CStr,
@@ -307,7 +303,7 @@ impl System {
 
 /// Identification information about a sound device specified by its index,
 /// specific to the selected output mode.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct DriverInfo {
     /// GUID that uniquely identifies the device.
     pub guid: Guid,
@@ -317,43 +313,6 @@ pub struct DriverInfo {
     pub speaker_mode: SpeakerMode,
     /// Number of channels in the current speaker setup.
     pub speaker_mode_channels: i32,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-/// Output format for the software mixer.
-pub struct SoftwareFormat {
-    /// Sample rate of the mixer.
-    ///
-    /// <dl>
-    /// <dt>Range</dt><dd>[8000, 192000]</dd>
-    /// <dt>Units</dt><dd>Hertz</dd>
-    /// <dt>Default</dt><dd>48000</dd>
-    pub sample_rate: i32,
-    /// Speaker setup of the mixer.
-    pub speaker_mode: SpeakerMode,
-    /// Number of speakers for [SpeakerMode::Raw].
-    ///
-    /// <dl>
-    /// <dt>Range</dt><dd>[0, MAX_CHANNEL_WIDTH]</dd>
-    /// </d>
-    pub num_raw_speakers: i32,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-/// The buffer size for the FMOD software mixing engine.
-pub struct DspBufferSize {
-    /// The mixer engine block size. Use this to adjust mixer update
-    /// granularity. See below for more information on buffer length vs latency.
-    ///
-    /// <dl>
-    /// <dt>Units</dt><dd>Samples</dd>
-    /// <dt>Default</dt><dd>1024</dd>
-    /// </dl>
-    pub buffer_length: u32,
-    /// The mixer engine number of buffers used. Use this to adjust mixer
-    /// latency. See [System::setDSPBufferSize] for more information on number
-    /// of buffers vs latency.
-    pub num_buffers: i32,
 }
 
 /// Device selection.
@@ -544,6 +503,101 @@ impl System {
         Ok(driver)
     }
 }
+
+/// Output format for the software mixer.
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct SoftwareFormat {
+    /// Sample rate of the mixer.
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[8000, 192000]</dd>
+    /// <dt>Units</dt><dd>Hertz</dd>
+    /// <dt>Default</dt><dd>48000</dd>
+    pub sample_rate: i32,
+    /// Speaker setup of the mixer.
+    pub speaker_mode: SpeakerMode,
+    /// Number of speakers for [SpeakerMode::Raw].
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[0, MAX_CHANNEL_WIDTH]</dd>
+    /// </d>
+    pub num_raw_speakers: i32,
+}
+
+/// The buffer size for the FMOD software mixing engine.
+#[derive(Debug, SmartDefault, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct DspBufferSize {
+    /// The mixer engine block size. Use this to adjust mixer update
+    /// granularity. See below for more information on buffer length vs latency.
+    ///
+    /// <dl>
+    /// <dt>Units</dt><dd>Samples</dd>
+    /// <dt>Default</dt><dd>1024</dd>
+    /// </dl>
+    #[default(1024)]
+    pub buffer_length: u32,
+    /// The mixer engine number of buffers used. Use this to adjust mixer
+    /// latency. See [System::set_dsp_buffer_size] for more information on
+    /// number of buffers vs latency.
+    pub num_buffers: i32,
+}
+
+/// The position of a speaker for the current speaker mode.
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
+pub struct SpeakerPosition {
+    /// 2D X position relative to the listener. -1 = left, 0 = middle,
+    /// +1 = right.
+    /// <dl>
+    /// <dt>Range</dt><dd>[-1, 1]</dd>
+    /// </dl>
+    pub x: f32,
+    /// 2D Y position relative to the listener. -1 = back, 0 = middle,
+    /// +1 = front.
+    /// <dl>
+    /// <dt>Range</dt><dd>[-1, 1]</dd>
+    /// </dl>
+    pub y: f32,
+    /// Active state of a speaker. true = included in 3D calculations,
+    /// false = ignored.
+    pub active: bool,
+}
+
+/// The global doppler scale, distance factor and log rolloff scale for all 3D
+/// sound in FMOD.
+#[derive(Debug, SmartDefault, Copy, Clone, PartialEq)]
+pub struct Settings3d {
+    /// A general scaling factor for how much the pitch varies due to doppler
+    /// shifting in 3D sound. Doppler is the pitch bending effect when a sound
+    /// comes towards the listener or moves away from it, much like the effect
+    /// you hear when a train goes past you with its horn sounding. With
+    /// `doppler_scale` you can exaggerate or diminish the effect. FMOD's
+    /// effective speed of sound at a doppler factor of 1.0 is 340 m/s.
+    #[default(1.0)]
+    pub doppler_scale: f32,
+    /// The FMOD 3D engine relative distance factor, compared to 1.0 meters.
+    /// Another way to put it is that it equates to "how many units per meter
+    /// does your engine have". For example, if you are using feet then "scale"
+    /// would equal 3.28.  
+    /// This only affects doppler. If you keep your min/max distance, custom
+    /// rolloff curves and positions in scale relative to each other the volume
+    /// rolloff will not change. If you set this, the min_distance of a sound
+    /// will automatically set itself to this value when it is created in case
+    /// the user forgets to set the min_distance to match the new
+    /// distance_factor.
+    #[default(1.0)]
+    pub distance_factor: f32,
+    /// The global attenuation rolloff factor. Volume for a sound will scale at
+    /// min_distance / distance. Setting this value makes the sound drop off
+    /// faster or slower. The higher the value, the faster volume will
+    /// attenuate, and conversely the lower the value, the slower it will
+    /// attenuate. For example, a rolloff factor of 1 will simulate the real
+    /// world, where as a value of 2 will make sounds attenuate 2 times quicker.
+    #[default(1.0)]
+    pub rolloff_scale: f32,
+}
+
+/// Callback to allow custom calculation of distance attenuation.
+pub type Rolloff3dCallback = extern "C" fn(channel: &Channel, distance: f32) -> f32;
 
 /// Setup.
 impl System {
@@ -792,6 +846,133 @@ impl System {
             file_buffer_size_type.as_raw_mut()
         ));
         Ok((file_buffer_size, file_buffer_size_type))
+    }
+
+    /// Sets advanced settings for the system object, typically to allow
+    /// adjusting of settings related to resource usage or audio quality.
+    pub fn set_advanced_settings(&self, mut advanced_settings: AdvancedSettings) -> Result {
+        fmod_try!(FMOD_System_SetAdvancedSettings(
+            self.as_raw(),
+            advanced_settings.as_raw_mut(),
+        ));
+        Ok(())
+    }
+
+    /// Retrieves the advanced settings for the system object.
+    pub fn get_advanced_settings(&self) -> Result<AdvancedSettings> {
+        let mut advanced_settings = AdvancedSettings::default();
+        fmod_try!(FMOD_System_GetAdvancedSettings(
+            self.as_raw(),
+            advanced_settings.as_raw_mut()
+        ));
+        Ok(advanced_settings)
+    }
+
+    /// Sets the position of the specified speaker for the current speaker mode.
+    ///
+    /// This function allows the user to specify the position of their speaker
+    /// to account for non standard setups.  
+    /// It also allows the user to disable speakers from 3D consideration in a
+    /// game.
+    pub fn set_speaker_position(&self, speaker: Speaker, position: SpeakerPosition) -> Result {
+        let SpeakerPosition { x, y, active } = position;
+        fmod_try!(FMOD_System_SetSpeakerPosition(
+            self.as_raw(),
+            speaker.into_raw(),
+            x,
+            y,
+            if active { 1 } else { 0 }
+        ));
+        Ok(())
+    }
+
+    /// Retrieves the position of the specified speaker for the current speaker
+    /// mode.
+    pub fn get_speaker_position(&self, speaker: Speaker) -> Result<SpeakerPosition> {
+        let mut speaker_position = SpeakerPosition::default();
+        let mut active = 0;
+        fmod_try!(FMOD_System_GetSpeakerPosition(
+            self.as_raw(),
+            speaker.into_raw(),
+            &mut speaker_position.x,
+            &mut speaker_position.y,
+            &mut active,
+        ));
+        speaker_position.active = active != 1;
+        Ok(speaker_position)
+    }
+
+    /// Sets the global doppler scale, distance factor and log rolloff scale for
+    /// all 3D sound in FMOD.
+    ///
+    /// See [Settings3d] for a description of what specificially this changes.
+    pub fn set_3d_settings(&self, settings: Settings3d) -> Result {
+        let Settings3d {
+            doppler_scale,
+            distance_factor,
+            rolloff_scale,
+        } = settings;
+        fmod_try!(FMOD_System_Set3DSettings(
+            self.as_raw(),
+            doppler_scale,
+            distance_factor,
+            rolloff_scale
+        ));
+        Ok(())
+    }
+
+    /// Retrieves the global doppler scale, distance factor and rolloff scale for all 3D sounds.
+    pub fn get_3d_settings(&self) -> Result<Settings3d> {
+        let mut settings = Settings3d::default();
+        fmod_try!(FMOD_System_Get3DSettings(
+            self.as_raw(),
+            &mut settings.doppler_scale,
+            &mut settings.distance_factor,
+            &mut settings.rolloff_scale
+        ));
+        Ok(settings)
+    }
+
+    /// Sets the number of 3D 'listeners' in the 3D sound scene.
+    ///
+    /// This function is useful mainly for split-screen game purposes.
+    ///
+    /// If the number of listeners is set to more than 1, then panning and
+    /// doppler are turned off. All sound effects will be mono. FMOD uses a
+    /// 'closest sound to the listener' method to determine what should be heard
+    /// in this case.
+    ///
+    /// Users of the Studio API should call [studio::System::set_num_listeners]
+    /// instead of this function.
+    pub fn set_3d_num_listeners(&self, num_listeners: i32) -> Result {
+        fmod_try!(FMOD_System_Set3DNumListeners(self.as_raw(), num_listeners));
+        Ok(())
+    }
+
+    /// Retrieves the number of 3D listeners.
+    ///
+    /// Users of the Studio API should call [studio::System::get_num_listeners]
+    /// instead of this function.
+    pub fn get_3d_num_listeners(&self) -> Result<i32> {
+        let mut num_listeners = 0;
+        fmod_try!(FMOD_System_Get3DNumListeners(
+            self.as_raw(),
+            &mut num_listeners
+        ));
+        Ok(num_listeners)
+    }
+
+    /// Sets a callback to allow custom calculation of distance attenuation.
+    ///
+    /// This function overrides [Mode::InverseRolloff3d],
+    /// [Mode::LinearRolloff3d], [Mode::LinearSquareRolloff3d],
+    /// [Mode::InverseTaperedRolloff3d], and [Mode::CustomRolloff3d].
+    pub fn set_3d_rolloff_callback(&self, callback: Option<Rolloff3dCallback>) -> Result {
+        fmod_try!(FMOD_System_Set3DRolloffCallback(
+            self.as_raw(),
+            mem::transmute(callback)
+        ));
+        Ok(())
     }
 }
 

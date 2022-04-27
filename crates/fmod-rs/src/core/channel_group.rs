@@ -1,4 +1,4 @@
-use crate::{raw::*, Result};
+use fmod::{raw::*, *};
 
 opaque!(class ChannelGroup = FMOD_CHANNELGROUP, FMOD_ChannelGroup_*);
 

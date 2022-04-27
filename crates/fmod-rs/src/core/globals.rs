@@ -1,8 +1,6 @@
 pub mod memory {
-    #[cfg(doc)]
-    use fmod::*;
     use {
-        fmod::{raw::*, MemoryType, Result, GLOBAL_SYSTEM_STATE},
+        fmod::{raw::*, *},
         std::{
             alloc::{alloc, dealloc, realloc, Layout},
             mem::{self, MaybeUninit},
@@ -253,7 +251,7 @@ pub mod memory {
 }
 
 pub mod debug {
-    use fmod::{Error, Result};
+    use fmod::*;
 
     /// Specify the level and delivery method of log messages when using the
     /// logging version of FMOD.
@@ -273,9 +271,7 @@ pub mod debug {
 }
 
 pub mod file {
-    #[cfg(doc)]
-    use fmod::*;
-    use fmod::{raw::*, Result, GLOBAL_SYSTEM_STATE};
+    use fmod::{raw::*, *};
 
     /// Information function to retrieve the state of FMOD disk access.
     ///
@@ -342,9 +338,7 @@ pub mod file {
 }
 
 pub mod thread {
-    #[cfg(doc)]
-    use fmod::*;
-    use fmod::{raw::*, Result, ThreadAffinity, ThreadPriority, ThreadStackSize, ThreadType};
+    use fmod::{raw::*, *};
 
     /// Specify the affinity, priority and stack size for all FMOD created
     /// threads.

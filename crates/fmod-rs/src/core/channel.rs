@@ -1,5 +1,5 @@
 use {
-    crate::{raw::*, Result, Sound, TimeUnit},
+    fmod::{raw::*, *},
     std::ptr,
 };
 
