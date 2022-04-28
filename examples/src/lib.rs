@@ -72,7 +72,7 @@ impl Example {
         terminal::enable_raw_mode()?;
         execute!(
             stdout(),
-            terminal::SetSize(NUM_COLUMNS, NUM_ROWS),
+            terminal::EnterAlternateScreen,
             cursor::Hide,
             terminal::SetTitle("FMOD Example"),
         )?;
@@ -83,7 +83,7 @@ impl Example {
             pressed: Buttons::empty(),
             down: Buttons::empty(),
             paused: false,
-            buffer: String::with_capacity((NUM_COLUMNS * NUM_ROWS) as usize),
+            buffer: String::with_capacity(((NUM_COLUMNS + 1) * NUM_ROWS) as usize),
             ypos: 0,
             _guard,
         })
@@ -91,6 +91,7 @@ impl Example {
 
     pub fn close(self) -> Result<()> {
         let Example { .. } = &mut *ManuallyDrop::new(self);
+        execute!(stdout(), terminal::LeaveAlternateScreen)?;
         terminal::disable_raw_mode()?;
         Ok(())
     }
@@ -98,6 +99,7 @@ impl Example {
 
 impl Drop for Example {
     fn drop(&mut self) {
+        execute!(stdout(), terminal::LeaveAlternateScreen).ok();
         terminal::disable_raw_mode().ok();
     }
 }
@@ -128,9 +130,8 @@ impl Example {
         if !self.paused {
             execute!(
                 stdout(),
-                terminal::Clear(terminal::ClearType::All),
+                terminal::Clear(terminal::ClearType::Purge),
                 cursor::MoveTo(0, 0),
-                terminal::EnableLineWrap,
                 style::Print(&self.buffer),
             )?;
         }
@@ -143,7 +144,7 @@ impl Example {
         if self.ypos < NUM_ROWS as usize {
             self.ypos += 1;
             use std::fmt::Write;
-            write!(
+            writeln!(
                 &mut self.buffer,
                 "{text:NUM_COLUMNS$.NUM_COLUMNS$}",
                 NUM_COLUMNS = NUM_COLUMNS as usize
