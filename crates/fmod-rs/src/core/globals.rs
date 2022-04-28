@@ -484,18 +484,11 @@ pub mod debug {
     #[cfg(feature = "tracing")]
     /// An `FmodDebug` sink that hooks up FMOD debug messages into [tracing].
     ///
-    //  From my experience, DebugType::Memory, File, Codec are *very very*
-    //  verbose, and are basically TRACE level detail. Also very interestingly,
-    //  DebugType::Trace has yet to make a peep in any implemented example.
-    //  As such, we map Trace to tracing Level::DEBUG and Memory, File, Codec
-    //  to tracing Level::TRACE. This looks backwards on first glance, but seems
-    //  to match their use in practice.
-    ///
     /// Mapping:
     /// - [DebugFlags::TypeMemory]   ~ [Level::TRACE], target `fmod::memory`
     /// - [DebugFlags::TypeFile]     ~ [Level::TRACE], target `fmod::file`
     /// - [DebugFlags::TypeCodec]    ~ [Level::TRACE], target `fmod::codec`
-    /// - [DebugFlags::TypeTrace]    ~ [Level::DEBUG], target `fmod`
+    /// - [DebugFlags::TypeTrace]    ~ [Level::TRACE], target `fmod::trace`
     /// - [DebugFlags::LevelLog]     ~ [Level::INFO],  target `fmod`
     /// - [DebugFlags::LevelWarning] ~ [Level::WARN],  target `fmod`
     /// - [DebugFlags::LevelError]   ~ [Level::ERROR], target `fmod`
@@ -529,7 +522,7 @@ pub mod debug {
             } else if flags.is_set(DebugFlags::TypeCodec) {
                 tracing::trace!(target: "fmod::codec", parent: crate::span(), file, line, func, message)
             } else if flags.is_set(DebugFlags::TypeTrace) {
-                tracing::debug!(target: "fmod", parent: crate::span(), file, line, func, message)
+                tracing::trace!(target: "fmod::trace", parent: crate::span(), file, line, func, message)
             } else if flags.is_set(DebugFlags::LevelLog) {
                 tracing::info!(target: "fmod", parent: crate::span(), file, line, func, message)
             } else if flags.is_set(DebugFlags::LevelWarning) {
@@ -539,7 +532,7 @@ pub mod debug {
             } else {
                 tracing::error!(
                     parent: crate::span(),
-                    flags = ?flags,
+                    debug_flags = ?flags,
                     file,
                     line,
                     func,
@@ -586,7 +579,7 @@ pub mod debug {
             if enabled!(target: "fmod", Level::INFO, { file, line, func, message }) {
                 debug_flags = DebugFlags::LevelLog;
             }
-            if enabled!(target: "fmod", Level::DEBUG, { file, line, func, message }) {
+            if enabled!(target: "fmod::trace", Level::TRACE, { file, line, func, message }) {
                 debug_flags |= DebugFlags::TypeTrace;
             }
             if enabled!(target: "fmod::memory", Level::TRACE, { file, line, func, message }) {
