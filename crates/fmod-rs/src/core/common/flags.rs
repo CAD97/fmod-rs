@@ -190,38 +190,34 @@ macro_rules! flags {
     {@stripdefault $($tt:tt)*} => { $($tt)* };
 }
 
-raw! {
-    flags! {
-        /// Specify the requested information to be output when using the logging version of FMOD.
-        pub struct DebugFlags: u32 {
-            /// Disable all messages.
-            LevelNone          = FMOD_DEBUG_LEVEL_NONE,
-            /// Enable only error messages.
-            LevelError         = FMOD_DEBUG_LEVEL_ERROR,
-            /// Enable warning and error messages.
-            LevelWarning       = FMOD_DEBUG_LEVEL_WARNING,
-            #[default]
-            /// Enable informational, warning and error messages (default).
-            LevelLog           = FMOD_DEBUG_LEVEL_LOG,
-            /// Verbose logging for memory operations, only use this if you are debugging a memory related issue.
-            TypeMemory         = FMOD_DEBUG_TYPE_MEMORY,
-            /// Verbose logging for file access, only use this if you are debugging a file related issue.
-            TypeFile           = FMOD_DEBUG_TYPE_FILE,
-            /// Verbose logging for codec initialization, only use this if you are debugging a codec related issue.
-            TypeCodec          = FMOD_DEBUG_TYPE_CODEC,
-            /// Verbose logging for internal errors, use this for tracking the origin of error codes.
-            TypeTrace          = FMOD_DEBUG_TYPE_TRACE,
-            /// Display the time stamp of the log message in milliseconds.
-            DisplayTimestamps  = FMOD_DEBUG_DISPLAY_TIMESTAMPS,
-            /// Display the source code file and line number for where the message originated.
-            DisplayLinenumbers = FMOD_DEBUG_DISPLAY_LINENUMBERS,
-            /// Display the thread ID of the calling function that generated the message.
-            DisplayThread      = FMOD_DEBUG_DISPLAY_THREAD,
-        }
-    }
-}
-
 flags! {
+    /// Specify the requested information to be output when using the logging version of FMOD.
+    pub struct DebugFlags: u32 {
+        /// Disable all messages.
+        LevelNone          = FMOD_DEBUG_LEVEL_NONE,
+        /// Enable only error messages.
+        LevelError         = FMOD_DEBUG_LEVEL_ERROR,
+        /// Enable warning and error messages.
+        LevelWarning       = FMOD_DEBUG_LEVEL_WARNING,
+        #[default]
+        /// Enable informational, warning and error messages (default).
+        LevelLog           = FMOD_DEBUG_LEVEL_LOG,
+        /// Verbose logging for memory operations, only use this if you are debugging a memory related issue.
+        TypeMemory         = FMOD_DEBUG_TYPE_MEMORY,
+        /// Verbose logging for file access, only use this if you are debugging a file related issue.
+        TypeFile           = FMOD_DEBUG_TYPE_FILE,
+        /// Verbose logging for codec initialization, only use this if you are debugging a codec related issue.
+        TypeCodec          = FMOD_DEBUG_TYPE_CODEC,
+        /// Verbose logging for internal errors, use this for tracking the origin of error codes.
+        TypeTrace          = FMOD_DEBUG_TYPE_TRACE,
+        /// Display the time stamp of the log message in milliseconds.
+        DisplayTimestamps  = FMOD_DEBUG_DISPLAY_TIMESTAMPS,
+        /// Display the source code file and line number for where the message originated.
+        DisplayLinenumbers = FMOD_DEBUG_DISPLAY_LINENUMBERS,
+        /// Display the thread ID of the calling function that generated the message.
+        DisplayThread      = FMOD_DEBUG_DISPLAY_THREAD,
+    }
+
     /// Bitfields for memory allocation type being passed into FMOD memory callbacks.
     pub struct MemoryType: u32 {
         #[default]
