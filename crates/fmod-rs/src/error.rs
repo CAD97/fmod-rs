@@ -347,7 +347,7 @@ pub(crate) fn fmod_debug_install_tracing() {
         debug_flags |= DebugFlags::TypeCodec;
     }
 
-    unsafe extern "C" fn callback(
+    unsafe extern "system" fn callback(
         flags: FMOD_DEBUG_FLAGS,
         file: *const std::os::raw::c_char,
         line: std::os::raw::c_int,

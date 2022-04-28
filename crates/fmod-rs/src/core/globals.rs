@@ -157,7 +157,7 @@ pub mod memory {
         ) -> *mut u8;
     }
 
-    unsafe extern "C" fn useralloc<A: FmodAlloc>(
+    unsafe extern "system" fn useralloc<A: FmodAlloc>(
         size: c_uint,
         kind: FMOD_MEMORY_TYPE,
         source: *const c_char,
@@ -175,7 +175,7 @@ pub mod memory {
         .unwrap_or(ptr::null_mut())
     }
 
-    unsafe extern "C" fn userrealloc<A: FmodRealloc>(
+    unsafe extern "system" fn userrealloc<A: FmodRealloc>(
         ptr: *mut c_void,
         size: c_uint,
         kind: FMOD_MEMORY_TYPE,
@@ -194,7 +194,7 @@ pub mod memory {
         .unwrap_or(ptr::null_mut())
     }
 
-    unsafe extern "C" fn userfree<A: FmodAlloc>(
+    unsafe extern "system" fn userfree<A: FmodAlloc>(
         ptr: *mut c_void,
         kind: FMOD_MEMORY_TYPE,
         source: *const c_char,
