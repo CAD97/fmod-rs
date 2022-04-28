@@ -1,4 +1,7 @@
-use {cfg_if::cfg_if, std::panic::UnwindSafe};
+use {
+    cfg_if::cfg_if,
+    std::{ffi::CStr, os::raw::c_char, panic::UnwindSafe, ptr},
+};
 
 /// Decode a UTF-16LE–encoded slice `v` into a `String`, replacing
 /// invalid data with [the replacement character (`U+FFFD`)][U+FFFD].
@@ -164,4 +167,8 @@ where
             None
         },
     }
+}
+
+pub unsafe fn str_from_nonnull_unchecked<'a>(ptr: ptr::NonNull<c_char>) -> &'a str {
+    CStr::from_ptr(ptr.as_ptr()).to_str().unwrap_unchecked()
 }

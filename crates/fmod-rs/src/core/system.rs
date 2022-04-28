@@ -146,7 +146,7 @@ impl System {
     }
 
     unsafe fn new_inner(system_count: &mut usize) -> Result<Handle<'static, Self>> {
-        crate::debug_initialize_once(); // setup debug logging
+        debug::initialize_default(); // setup debug logging
 
         let mut raw = ptr::null_mut();
         fmod_try!(FMOD_System_Create(&mut raw, FMOD_VERSION));
