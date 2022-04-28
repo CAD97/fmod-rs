@@ -106,7 +106,8 @@ pub const FMOD_STUDIO_INSTANCETYPE_COMMANDREPLAY: FMOD_STUDIO_INSTANCETYPE = 8;
 pub const FMOD_STUDIO_INSTANCETYPE_FORCEINT: FMOD_STUDIO_INSTANCETYPE = 65536;
 pub type FMOD_STUDIO_INSTANCETYPE = ::std::os::raw::c_int;
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+// #[derive(Debug)] // rust-lang/rust#96513
+#[derive(Copy, Clone)]
 pub struct FMOD_STUDIO_BANK_INFO {
     pub size: ::std::os::raw::c_int,
     pub userdata: *mut ::std::os::raw::c_void,
@@ -1088,7 +1089,8 @@ fn bindgen_test_layout_FMOD_STUDIO_BUFFER_USAGE() {
     );
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+// #[derive(Debug)] // rust-lang/rust#96513
+#[derive(Copy, Clone)]
 pub struct FMOD_STUDIO_SOUND_INFO {
     pub name_or_data: *const ::std::os::raw::c_char,
     pub mode: FMOD_MODE,
@@ -1331,7 +1333,7 @@ fn bindgen_test_layout_FMOD_STUDIO_MEMORY_USAGE() {
     );
 }
 pub type FMOD_STUDIO_SYSTEM_CALLBACK = ::std::option::Option<
-    unsafe extern "C" fn(
+    unsafe extern "system" fn(
         system: *mut FMOD_STUDIO_SYSTEM,
         type_: FMOD_STUDIO_SYSTEM_CALLBACK_TYPE,
         commanddata: *mut ::std::os::raw::c_void,
@@ -1339,14 +1341,14 @@ pub type FMOD_STUDIO_SYSTEM_CALLBACK = ::std::option::Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_STUDIO_EVENT_CALLBACK = ::std::option::Option<
-    unsafe extern "C" fn(
+    unsafe extern "system" fn(
         type_: FMOD_STUDIO_EVENT_CALLBACK_TYPE,
         event: *mut FMOD_STUDIO_EVENTINSTANCE,
         parameters: *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_STUDIO_COMMANDREPLAY_FRAME_CALLBACK = ::std::option::Option<
-    unsafe extern "C" fn(
+    unsafe extern "system" fn(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         commandindex: ::std::os::raw::c_int,
         currenttime: f32,
@@ -1354,7 +1356,7 @@ pub type FMOD_STUDIO_COMMANDREPLAY_FRAME_CALLBACK = ::std::option::Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_STUDIO_COMMANDREPLAY_LOAD_BANK_CALLBACK = ::std::option::Option<
-    unsafe extern "C" fn(
+    unsafe extern "system" fn(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         commandindex: ::std::os::raw::c_int,
         bankguid: *const FMOD_GUID,
@@ -1365,7 +1367,7 @@ pub type FMOD_STUDIO_COMMANDREPLAY_LOAD_BANK_CALLBACK = ::std::option::Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_STUDIO_COMMANDREPLAY_CREATE_INSTANCE_CALLBACK = ::std::option::Option<
-    unsafe extern "C" fn(
+    unsafe extern "system" fn(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         commandindex: ::std::os::raw::c_int,
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
@@ -1373,34 +1375,34 @@ pub type FMOD_STUDIO_COMMANDREPLAY_CREATE_INSTANCE_CALLBACK = ::std::option::Opt
         userdata: *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT,
 >;
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_ParseID(
         idstring: *const ::std::os::raw::c_char,
         id: *mut FMOD_GUID,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_Create(
         system: *mut *mut FMOD_STUDIO_SYSTEM,
         headerversion: ::std::os::raw::c_uint,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_IsValid(system: *mut FMOD_STUDIO_SYSTEM) -> FMOD_BOOL;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetAdvancedSettings(
         system: *mut FMOD_STUDIO_SYSTEM,
         settings: *mut FMOD_STUDIO_ADVANCEDSETTINGS,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetAdvancedSettings(
         system: *mut FMOD_STUDIO_SYSTEM,
         settings: *mut FMOD_STUDIO_ADVANCEDSETTINGS,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_Initialize(
         system: *mut FMOD_STUDIO_SYSTEM,
         maxchannels: ::std::os::raw::c_int,
@@ -1409,96 +1411,96 @@ extern "C" {
         extradriverdata: *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_Release(system: *mut FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_Update(system: *mut FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetCoreSystem(
         system: *mut FMOD_STUDIO_SYSTEM,
         coresystem: *mut *mut FMOD_SYSTEM,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetEvent(
         system: *mut FMOD_STUDIO_SYSTEM,
         pathOrID: *const ::std::os::raw::c_char,
         event: *mut *mut FMOD_STUDIO_EVENTDESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetBus(
         system: *mut FMOD_STUDIO_SYSTEM,
         pathOrID: *const ::std::os::raw::c_char,
         bus: *mut *mut FMOD_STUDIO_BUS,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetVCA(
         system: *mut FMOD_STUDIO_SYSTEM,
         pathOrID: *const ::std::os::raw::c_char,
         vca: *mut *mut FMOD_STUDIO_VCA,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetBank(
         system: *mut FMOD_STUDIO_SYSTEM,
         pathOrID: *const ::std::os::raw::c_char,
         bank: *mut *mut FMOD_STUDIO_BANK,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetEventByID(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: *const FMOD_GUID,
         event: *mut *mut FMOD_STUDIO_EVENTDESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetBusByID(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: *const FMOD_GUID,
         bus: *mut *mut FMOD_STUDIO_BUS,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetVCAByID(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: *const FMOD_GUID,
         vca: *mut *mut FMOD_STUDIO_VCA,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetBankByID(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: *const FMOD_GUID,
         bank: *mut *mut FMOD_STUDIO_BANK,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetSoundInfo(
         system: *mut FMOD_STUDIO_SYSTEM,
         key: *const ::std::os::raw::c_char,
         info: *mut FMOD_STUDIO_SOUND_INFO,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetParameterDescriptionByName(
         system: *mut FMOD_STUDIO_SYSTEM,
         name: *const ::std::os::raw::c_char,
         parameter: *mut FMOD_STUDIO_PARAMETER_DESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetParameterDescriptionByID(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: FMOD_STUDIO_PARAMETER_ID,
         parameter: *mut FMOD_STUDIO_PARAMETER_DESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetParameterLabelByName(
         system: *mut FMOD_STUDIO_SYSTEM,
         name: *const ::std::os::raw::c_char,
@@ -1508,7 +1510,7 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetParameterLabelByID(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: FMOD_STUDIO_PARAMETER_ID,
@@ -1518,7 +1520,7 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetParameterByID(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: FMOD_STUDIO_PARAMETER_ID,
@@ -1526,7 +1528,7 @@ extern "C" {
         finalvalue: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetParameterByID(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: FMOD_STUDIO_PARAMETER_ID,
@@ -1534,7 +1536,7 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetParameterByIDWithLabel(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: FMOD_STUDIO_PARAMETER_ID,
@@ -1542,7 +1544,7 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetParametersByIDs(
         system: *mut FMOD_STUDIO_SYSTEM,
         ids: *const FMOD_STUDIO_PARAMETER_ID,
@@ -1551,7 +1553,7 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetParameterByName(
         system: *mut FMOD_STUDIO_SYSTEM,
         name: *const ::std::os::raw::c_char,
@@ -1559,7 +1561,7 @@ extern "C" {
         finalvalue: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetParameterByName(
         system: *mut FMOD_STUDIO_SYSTEM,
         name: *const ::std::os::raw::c_char,
@@ -1567,7 +1569,7 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetParameterByNameWithLabel(
         system: *mut FMOD_STUDIO_SYSTEM,
         name: *const ::std::os::raw::c_char,
@@ -1575,14 +1577,14 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_LookupID(
         system: *mut FMOD_STUDIO_SYSTEM,
         path: *const ::std::os::raw::c_char,
         id: *mut FMOD_GUID,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_LookupPath(
         system: *mut FMOD_STUDIO_SYSTEM,
         id: *const FMOD_GUID,
@@ -1591,19 +1593,19 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetNumListeners(
         system: *mut FMOD_STUDIO_SYSTEM,
         numlisteners: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetNumListeners(
         system: *mut FMOD_STUDIO_SYSTEM,
         numlisteners: ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetListenerAttributes(
         system: *mut FMOD_STUDIO_SYSTEM,
         index: ::std::os::raw::c_int,
@@ -1611,7 +1613,7 @@ extern "C" {
         attenuationposition: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetListenerAttributes(
         system: *mut FMOD_STUDIO_SYSTEM,
         index: ::std::os::raw::c_int,
@@ -1619,21 +1621,21 @@ extern "C" {
         attenuationposition: *const FMOD_VECTOR,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetListenerWeight(
         system: *mut FMOD_STUDIO_SYSTEM,
         index: ::std::os::raw::c_int,
         weight: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetListenerWeight(
         system: *mut FMOD_STUDIO_SYSTEM,
         index: ::std::os::raw::c_int,
         weight: f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_LoadBankFile(
         system: *mut FMOD_STUDIO_SYSTEM,
         filename: *const ::std::os::raw::c_char,
@@ -1641,7 +1643,7 @@ extern "C" {
         bank: *mut *mut FMOD_STUDIO_BANK,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_LoadBankMemory(
         system: *mut FMOD_STUDIO_SYSTEM,
         buffer: *const ::std::os::raw::c_char,
@@ -1651,7 +1653,7 @@ extern "C" {
         bank: *mut *mut FMOD_STUDIO_BANK,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_LoadBankCustom(
         system: *mut FMOD_STUDIO_SYSTEM,
         info: *const FMOD_STUDIO_BANK_INFO,
@@ -1659,38 +1661,38 @@ extern "C" {
         bank: *mut *mut FMOD_STUDIO_BANK,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_RegisterPlugin(
         system: *mut FMOD_STUDIO_SYSTEM,
         description: *const FMOD_DSP_DESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_UnregisterPlugin(
         system: *mut FMOD_STUDIO_SYSTEM,
         name: *const ::std::os::raw::c_char,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_UnloadAll(system: *mut FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_FlushCommands(system: *mut FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_FlushSampleLoading(system: *mut FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_StartCommandCapture(
         system: *mut FMOD_STUDIO_SYSTEM,
         filename: *const ::std::os::raw::c_char,
         flags: FMOD_STUDIO_COMMANDCAPTURE_FLAGS,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_StopCommandCapture(system: *mut FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_LoadCommandReplay(
         system: *mut FMOD_STUDIO_SYSTEM,
         filename: *const ::std::os::raw::c_char,
@@ -1698,13 +1700,13 @@ extern "C" {
         replay: *mut *mut FMOD_STUDIO_COMMANDREPLAY,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetBankCount(
         system: *mut FMOD_STUDIO_SYSTEM,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetBankList(
         system: *mut FMOD_STUDIO_SYSTEM,
         array: *mut *mut FMOD_STUDIO_BANK,
@@ -1712,13 +1714,13 @@ extern "C" {
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetParameterDescriptionCount(
         system: *mut FMOD_STUDIO_SYSTEM,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetParameterDescriptionList(
         system: *mut FMOD_STUDIO_SYSTEM,
         array: *mut FMOD_STUDIO_PARAMETER_DESCRIPTION,
@@ -1726,59 +1728,59 @@ extern "C" {
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetCPUUsage(
         system: *mut FMOD_STUDIO_SYSTEM,
         usage: *mut FMOD_STUDIO_CPU_USAGE,
         usage_core: *mut FMOD_CPU_USAGE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetBufferUsage(
         system: *mut FMOD_STUDIO_SYSTEM,
         usage: *mut FMOD_STUDIO_BUFFER_USAGE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_ResetBufferUsage(system: *mut FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetCallback(
         system: *mut FMOD_STUDIO_SYSTEM,
         callback: FMOD_STUDIO_SYSTEM_CALLBACK,
         callbackmask: FMOD_STUDIO_SYSTEM_CALLBACK_TYPE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_SetUserData(
         system: *mut FMOD_STUDIO_SYSTEM,
         userdata: *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetUserData(
         system: *mut FMOD_STUDIO_SYSTEM,
         userdata: *mut *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_System_GetMemoryUsage(
         system: *mut FMOD_STUDIO_SYSTEM,
         memoryusage: *mut FMOD_STUDIO_MEMORY_USAGE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_IsValid(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
     ) -> FMOD_BOOL;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetID(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         id: *mut FMOD_GUID,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetPath(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         path: *mut ::std::os::raw::c_char,
@@ -1786,34 +1788,34 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetParameterDescriptionCount(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetParameterDescriptionByIndex(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         index: ::std::os::raw::c_int,
         parameter: *mut FMOD_STUDIO_PARAMETER_DESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetParameterDescriptionByName(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         name: *const ::std::os::raw::c_char,
         parameter: *mut FMOD_STUDIO_PARAMETER_DESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetParameterDescriptionByID(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         id: FMOD_STUDIO_PARAMETER_ID,
         parameter: *mut FMOD_STUDIO_PARAMETER_DESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetParameterLabelByIndex(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         index: ::std::os::raw::c_int,
@@ -1823,7 +1825,7 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetParameterLabelByName(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         name: *const ::std::os::raw::c_char,
@@ -1833,7 +1835,7 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetParameterLabelByID(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         id: FMOD_STUDIO_PARAMETER_ID,
@@ -1843,94 +1845,94 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetUserPropertyCount(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetUserPropertyByIndex(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         index: ::std::os::raw::c_int,
         property: *mut FMOD_STUDIO_USER_PROPERTY,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetUserProperty(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         name: *const ::std::os::raw::c_char,
         property: *mut FMOD_STUDIO_USER_PROPERTY,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetLength(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         length: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetMinMaxDistance(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         min: *mut f32,
         max: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetSoundSize(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         size: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_IsSnapshot(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         snapshot: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_IsOneshot(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         oneshot: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_IsStream(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         isStream: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_Is3D(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         is3D: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_IsDopplerEnabled(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         doppler: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_HasSustainPoint(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         sustainPoint: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_CreateInstance(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         instance: *mut *mut FMOD_STUDIO_EVENTINSTANCE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetInstanceCount(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetInstanceList(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         array: *mut *mut FMOD_STUDIO_EVENTINSTANCE,
@@ -1938,201 +1940,201 @@ extern "C" {
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_LoadSampleData(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_UnloadSampleData(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetSampleLoadingState(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         state: *mut FMOD_STUDIO_LOADING_STATE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_ReleaseAllInstances(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_SetCallback(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         callback: FMOD_STUDIO_EVENT_CALLBACK,
         callbackmask: FMOD_STUDIO_EVENT_CALLBACK_TYPE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_GetUserData(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         userdata: *mut *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventDescription_SetUserData(
         eventdescription: *mut FMOD_STUDIO_EVENTDESCRIPTION,
         userdata: *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_IsValid(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
     ) -> FMOD_BOOL;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetDescription(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         description: *mut *mut FMOD_STUDIO_EVENTDESCRIPTION,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetVolume(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         volume: *mut f32,
         finalvolume: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetVolume(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         volume: f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetPitch(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         pitch: *mut f32,
         finalpitch: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetPitch(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         pitch: f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_Get3DAttributes(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         attributes: *mut FMOD_3D_ATTRIBUTES,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_Set3DAttributes(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         attributes: *mut FMOD_3D_ATTRIBUTES,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetListenerMask(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         mask: *mut ::std::os::raw::c_uint,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetListenerMask(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         mask: ::std::os::raw::c_uint,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetProperty(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         index: FMOD_STUDIO_EVENT_PROPERTY,
         value: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetProperty(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         index: FMOD_STUDIO_EVENT_PROPERTY,
         value: f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetReverbLevel(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         index: ::std::os::raw::c_int,
         level: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetReverbLevel(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         index: ::std::os::raw::c_int,
         level: f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetPaused(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         paused: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetPaused(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         paused: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_Start(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_Stop(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         mode: FMOD_STUDIO_STOP_MODE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetTimelinePosition(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         position: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetTimelinePosition(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         position: ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetPlaybackState(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         state: *mut FMOD_STUDIO_PLAYBACK_STATE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetChannelGroup(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         group: *mut *mut FMOD_CHANNELGROUP,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetMinMaxDistance(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         min: *mut f32,
         max: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_Release(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_IsVirtual(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         virtualstate: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetParameterByName(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         name: *const ::std::os::raw::c_char,
@@ -2140,7 +2142,7 @@ extern "C" {
         finalvalue: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetParameterByName(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         name: *const ::std::os::raw::c_char,
@@ -2148,7 +2150,7 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetParameterByNameWithLabel(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         name: *const ::std::os::raw::c_char,
@@ -2156,7 +2158,7 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetParameterByID(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         id: FMOD_STUDIO_PARAMETER_ID,
@@ -2164,7 +2166,7 @@ extern "C" {
         finalvalue: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetParameterByID(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         id: FMOD_STUDIO_PARAMETER_ID,
@@ -2172,7 +2174,7 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetParameterByIDWithLabel(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         id: FMOD_STUDIO_PARAMETER_ID,
@@ -2180,7 +2182,7 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetParametersByIDs(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         ids: *const FMOD_STUDIO_PARAMETER_ID,
@@ -2189,50 +2191,50 @@ extern "C" {
         ignoreseekspeed: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_KeyOff(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetCallback(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         callback: FMOD_STUDIO_EVENT_CALLBACK,
         callbackmask: FMOD_STUDIO_EVENT_CALLBACK_TYPE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetUserData(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         userdata: *mut *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_SetUserData(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         userdata: *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetCPUUsage(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         exclusive: *mut ::std::os::raw::c_uint,
         inclusive: *mut ::std::os::raw::c_uint,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_EventInstance_GetMemoryUsage(
         eventinstance: *mut FMOD_STUDIO_EVENTINSTANCE,
         memoryusage: *mut FMOD_STUDIO_MEMORY_USAGE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_IsValid(bus: *mut FMOD_STUDIO_BUS) -> FMOD_BOOL;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_GetID(bus: *mut FMOD_STUDIO_BUS, id: *mut FMOD_GUID) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_GetPath(
         bus: *mut FMOD_STUDIO_BUS,
         path: *mut ::std::os::raw::c_char,
@@ -2240,81 +2242,81 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_GetVolume(
         bus: *mut FMOD_STUDIO_BUS,
         volume: *mut f32,
         finalvolume: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_SetVolume(bus: *mut FMOD_STUDIO_BUS, volume: f32) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_GetPaused(
         bus: *mut FMOD_STUDIO_BUS,
         paused: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_SetPaused(bus: *mut FMOD_STUDIO_BUS, paused: FMOD_BOOL) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_GetMute(bus: *mut FMOD_STUDIO_BUS, mute: *mut FMOD_BOOL) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_SetMute(bus: *mut FMOD_STUDIO_BUS, mute: FMOD_BOOL) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_StopAllEvents(
         bus: *mut FMOD_STUDIO_BUS,
         mode: FMOD_STUDIO_STOP_MODE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_GetPortIndex(
         bus: *mut FMOD_STUDIO_BUS,
         index: *mut FMOD_PORT_INDEX,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_SetPortIndex(
         bus: *mut FMOD_STUDIO_BUS,
         index: FMOD_PORT_INDEX,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_LockChannelGroup(bus: *mut FMOD_STUDIO_BUS) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_UnlockChannelGroup(bus: *mut FMOD_STUDIO_BUS) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_GetChannelGroup(
         bus: *mut FMOD_STUDIO_BUS,
         group: *mut *mut FMOD_CHANNELGROUP,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_GetCPUUsage(
         bus: *mut FMOD_STUDIO_BUS,
         exclusive: *mut ::std::os::raw::c_uint,
         inclusive: *mut ::std::os::raw::c_uint,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bus_GetMemoryUsage(
         bus: *mut FMOD_STUDIO_BUS,
         memoryusage: *mut FMOD_STUDIO_MEMORY_USAGE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_VCA_IsValid(vca: *mut FMOD_STUDIO_VCA) -> FMOD_BOOL;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_VCA_GetID(vca: *mut FMOD_STUDIO_VCA, id: *mut FMOD_GUID) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_VCA_GetPath(
         vca: *mut FMOD_STUDIO_VCA,
         path: *mut ::std::os::raw::c_char,
@@ -2322,23 +2324,23 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_VCA_GetVolume(
         vca: *mut FMOD_STUDIO_VCA,
         volume: *mut f32,
         finalvolume: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_VCA_SetVolume(vca: *mut FMOD_STUDIO_VCA, volume: f32) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_IsValid(bank: *mut FMOD_STUDIO_BANK) -> FMOD_BOOL;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetID(bank: *mut FMOD_STUDIO_BANK, id: *mut FMOD_GUID) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetPath(
         bank: *mut FMOD_STUDIO_BANK,
         path: *mut ::std::os::raw::c_char,
@@ -2346,34 +2348,34 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_Unload(bank: *mut FMOD_STUDIO_BANK) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_LoadSampleData(bank: *mut FMOD_STUDIO_BANK) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_UnloadSampleData(bank: *mut FMOD_STUDIO_BANK) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetLoadingState(
         bank: *mut FMOD_STUDIO_BANK,
         state: *mut FMOD_STUDIO_LOADING_STATE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetSampleLoadingState(
         bank: *mut FMOD_STUDIO_BANK,
         state: *mut FMOD_STUDIO_LOADING_STATE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetStringCount(
         bank: *mut FMOD_STUDIO_BANK,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetStringInfo(
         bank: *mut FMOD_STUDIO_BANK,
         index: ::std::os::raw::c_int,
@@ -2383,13 +2385,13 @@ extern "C" {
         retrieved: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetEventCount(
         bank: *mut FMOD_STUDIO_BANK,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetEventList(
         bank: *mut FMOD_STUDIO_BANK,
         array: *mut *mut FMOD_STUDIO_EVENTDESCRIPTION,
@@ -2397,13 +2399,13 @@ extern "C" {
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetBusCount(
         bank: *mut FMOD_STUDIO_BANK,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetBusList(
         bank: *mut FMOD_STUDIO_BANK,
         array: *mut *mut FMOD_STUDIO_BUS,
@@ -2411,13 +2413,13 @@ extern "C" {
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetVCACount(
         bank: *mut FMOD_STUDIO_BANK,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetVCAList(
         bank: *mut FMOD_STUDIO_BANK,
         array: *mut *mut FMOD_STUDIO_VCA,
@@ -2425,47 +2427,47 @@ extern "C" {
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_GetUserData(
         bank: *mut FMOD_STUDIO_BANK,
         userdata: *mut *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_Bank_SetUserData(
         bank: *mut FMOD_STUDIO_BANK,
         userdata: *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_IsValid(replay: *mut FMOD_STUDIO_COMMANDREPLAY) -> FMOD_BOOL;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetSystem(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         system: *mut *mut FMOD_STUDIO_SYSTEM,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetLength(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         length: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetCommandCount(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         count: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetCommandInfo(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         commandindex: ::std::os::raw::c_int,
         info: *mut FMOD_STUDIO_COMMAND_INFO,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetCommandString(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         commandindex: ::std::os::raw::c_int,
@@ -2473,91 +2475,91 @@ extern "C" {
         length: ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetCommandAtTime(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         time: f32,
         commandindex: *mut ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_SetBankPath(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         bankPath: *const ::std::os::raw::c_char,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_Start(replay: *mut FMOD_STUDIO_COMMANDREPLAY) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_Stop(replay: *mut FMOD_STUDIO_COMMANDREPLAY) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_SeekToTime(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         time: f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_SeekToCommand(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         commandindex: ::std::os::raw::c_int,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetPaused(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         paused: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_SetPaused(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         paused: FMOD_BOOL,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetPlaybackState(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         state: *mut FMOD_STUDIO_PLAYBACK_STATE,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetCurrentCommand(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         commandindex: *mut ::std::os::raw::c_int,
         currenttime: *mut f32,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_Release(replay: *mut FMOD_STUDIO_COMMANDREPLAY)
         -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_SetFrameCallback(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         callback: FMOD_STUDIO_COMMANDREPLAY_FRAME_CALLBACK,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_SetLoadBankCallback(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         callback: FMOD_STUDIO_COMMANDREPLAY_LOAD_BANK_CALLBACK,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_SetCreateInstanceCallback(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         callback: FMOD_STUDIO_COMMANDREPLAY_CREATE_INSTANCE_CALLBACK,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_GetUserData(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         userdata: *mut *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT;
 }
-extern "C" {
+extern "system" {
     pub fn FMOD_Studio_CommandReplay_SetUserData(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         userdata: *mut ::std::os::raw::c_void,
