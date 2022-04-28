@@ -276,10 +276,8 @@ pub mod memory {
     /// In most cases, you should prefer leaving the defaults (FMOD will use the
     /// system allocator) or one of the other [`memory::initialize`] variants
     /// which don't require this overhead.
-    #[cfg(feature = "rust_alloc_bridge")]
     pub enum FmodAllocViaRust {}
 
-    #[cfg(feature = "rust_alloc_bridge")]
     unsafe impl FmodAlloc for FmodAllocViaRust {
         fn alloc(size: u32, _: MemoryType, _: Option<&str>) -> *mut u8 {
             unsafe {
@@ -288,30 +286,31 @@ pub mod memory {
                 if ptr.is_null() {
                     return ptr;
                 }
-                const _: u8 = [0u8; 16 + 1][mem::size_of::<Layout>()];
-                ptr.cast::<Layout>().write(layout);
+                ::static_assertions::const_assert!(mem::size_of::<usize>() <= 16);
+                ptr.cast::<usize>().write(layout.size());
                 ptr.add(16)
             }
         }
 
         unsafe fn free(ptr: *mut u8, _: MemoryType, _: Option<&str>) {
             let ptr = ptr.sub(16);
-            let layout = ptr.cast::<Layout>().read();
+            let size = ptr.cast::<usize>().read();
+            let layout = Layout::from_size_align_unchecked(size, 16);
             dealloc(ptr, layout)
         }
     }
 
-    #[cfg(feature = "rust_alloc_bridge")]
     unsafe impl FmodRealloc for FmodAllocViaRust {
         unsafe fn realloc(ptr: *mut u8, size: u32, _: MemoryType, _: Option<&str>) -> *mut u8 {
-            let new_layout = Layout::from_size_align_unchecked(size as usize + 16, 16);
+            let new_size = size as usize + 16;
             let ptr = ptr.sub(16);
-            let old_layout = ptr.cast::<Layout>().read();
-            let ptr = realloc(ptr, old_layout, new_layout.size());
+            let old_size = ptr.cast::<usize>().read();
+            let old_layout = Layout::from_size_align_unchecked(old_size, 16);
+            let ptr = realloc(ptr, old_layout, new_size);
             if ptr.is_null() {
                 return ptr;
             }
-            ptr.cast::<Layout>().write(new_layout);
+            ptr.cast::<usize>().write(new_size);
             ptr.add(16)
         }
     }

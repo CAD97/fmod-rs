@@ -25,9 +25,6 @@ studio = ["dep:fmod-studio-sys"]
 fmod_debug_is_tracing = ["tracing"]
 ## Enable use of tracing in FMOD.rs (implied by `fmod_debug_is_tracing`).
 tracing = ["dep:tracing", "dep:once_cell"]
-## Enable use of [memory::initialize_rust_global_alloc], which requires that
-## `size_of::<std::alloc::Layout>() <= 16`.
-rust_alloc_bridge = []
 
 ## Enable access to the raw FMOD API calls.
 raw = []
