@@ -34,6 +34,14 @@ impl Channel {
         Ok(pitch)
     }
 
+    pub fn set_mute(&self, mute: bool) -> Result {
+        fmod_try!(FMOD_Channel_SetMute(
+            self.as_raw(),
+            if mute { 1 } else { 0 },
+        ));
+        Ok(())
+    }
+
     // snip
 
     pub fn is_playing(&self) -> Result<bool> {

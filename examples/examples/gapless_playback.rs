@@ -9,7 +9,7 @@
 
 use {
     fmod::cstr,
-    fmod_examples::{media, Buttons, Example},
+    fmod_examples::{media, sleep_ms, Buttons, Example},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -129,7 +129,7 @@ fn main() -> anyhow::Result<()> {
                     pitch += 0.01;
                     channel_group.set_pitch(pitch)?;
                     system.update()?;
-                    example.sleep(10);
+                    sleep_ms(10);
                 }
             }
 
@@ -141,7 +141,7 @@ fn main() -> anyhow::Result<()> {
                     }
                     channel_group.set_pitch(pitch)?;
                     system.update()?;
-                    example.sleep(10);
+                    sleep_ms(10);
                 }
             }
 
@@ -191,7 +191,7 @@ fn main() -> anyhow::Result<()> {
             ));
         }
 
-        example.sleep(50);
+        sleep_ms(50);
     }
 
     example.close()?;

@@ -27,6 +27,21 @@ impl Sound {
     }
 
     // snip
+
+    pub fn get_open_state(&self) -> Result<(OpenState, u32, bool, bool)> {
+        let mut state = OpenState::zeroed();
+        let mut percent_buffered = 0;
+        let mut starving = 0;
+        let mut disk_busy = 0;
+        fmod_try!(FMOD_Sound_GetOpenState(
+            self.as_raw(),
+            state.as_raw_mut(),
+            &mut percent_buffered,
+            &mut starving,
+            &mut disk_busy
+        ));
+        Ok((state, percent_buffered, starving != 0, disk_busy != 0))
+    }
 }
 
 /// Synchronization point API. These points can come from markers embedded in

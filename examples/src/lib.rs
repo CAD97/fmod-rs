@@ -181,10 +181,6 @@ impl Example {
         }
     }
 
-    pub fn sleep(&self, ms: u64) {
-        std::thread::sleep(Duration::from_millis(ms));
-    }
-
     pub fn btn_press(&self, btn: Buttons) -> bool {
         self.pressed.contains(btn)
     }
@@ -192,6 +188,10 @@ impl Example {
     pub fn btn_down(&self, btn: Buttons) -> bool {
         self.down.contains(btn)
     }
+}
+
+pub fn sleep_ms(ms: u64) {
+    std::thread::sleep(Duration::from_millis(ms));
 }
 
 #[macro_export]

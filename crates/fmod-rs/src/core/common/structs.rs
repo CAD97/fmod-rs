@@ -2,7 +2,15 @@ use {
     crate::utils::{decode_sbcd_u8, string_from_utf16be_lossy, string_from_utf16le_lossy},
     fmod::{raw::*, *},
     smart_default::SmartDefault,
-    std::{borrow::Cow, ffi::CStr, mem, os::raw::c_char, ptr, slice},
+    std::{
+        borrow::Cow,
+        ffi::CStr,
+        marker::PhantomData,
+        mem::{self, MaybeUninit},
+        os::raw::c_char,
+        pin::Pin,
+        ptr, slice,
+    },
 };
 
 macro_rules! fmod_struct {
@@ -81,7 +89,114 @@ impl Version {
     }
 }
 
-// FMOD_ASYNCREADINFO
+/// A handle to an FMOD asynchronous file read request, received from
+/// [`file::AsyncFileSystem`].
+///
+/// When servicing the async read operation, read from
+/// [`handle`](Self::handle) at the given [`offset`](Self::offset) for
+/// [`size`](Self::size) bytes into [`buffer`](Self::buffer). Then call
+/// [`done`](Self::done) with the number of bytes read and the [`Result`]
+/// that matches the success of the operation.
+///
+/// # Safety
+///
+/// This structure must not be used after calling [`done`](Self::done) or
+/// the read operation has been [`cancel`led](file::AsyncFileSystem::cancel).
+#[derive(Debug)]
+pub struct AsyncReadInfo<File> {
+    raw: *mut FMOD_ASYNCREADINFO,
+    _phantom: PhantomData<*mut *mut File>,
+}
+
+unsafe impl<File> Send for AsyncReadInfo<File> where for<'a> &'a mut File: Send {}
+unsafe impl<File> Sync for AsyncReadInfo<File> where for<'a> &'a mut File: Sync {}
+
+#[allow(clippy::missing_safety_doc)]
+impl<File> AsyncReadInfo<File> {
+    raw! {
+        pub const fn from_raw(raw: *mut FMOD_ASYNCREADINFO) -> Self {
+            Self { raw, _phantom: PhantomData }
+        }
+    }
+
+    raw! {
+        pub const fn into_raw(self) -> *mut FMOD_ASYNCREADINFO {
+            self.raw
+        }
+    }
+
+    /// File handle that was provided by [`FileSystem::open`].
+    pub unsafe fn handle<'a>(self) -> Pin<&'a File> {
+        Pin::new_unchecked(&*(*self.raw).handle.cast())
+    }
+
+    /// File handle that was provided by [`FileSystem::open`].
+    pub unsafe fn handle_mut<'a>(self) -> Pin<&'a mut File> {
+        Pin::new_unchecked(&mut *(*self.raw).handle.cast())
+    }
+
+    /// Byte offset within the file where the read operation should occur.
+    pub unsafe fn offset(self) -> u32 {
+        (*self.raw).offset
+    }
+
+    /// Number of bytes to read.
+    pub unsafe fn size(self) -> u32 {
+        (*self.raw).sizebytes
+    }
+
+    /// Priority hint for how quickly this operation should be serviced
+    /// where 0 represents low importance and 100 represents extreme
+    /// importance. This could be used to prioritize the read order of a
+    /// file job queue for example. FMOD decides the importance of the read
+    /// based on if it could degrade audio or not.
+    pub unsafe fn priority(self) -> i32 {
+        (*self.raw).priority
+    }
+
+    /// Buffer to read data into.
+    pub unsafe fn buffer(self) -> *mut [MaybeUninit<u8>] {
+        let ptr = (*self.raw).buffer;
+        let len = self.size();
+        ptr::slice_from_raw_parts_mut(ptr.cast(), len as usize)
+    }
+
+    /// Completion function to signal the async read is done.
+    ///
+    /// Relevant result codes to use with this function include:
+    ///
+    /// - `Ok`: Read was successful.
+    /// - [`Error::FileDiskEjected`]: Read was cancelled before being serviced.
+    /// - [`Error::FileBad`]: Read operation failed for any other reason.
+    pub unsafe fn done(self, result: Result<u32>) {
+        let done = (*self.raw).done.unwrap_unchecked();
+        match result {
+            Ok(bytes_read) => {
+                (*self.raw).bytesread = bytes_read;
+                if bytes_read < self.size() {
+                    done(self.raw, FMOD_ERR_FILE_EOF);
+                } else {
+                    done(self.raw, FMOD_OK);
+                }
+            },
+            Err(err) => done(self.raw, err.into_raw()),
+        }
+    }
+}
+
+impl<File> Copy for AsyncReadInfo<File> {}
+impl<File> Clone for AsyncReadInfo<File> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<File> Eq for AsyncReadInfo<File> {}
+impl<File> PartialEq for AsyncReadInfo<File> {
+    fn eq(&self, other: &Self) -> bool {
+        self.raw == other.raw
+    }
+}
 
 fmod_struct! {
     /// Structure describing a point in 3D space.
