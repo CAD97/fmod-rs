@@ -200,7 +200,7 @@ impl System {
             self.as_raw(),
             max_channels,
             flags,
-            extra_driver_data as *mut _
+            extra_driver_data as *mut _,
         ));
         Ok(())
     }
@@ -622,7 +622,7 @@ impl System {
         let mut num_software_channels = 0;
         fmod_try!(FMOD_System_GetSoftwareChannels(
             self.as_raw(),
-            &mut num_software_channels
+            &mut num_software_channels,
         ));
         Ok(num_software_channels)
     }
@@ -656,7 +656,7 @@ impl System {
             self.as_raw(),
             sample_rate,
             speaker_mode.into_raw(),
-            num_raw_speakers
+            num_raw_speakers,
         ));
         Ok(())
     }
@@ -828,7 +828,7 @@ impl System {
         fmod_try!(FMOD_System_SetStreamBufferSize(
             self.as_raw(),
             file_buffer_size,
-            file_buffer_size_type.into_raw()
+            file_buffer_size_type.into_raw(),
         ));
         Ok(())
     }
@@ -843,7 +843,7 @@ impl System {
         fmod_try!(FMOD_System_GetStreamBufferSize(
             self.as_raw(),
             &mut file_buffer_size,
-            file_buffer_size_type.as_raw_mut()
+            file_buffer_size_type.as_raw_mut(),
         ));
         Ok((file_buffer_size, file_buffer_size_type))
     }
@@ -863,7 +863,7 @@ impl System {
         let mut advanced_settings = AdvancedSettings::default();
         fmod_try!(FMOD_System_GetAdvancedSettings(
             self.as_raw(),
-            advanced_settings.as_raw_mut()
+            advanced_settings.as_raw_mut(),
         ));
         Ok(advanced_settings)
     }
@@ -881,7 +881,7 @@ impl System {
             speaker.into_raw(),
             x,
             y,
-            if active { 1 } else { 0 }
+            if active { 1 } else { 0 },
         ));
         Ok(())
     }
@@ -916,7 +916,7 @@ impl System {
             self.as_raw(),
             doppler_scale,
             distance_factor,
-            rolloff_scale
+            rolloff_scale,
         ));
         Ok(())
     }
@@ -928,7 +928,7 @@ impl System {
             self.as_raw(),
             &mut settings.doppler_scale,
             &mut settings.distance_factor,
-            &mut settings.rolloff_scale
+            &mut settings.rolloff_scale,
         ));
         Ok(settings)
     }
@@ -957,7 +957,7 @@ impl System {
         let mut num_listeners = 0;
         fmod_try!(FMOD_System_Get3DNumListeners(
             self.as_raw(),
-            &mut num_listeners
+            &mut num_listeners,
         ));
         Ok(num_listeners)
     }
@@ -970,7 +970,7 @@ impl System {
     pub fn set_3d_rolloff_callback(&self, callback: Option<Rolloff3dCallback>) -> Result {
         fmod_try!(FMOD_System_Set3DRolloffCallback(
             self.as_raw(),
-            mem::transmute(callback)
+            mem::transmute(callback),
         ));
         Ok(())
     }
@@ -978,9 +978,129 @@ impl System {
 
 /// File system setup.
 impl System {
-    // TODO: set_file_system (sync, async, default) and attach_file_system
-    // Strategy: trait FileSystem with associated functions for functionality,
-    // bridge function with a type parameter matching FMOD callback type.
+    /// Set file I/O to use the platform native method.
+    ///
+    /// `block_align` is the file buffering chunk size; specify -1 to keep the
+    /// system default or previously set value. 0 = disable buffering.
+    ///
+    /// Setting `block_align` to 0 will disable file buffering and cause every
+    /// read to invoke the relevant callback (not recommended), current default
+    /// is tuned for memory usage vs performance. Be mindful of the I/O
+    /// capabilities of the platform before increasing this default.
+    pub fn set_file_system_default(&self, block_align: i32) -> Result {
+        fmod_try!(FMOD_System_SetFileSystem(
+            self.as_raw(),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            block_align,
+        ));
+        Ok(())
+    }
+
+    /// Set callbacks to implement all file I/O instead of using the platform
+    /// native method.
+    ///
+    /// `block_align` is the file buffering chunk size; specify -1 to keep the
+    /// system default or previously set value. 0 = disable buffering.
+    ///
+    /// Setting `block_align` to 0 will disable file buffering and cause every
+    /// read to invoke the relevant callback (not recommended), current default
+    /// is tuned for memory usage vs performance. Be mindful of the I/O
+    /// capabilities of the platform before increasing this default.
+    pub fn set_file_system_sync<FS: file::SyncFileSystem>(&self, block_align: i32) -> Result {
+        fmod_try!(FMOD_System_SetFileSystem(
+            self.as_raw(),
+            Some(file::useropen::<FS>),
+            Some(file::userclose::<FS>),
+            Some(file::userread::<FS>),
+            Some(file::userseek::<FS>),
+            None,
+            None,
+            block_align,
+        ));
+        Ok(())
+    }
+
+    /// Set callbacks to implement all file I/O instead of using the platform
+    /// native method.
+    ///
+    /// `block_align` is the file buffering chunk size; specify -1 to keep the
+    /// system default or previously set value. 0 = disable buffering.
+    ///
+    /// Setting `block_align` to 0 will disable file buffering and cause every
+    /// read to invoke the relevant callback (not recommended), current default
+    /// is tuned for memory usage vs performance. Be mindful of the I/O
+    /// capabilities of the platform before increasing this default.
+    ///
+    /// # Asynchrony notes
+    ///
+    /// - It is recommended to consult the 'async_io' example for reference
+    /// implementation. There is also a tutorial on the subject,
+    /// [Asynchronous I/O](https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-asynchronous-io.html).
+    /// - [`AsyncFileSystem::read`] allows the user to return immediately before
+    /// the data is ready. FMOD will either wait internally (see note below
+    /// about thread safety), or continuously check in the streamer until data
+    /// arrives. It is the user's responsibility to provide data in time in the
+    /// stream case, or the stream may stutter. Data starvation can be detected
+    /// with [Sound::get_open_state].
+    /// - **Important:** If [`AsyncFileSystem::read`] is processed in the main
+    /// thread, then it will hang the application, because FMOD will wait
+    /// internally until data is ready, and the main thread will not be able to
+    /// supply the data. For this reason the user's file access should normally
+    /// be from a separate thread.
+    /// - [AsyncFileSystem::cancel] must either service or prevent an async read
+    /// issued previously via [AsyncFileSystem::read] before returning.
+    pub fn set_file_system_async<FS: file::AsyncFileSystem>(&self, block_align: i32) -> Result {
+        fmod_try!(FMOD_System_SetFileSystem(
+            self.as_raw(),
+            Some(file::useropen::<FS>),
+            Some(file::userclose::<FS>),
+            None,
+            None,
+            Some(file::userasyncread::<FS>),
+            Some(file::userasynccancel::<FS>),
+            block_align,
+        ));
+        Ok(())
+    }
+
+    /// 'Piggyback' on FMOD file reading routines to capture data as it's read.
+    ///
+    /// This allows users to capture data as FMOD reads it, which may be useful
+    /// for extracting the raw data that FMOD reads for hard to support sources
+    /// (for example internet streams).
+    ///
+    /// To detach, use [`detach_file_system`].
+    ///
+    /// Note: This function is not to replace FMOD's file system. For this
+    /// functionality, see [System::set_file_system].
+    pub fn attach_file_system<FS: file::ListenFileSystem>(&self) -> Result {
+        fmod_try!(FMOD_System_AttachFileSystem(
+            self.as_raw(),
+            Some(file::useropen_listen::<FS>),
+            Some(file::userclose_listen::<FS>),
+            Some(file::userread_listen::<FS>),
+            Some(file::userseek_listen::<FS>),
+        ));
+        Ok(())
+    }
+
+    /// Detach a previously [attached](Self::attach_file_system) file system
+    /// listener.
+    pub fn detach_file_system(&self) -> Result {
+        fmod_try!(FMOD_System_AttachFileSystem(
+            self.as_raw(),
+            None,
+            None,
+            None,
+            None,
+        ));
+        Ok(())
+    }
 }
 
 #[repr(transparent)]
@@ -1003,7 +1123,7 @@ impl PluginHandle {
     }
 }
 
-/// Plug-in support.
+/// Plugin support.
 impl System {
     pub fn set_plugin_path(&self, path: &CStr) -> Result {
         fmod_try!(FMOD_System_SetPluginPath(self.as_raw(), path.as_ptr()));
@@ -1077,14 +1197,24 @@ impl System {
         Ok(unsafe { Handle::new(dsp) })
     }
 
+    // pub fn get_dsp_info_by_plugin
     // pub fn register_codec(priority: u32) -> Result<(FMOD_CODEC_DESCRIPTION, PluginHandle)>;
-    // pub fn register_codec(description: FMOD_DSP_DESCRIPTION) -> Result<PluginHandle>;
-    // pub fn register_codec(description: FMOD_OUTPUT_DESCRIPTION) -> Result<PluginHandle>;
+    // pub fn register_dsp(description: FMOD_DSP_DESCRIPTION) -> Result<PluginHandle>;
+    // pub fn register_output(description: FMOD_OUTPUT_DESCRIPTION) -> Result<PluginHandle>;
 }
 
-/// System information functions.
+/// Network configuration.
 impl System {
-    // snip
+    // pub fn set_network_proxy
+    // pub fn get_network_proxy
+    // pub fn set_network_timeout
+    // pub fn get_network_timeout
+}
+
+/// Information.
+impl System {
+    // pub fn get_version
+    // pub fn get_output_handle
 
     pub fn get_channels_playing(&self) -> Result<(i32, i32)> {
         let mut channels = 0;
@@ -1097,12 +1227,15 @@ impl System {
         Ok((channels, real_channels))
     }
 
-    // snip
+    // pub fn get_cpu_usage
+    // pub fn get_file_usage
+    // pub fn get_default_mix_matrix
+    // pub fn get_speaker_mode_channels
 }
 
-/// Sound/DSP/Channel/FX creation and retrieval.
+/// Creation and retrieval.
 impl System {
-    // TODO: create_cound_ex
+    // TODO: create_sound_ex
     pub fn create_sound(&self, name: &CStr, mode: Mode) -> Result<Handle<'_, Sound>> {
         if matches!(
             mode,
@@ -1133,7 +1266,39 @@ impl System {
         Ok(unsafe { Handle::new(sound) })
     }
 
-    // snip
+    // TODO: create_stream_ex
+    pub fn create_stream(&self, name: &CStr, mode: Mode) -> Result<Handle<'_, Sound>> {
+        if matches!(
+            mode,
+            Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
+        ) {
+            if cfg!(debug_assertions) {
+                panic!("System::create_stream cannot be called with extended mode {mode:?}; use create_stream_ex instead");
+            }
+            #[cfg(feature = "tracing")]
+            tracing::error!(
+                parent: crate::span(),
+                ?mode,
+                "System::create_stream called with extended mode; use create_stream_ex instead",
+            );
+            return Err(Error::InvalidParam);
+        }
+
+        let mode = Mode::into_raw(mode);
+        let exinfo = ptr::null_mut();
+        let mut sound = ptr::null_mut();
+        fmod_try!(FMOD_System_CreateStream(
+            self.as_raw(),
+            name.as_ptr(),
+            mode,
+            exinfo,
+            &mut sound,
+        ));
+        Ok(unsafe { Handle::new(sound) })
+    }
+
+    // pub fn create_dsp
+    // pub fn create_dsp_by_type
 
     pub fn create_channel_group(&self, name: &CStr) -> Result<Handle<'_, ChannelGroup>> {
         let mut channel_group = ptr::null_mut();
@@ -1145,7 +1310,8 @@ impl System {
         Ok(unsafe { Handle::new(channel_group) })
     }
 
-    // snip
+    // pub fn create_sound_group
+    // pub fn create_reverb_3d
 
     pub fn play_sound(
         &self,
@@ -1168,5 +1334,21 @@ impl System {
         Ok(unsafe { Handle::new(channel) })
     }
 
-    // snip
+    // pub fn play_dsp
+    // pub fn get_channel
+    // pub fn get_dsp_info_by_type
+    // pub fn get_master_channel_group
+    // pub fn get_master_sound_group
 }
+
+/// Runtime control.
+impl System {}
+
+/// Recording.
+impl System {}
+
+/// Geometry management.
+impl System {}
+
+/// General.
+impl System {}

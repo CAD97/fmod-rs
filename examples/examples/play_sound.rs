@@ -11,7 +11,7 @@
 
 #![allow(clippy::try_err)]
 
-use fmod_examples::{media, Buttons, Example};
+use fmod_examples::{media, sleep_ms, Buttons, Example};
 
 fn main() -> anyhow::Result<()> {
     let mut example = Example::init()?;
@@ -113,7 +113,7 @@ fn main() -> anyhow::Result<()> {
             ));
             example.draw(format_args!("Channels Playing {channels_playing}"));
 
-            example.sleep(50);
+            sleep_ms(50);
         }
     }
 

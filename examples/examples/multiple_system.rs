@@ -11,7 +11,7 @@
 
 #![allow(clippy::try_err)]
 
-use fmod_examples::{media, Buttons, Example};
+use fmod_examples::{media, sleep_ms, Buttons, Example};
 
 fn fetch_driver(example: &mut Example, system: &fmod::System) -> anyhow::Result<i32> {
     let mut selected_index = 0;
@@ -58,7 +58,7 @@ fn fetch_driver(example: &mut Example, system: &fmod::System) -> anyhow::Result<
             ));
         }
 
-        example.sleep(50);
+        sleep_ms(50);
     }
 
     Ok(selected_index)
@@ -119,7 +119,7 @@ fn main() -> anyhow::Result<()> {
             example.draw(format_args!("Channels playing on A: {channels_playing_a}"));
             example.draw(format_args!("Channels playing on B: {channels_playing_b}"));
 
-            example.sleep(50);
+            sleep_ms(50);
         }
     }
 

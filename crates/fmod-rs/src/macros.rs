@@ -92,8 +92,7 @@ macro_rules! raw {
 macro_rules! fmod_try {
     ($e:expr) => {{
         #[allow(unused_unsafe)]
-        let result = unsafe { $e };
-        if let Some(error) = fmod::Error::from_raw(result) {
+        if let Some(error) = fmod::Error::from_raw(unsafe { $e }) {
             return Err(error);
         }
     }};
