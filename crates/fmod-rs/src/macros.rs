@@ -90,10 +90,359 @@ macro_rules! raw {
 }
 
 macro_rules! fmod_try {
-    ($e:expr) => {{
+    ($e:expr) => {
         #[allow(unused_unsafe)]
-        if let Some(error) = fmod::Error::from_raw(unsafe { $e }) {
-            return Err(error);
+        fmod::Error::from_raw(unsafe { $e })?
+    };
+}
+
+macro_rules! flags_ops {
+    ($Name:ty: $($Op:ident)::+ $fn_op:ident $op:tt) => {
+        impl $($Op)::+ for $Name {
+            type Output = $Name;
+            fn $fn_op(self) -> $Name {
+                let raw = $op <$Name>::into_raw(self);
+                <$Name>::from_raw(raw)
+            }
         }
-    }};
+
+        impl $($Op)::+ for &'_ $Name {
+            type Output = $Name;
+            fn $fn_op(self) -> $Name {
+                $op *self
+            }
+        }
+    };
+    ($Name:ty: $($Op:ident)::+ $fn_op:ident $op:tt $($OpAssign:ident)::+ $fn_op_assign:ident) => {
+        impl $($Op)::+ for $Name {
+            type Output = $Name;
+            fn $fn_op(self, rhs: $Name) -> $Name {
+                let raw = <$Name>::into_raw(self) $op <$Name>::into_raw(rhs);
+                <$Name>::from_raw(raw)
+            }
+        }
+
+        impl $($Op)::+<&$Name> for $Name {
+            type Output = $Name;
+            fn $fn_op(self, rhs: &$Name) -> $Name {
+                self $op *rhs
+            }
+        }
+
+        impl $($Op)::+<$Name> for &$Name {
+            type Output = $Name;
+            fn $fn_op(self, rhs: $Name) -> $Name {
+                *self $op rhs
+            }
+        }
+
+        impl $($Op)::+<&$Name> for &$Name {
+            type Output = $Name;
+            fn $fn_op(self, rhs: &$Name) -> $Name {
+                *self $op *rhs
+            }
+        }
+
+        impl $($OpAssign)::+ for $Name {
+            fn $fn_op_assign(&mut self, rhs: $Name) {
+                *self = *self $op rhs;
+            }
+        }
+
+        impl $($OpAssign)::+<&$Name> for $Name {
+            fn $fn_op_assign(&mut self, rhs: &$Name) {
+                *self = *self $op *rhs;
+            }
+        }
+    };
+}
+
+macro_rules! flags {
+    {$(
+        $(#[$meta:meta])*
+        $vis:vis struct $Name:ident: $Raw:ty {$(
+            $(#[$($vmeta:tt)*])*
+            $Variant:ident = $value:expr,
+        )*}
+    )*} => {$(
+
+        $(#[$meta])*
+        #[repr(transparent)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+        $vis struct $Name {
+            raw: $Raw,
+        }
+
+        impl $Name {
+            $(
+                flags! {@stripdefault
+                    $(#[$($vmeta)*])*
+                    #[allow(non_upper_case_globals)]
+                    pub const $Variant: Self = Self::from_raw($value);
+                }
+            )*
+        }
+
+        impl $Name {
+            raw! {
+                pub const fn zeroed() -> $Name {
+                    Self::from_raw(0)
+                }
+            }
+            raw! {
+                pub const fn from_raw(raw: $Raw) -> $Name {
+                    unsafe { ::std::mem::transmute(raw) }
+                }
+            }
+            raw! {
+                pub const fn from_raw_ref(raw: &$Raw) -> &$Name {
+                    unsafe { &*(raw as *const $Raw as *const $Name ) }
+                }
+            }
+            raw! {
+                pub fn from_raw_mut(raw: &mut $Raw) -> &mut $Name {
+                    unsafe { &mut *(raw as *mut $Raw as *mut $Name ) }
+                }
+            }
+            raw! {
+                pub const fn into_raw(self) -> $Raw {
+                    unsafe { ::std::mem::transmute(self) }
+                }
+            }
+            raw! {
+                pub const fn as_raw(&self) -> &$Raw {
+                    unsafe { &*(self as *const $Name as *const $Raw ) }
+                }
+            }
+            raw! {
+                pub fn as_raw_mut(&mut self) -> &mut $Raw {
+                    unsafe { &mut *(self as *mut $Name as *mut $Raw ) }
+                }
+            }
+
+            pub fn is_set(self, variant: Self) -> bool {
+                self & variant == variant
+            }
+        }
+
+        flags_ops!($Name: std::ops::BitAnd bitand & std::ops::BitAndAssign bitand_assign);
+        flags_ops!($Name: std::ops::BitOr bitor | std::ops::BitOrAssign bitor_assign);
+        flags_ops!($Name: std::ops::BitXor bitxor ^ std::ops::BitXorAssign bitxor_assign);
+        flags_ops!($Name: std::ops::Not not !);
+
+        impl std::fmt::Debug for $Name {
+            #[allow(unreachable_patterns)]
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match *self {
+                    $($Name::$Variant => f.debug_struct(stringify!($Variant)).finish(),)*
+                    _ => f.debug_struct(stringify!($Name)).field("raw", &self.raw).finish(),
+                }
+            }
+        }
+
+        flags! {@default $Name {$(
+            $(#[$($vmeta)*])*
+            $Variant = $value,
+        )*}}
+    )*};
+
+    {@default $Name:ident {}} => {};
+
+    {@default $Name:ident {
+        #[default]
+        $(#[$meta:meta])*
+        $Variant:ident = $value:expr,
+        $(
+            $(#[$($vmeta:tt)*])*
+            $VVariant:ident = $vvalue:expr,
+        )*
+    }} => {
+        #[doc = concat!("[`", stringify!($Name), "::", stringify!($Variant), "`]")]
+        impl Default for $Name {
+            fn default() -> $Name {
+                $Name::$Variant
+            }
+        }
+        flags! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+    };
+
+    {@default $Name:ident {
+        $(#[$meta:meta])*
+        $Variant:ident = $value:expr,
+        $(
+            $(#[$($vmeta:tt)*])*
+            $VVariant:ident = $vvalue:expr,
+        )*
+    }} => {
+        flags! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+    };
+
+    {@stripdefault #[default] $($tt:tt)*} => { $($tt)* };
+    {@stripdefault $($tt:tt)*} => { $($tt)* };
+}
+
+macro_rules! enum_struct {
+    {$(
+        $(#[$meta:meta])*
+        $vis:vis enum $Name:ident: $Raw:ty {$(
+            $(#[$($vmeta:tt)*])*
+            $Variant:ident = $value:expr,
+        )*}
+    )*} => {$(
+        $(#[$meta])*
+        #[repr(transparent)]
+        #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+        $vis struct $Name {
+            raw: $Raw,
+        }
+
+        impl $Name {
+            $(
+                enum_struct! {@stripdefault
+                    $(#[$($vmeta)*])*
+                    #[allow(non_upper_case_globals)]
+                    pub const $Variant: Self = Self::from_raw($value);
+                }
+            )*
+        }
+
+        impl $Name {
+            raw! {
+                pub const fn zeroed() -> $Name {
+                    Self::from_raw(0)
+                }
+            }
+            raw! {
+                pub const fn from_raw(raw: $Raw) -> $Name {
+                    unsafe { ::std::mem::transmute(raw) }
+                }
+            }
+            raw! {
+                pub const fn from_raw_ref(raw: &$Raw) -> &$Name {
+                    unsafe { &*(raw as *const $Raw as *const $Name ) }
+                }
+            }
+            raw! {
+                pub fn from_raw_mut(raw: &mut $Raw) -> &mut $Name {
+                    unsafe { &mut *(raw as *mut $Raw as *mut $Name ) }
+                }
+            }
+            raw! {
+                pub const fn into_raw(self) -> $Raw {
+                    unsafe { ::std::mem::transmute(self) }
+                }
+            }
+            raw! {
+                pub const fn as_raw(&self) -> &$Raw {
+                    unsafe { &*(self as *const $Name as *const $Raw ) }
+                }
+            }
+            raw! {
+                pub fn as_raw_mut(&mut self) -> &mut $Raw {
+                    unsafe { &mut *(self as *mut $Name as *mut $Raw ) }
+                }
+            }
+        }
+
+        impl std::fmt::Debug for $Name {
+            #[allow(unreachable_patterns)]
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match *self {
+                    $($Name::$Variant => f.debug_struct(stringify!($Variant)).finish(),)*
+                    _ => f.debug_struct(stringify!($Name)).field("raw", &self.raw).finish(),
+                }
+            }
+        }
+
+        enum_struct! {@default $Name {$(
+            $(#[$($vmeta)*])*
+            $Variant = $value,
+        )*}}
+    )*};
+
+    {@default $Name:ident {}} => {};
+
+    {@default $Name:ident {
+        #[default]
+        $(#[$meta:meta])*
+        $Variant:ident = $value:expr,
+        $(
+            $(#[$($vmeta:tt)*])*
+            $VVariant:ident = $vvalue:expr,
+        )*
+    }} => {
+        #[doc = concat!("[`", stringify!($Name), "::", stringify!($Variant), "`]")]
+        impl Default for $Name {
+            fn default() -> $Name {
+                $Name::$Variant
+            }
+        }
+        enum_struct! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+    };
+
+    {@default $Name:ident {
+        $(#[$meta:meta])*
+        $Variant:ident = $value:expr,
+        $(
+            $(#[$($vmeta:tt)*])*
+            $VVariant:ident = $vvalue:expr,
+        )*
+    }} => {
+        enum_struct! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+    };
+
+    {@stripdefault #[default] $($tt:tt)*} => { $($tt)* };
+    {@stripdefault $($tt:tt)*} => { $($tt)* };
+}
+
+macro_rules! fmod_struct {
+    {$(
+        $(#[$meta:meta])*
+        $vis:vis struct $Name:ident = $Raw:ident {
+            $($body:tt)*
+        }
+    )*} => {$(
+        #[repr(C)]
+        $(#[$meta])*
+        #[derive(Debug, Clone, Copy, ::smart_default::SmartDefault, PartialEq)]
+        pub struct $Name {
+            $($body)*
+        }
+
+        ::static_assertions::assert_eq_size!($Name, $Raw);
+        ::static_assertions::assert_eq_align!($Name, $Raw);
+
+        impl $Name {
+            raw! {
+                pub const fn from_raw(raw: $Raw) -> $Name {
+                    unsafe { ::std::mem::transmute(raw) }
+                }
+            }
+            raw! {
+                pub const fn from_raw_ref(raw: &$Raw) -> &$Name {
+                    unsafe { &*(raw as *const $Raw as *const $Name ) }
+                }
+            }
+            raw! {
+                pub fn from_raw_mut(raw: &mut $Raw) -> &mut $Name {
+                    unsafe { &mut *(raw as *mut $Raw as *mut $Name ) }
+                }
+            }
+            raw! {
+                pub const fn into_raw(self) -> $Raw {
+                    unsafe { ::std::mem::transmute(self) }
+                }
+            }
+            raw! {
+                pub const fn as_raw(&self) -> &$Raw {
+                    unsafe { &*(self as *const $Name as *const $Raw ) }
+                }
+            }
+            raw! {
+                pub fn as_raw_mut(&mut self) -> &mut $Raw {
+                    unsafe { &mut *(self as *mut $Name as *mut $Raw ) }
+                }
+            }
+        }
+    )*};
 }

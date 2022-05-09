@@ -647,8 +647,8 @@ pub mod debug {
                     ptr::null(),
                 );
                 match Error::from_raw(error) {
-                    None => (),
-                    Some(error) => handle_init_failure(error),
+                    Ok(()) => (),
+                    Err(error) => handle_init_failure(error),
                 }
             }
         }
