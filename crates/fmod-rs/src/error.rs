@@ -24,10 +24,10 @@ macro_rules! error_enum_struct {
 
         impl $Name {
             raw! {
-                pub const fn from_raw(raw: i32) -> Option<Self> {
+                pub const fn from_raw(raw: i32) -> Result<(), Self> {
                     match NonZeroI32::new(raw) {
-                        Some(raw) => Some($Name { raw }),
-                        None => None,
+                        Some(raw) => Err($Name { raw }),
+                        None => Ok(()),
                     }
                 }
             }
@@ -40,8 +40,8 @@ macro_rules! error_enum_struct {
             // to clean up rustdoc, call this helper rather than inlining it
             const fn cook(raw: i32) -> Self {
                 match Self::from_raw(raw) {
-                    Some(this) => this,
-                    None => panic!("provided zero-valued FMOD_RESULT (FMOD_OK) as an error"),
+                    Err(this) => this,
+                    Ok(()) => panic!("provided zero-valued FMOD_RESULT (FMOD_OK) as an error"),
                 }
             }
 

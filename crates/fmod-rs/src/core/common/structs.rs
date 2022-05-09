@@ -13,58 +13,6 @@ use {
     },
 };
 
-macro_rules! fmod_struct {
-    {$(
-        $(#[$meta:meta])*
-        $vis:vis struct $Name:ident = $Raw:ident {
-            $($body:tt)*
-        }
-    )*} => {$(
-        #[repr(C)]
-        $(#[$meta])*
-        #[derive(Debug, Clone, Copy, SmartDefault, PartialEq)]
-        pub struct $Name {
-            $($body)*
-        }
-
-        ::static_assertions::assert_eq_size!($Name, $Raw);
-        ::static_assertions::assert_eq_align!($Name, $Raw);
-
-        impl $Name {
-            raw! {
-                pub const fn from_raw(raw: $Raw) -> $Name {
-                    unsafe { ::std::mem::transmute(raw) }
-                }
-            }
-            raw! {
-                pub const fn from_raw_ref(raw: &$Raw) -> &$Name {
-                    unsafe { &*(raw as *const $Raw as *const $Name ) }
-                }
-            }
-            raw! {
-                pub fn from_raw_mut(raw: &mut $Raw) -> &mut $Name {
-                    unsafe { &mut *(raw as *mut $Raw as *mut $Name ) }
-                }
-            }
-            raw! {
-                pub const fn into_raw(self) -> $Raw {
-                    unsafe { ::std::mem::transmute(self) }
-                }
-            }
-            raw! {
-                pub const fn as_raw(&self) -> &$Raw {
-                    unsafe { &*(self as *const $Name as *const $Raw ) }
-                }
-            }
-            raw! {
-                pub fn as_raw_mut(&mut self) -> &mut $Raw {
-                    unsafe { &mut *(self as *mut $Name as *mut $Raw ) }
-                }
-            }
-        }
-    )*};
-}
-
 /// FMOD version number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Version {

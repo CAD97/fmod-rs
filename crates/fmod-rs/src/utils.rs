@@ -1,6 +1,14 @@
 use {
     cfg_if::cfg_if,
-    std::{ffi::CStr, os::raw::c_char, panic::UnwindSafe, ptr},
+    fmod::{Error, Result},
+    std::{
+        borrow::Cow,
+        ffi::CStr,
+        mem::{self, MaybeUninit},
+        os::raw::c_char,
+        panic::UnwindSafe,
+        ptr,
+    },
 };
 
 /// Decode a UTF-16LE–encoded slice `v` into a `String`, replacing
@@ -171,4 +179,60 @@ where
 
 pub unsafe fn str_from_nonnull_unchecked<'a>(ptr: ptr::NonNull<c_char>) -> &'a str {
     CStr::from_ptr(ptr.as_ptr()).to_str().unwrap_unchecked()
+}
+
+pub unsafe fn fmod_get_string(
+    buf: &mut String,
+    mut retry: impl FnMut(&mut [MaybeUninit<u8>]) -> Result,
+) -> Result {
+    buf.clear();
+
+    // multiple_system.cpp uses a 256 byte buffer for System::get_driver_name
+    // follow that example and try a 256 byte buffer before heap reallocation
+    const STACK_BUFFER_SIZE: usize = 256;
+
+    // only use the stack buffer if the heap buffer isn't that large already
+    if buf.capacity() < STACK_BUFFER_SIZE {
+        let mut stack_buf: [MaybeUninit<u8>; STACK_BUFFER_SIZE] =
+            MaybeUninit::uninit().assume_init();
+
+        // first try with stack buffer
+        match retry(&mut stack_buf) {
+            Ok(()) => {
+                let cstr = CStr::from_ptr(stack_buf.as_ptr().cast());
+                string_extend_utf8_lossy(buf, cstr.to_bytes());
+                return Ok(());
+            },
+            Err(Error::Truncated) => (), // continue
+            Err(err) => return Err(err),
+        }
+
+        // keep trying with larger buffers
+        buf.reserve(STACK_BUFFER_SIZE * 2);
+    }
+
+    let buf = buf.as_mut_vec();
+    loop {
+        // try again
+        match retry(buf.spare_capacity_mut()) {
+            Ok(()) => break,
+            Err(Error::Truncated) => {
+                // keep trying with larger buffers
+                buf.reserve(buf.capacity() * 2);
+            },
+            Err(err) => return Err(err),
+        }
+    }
+
+    // now we need to set the vector length and verify proper UTF-8
+    buf.set_len(CStr::from_ptr(buf.as_ptr().cast()).to_bytes().len());
+    match String::from_utf8_lossy(buf) {
+        Cow::Borrowed(_) => (), // valid, leave in string buf
+        Cow::Owned(fix) => {
+            // swap in the fixed UTF-8
+            mem::swap(buf, &mut fix.into_bytes());
+        },
+    }
+
+    Ok(())
 }

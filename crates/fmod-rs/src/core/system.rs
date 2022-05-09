@@ -1,15 +1,10 @@
+use crate::utils::fmod_get_string;
+
 use {
-    crate::utils::string_extend_utf8_lossy,
     fmod::{raw::*, *},
     parking_lot::RwLockUpgradableReadGuard,
     smart_default::SmartDefault,
-    std::{
-        borrow::Cow,
-        ffi::CStr,
-        mem::{self, MaybeUninit},
-        os::raw::{c_char, c_int},
-        ptr,
-    },
+    std::{ffi::CStr, mem, ptr},
 };
 
 opaque! {
@@ -400,82 +395,20 @@ impl System {
     /// <dt>Range</dt><dd>[0, System::get_num_drivers]</dd>
     /// </dl>
     pub fn get_driver_name(&self, id: i32, name: &mut String) -> Result {
-        name.clear();
-
-        /// the multiple_system.cpp example uses a 256 byte buffer,
-        /// so that's probably enough; try that size first
-        const DEFAULT_NAME_CAPACITY: usize = 256;
-
-        // only read onto the stack buffer if provided heap buffer isn't larger
-        if name.capacity() < DEFAULT_NAME_CAPACITY {
-            let mut buffer: [MaybeUninit<u8>; DEFAULT_NAME_CAPACITY] =
-                unsafe { MaybeUninit::uninit().assume_init() };
-
-            // first try
-            let error = unsafe {
-                FMOD_System_GetDriverInfo(
-                    self.as_raw(),
-                    id,
-                    buffer.as_mut_ptr() as *mut c_char,
-                    name.capacity() as c_int,
-                    ptr::null_mut(),
-                    ptr::null_mut(),
-                    ptr::null_mut(),
-                    ptr::null_mut(),
-                )
-            };
-
-            match Error::from_raw(error) {
-                None => {
-                    let cstr = unsafe { CStr::from_ptr(buffer.as_ptr() as *const _) };
-                    string_extend_utf8_lossy(name, cstr.to_bytes());
-                    return Ok(());
-                },
-                Some(Error::Truncated) => (), // continue
-                Some(error) => return Err(error),
-            }
-
-            // we'll keep trying with larger buffers I guess
-            name.reserve(DEFAULT_NAME_CAPACITY * 2);
-        }
-
         unsafe {
-            let name = name.as_mut_vec();
-            loop {
-                // try again
-                let error = FMOD_System_GetDriverInfo(
+            fmod_get_string(name, |buf| {
+                Error::from_raw(FMOD_System_GetDriverInfo(
                     self.as_raw(),
                     id,
-                    name.as_mut_ptr() as *mut c_char,
-                    name.capacity() as c_int,
+                    buf.as_mut_ptr().cast(),
+                    buf.len() as _,
                     ptr::null_mut(),
                     ptr::null_mut(),
                     ptr::null_mut(),
                     ptr::null_mut(),
-                );
-
-                match Error::from_raw(error) {
-                    None => break,
-                    Some(fmod::Error::Truncated) => {
-                        // try doubling the buffer size again?
-                        name.reserve(name.len() * 2);
-                    },
-                    Some(error) => return Err(error),
-                }
-            }
-
-            // now we need to set the string len and verify it's proper UTF-8
-            name.set_len(CStr::from_ptr(name.as_ptr() as *const _).to_bytes().len());
-            match String::from_utf8_lossy(name) {
-                Cow::Borrowed(_) => {}, // it's valid
-                Cow::Owned(fixed) => {
-                    // swap in the fixed UTF-8
-                    mem::swap(name, &mut fixed.into_bytes());
-                },
-            }
+                ))
+            })
         }
-
-        Ok(())
     }
 
     /// Sets the output driver for the selected output type.
@@ -1117,90 +1050,228 @@ impl PluginHandle {
         }
     }
     raw! {
-        pub const fn into_raw(this: Self) -> u32 {
-            this.raw
+        pub const fn from_raw_ref(raw: &u32) -> &Self {
+            unsafe { &*(raw as *const u32 as *const Self ) }
+        }
+    }
+    raw! {
+        pub fn from_raw_mut(raw: &mut u32) -> &mut Self {
+            unsafe { &mut *(raw as *mut u32 as *mut Self ) }
+        }
+    }
+    raw! {
+        pub const fn into_raw(self) -> u32 {
+            self.raw
+        }
+    }
+    raw! {
+        pub const fn as_raw(&self) -> &u32 {
+            unsafe { &*(self as *const Self as *const u32 ) }
+        }
+    }
+    raw! {
+        pub fn as_raw_mut(&mut self) -> &mut u32 {
+            unsafe { &mut *(self as *mut Self as *mut u32 ) }
         }
     }
 }
 
+/// Information about a selected plugin.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginInfo {
+    /// Plugin type.
+    pub kind: PluginType,
+    /// Version number of the plugin.
+    pub version: u32,
+}
+
 /// Plugin support.
 impl System {
+    /// Specify a base search path for plugins so they can be placed somewhere
+    /// else than the directory of the main executable.
     pub fn set_plugin_path(&self, path: &CStr) -> Result {
         fmod_try!(FMOD_System_SetPluginPath(self.as_raw(), path.as_ptr()));
         Ok(())
     }
 
+    /// Loads an FMOD (DSP, Output or Codec) plugin from file.
+    ///
+    /// Once loaded, DSP plugins can be used via [System::create_dsp_by_plugin],
+    /// output plugins can be use via [System::set_output_by_plugin], and codec
+    /// plugins will be used automatically.
+    ///
+    /// When opening a file each codec tests whether it can support the file
+    /// format in `priority` order where 0 represents most important and higher
+    /// numbers represent less importance.
+    ///
+    /// The format of the plugin is dependant on the operating system.
     pub fn load_plugin(&self, filename: &CStr, priority: u32) -> Result<PluginHandle> {
-        let mut handle = 0;
+        let mut handle = PluginHandle::default();
         fmod_try!(FMOD_System_LoadPlugin(
             self.as_raw(),
             filename.as_ptr(),
-            &mut handle,
+            handle.as_raw_mut(),
             priority,
         ));
-        Ok(unsafe { PluginHandle::from_raw(handle) })
+        Ok(handle)
     }
 
+    /// Unloads an FMOD (DSP, Output or Codec) plugin.
     pub fn unload_plugin(&self, handle: PluginHandle) -> Result {
-        let handle = PluginHandle::into_raw(handle);
-        fmod_try!(FMOD_System_UnloadPlugin(self.as_raw(), handle));
+        fmod_try!(FMOD_System_UnloadPlugin(self.as_raw(), handle.into_raw()));
         Ok(())
     }
 
+    /// Retrieves the number of nested plugins from the selected plugin.
+    ///
+    /// Most plugins contain a single definition, in which case the count is 1,
+    /// however some have a list of definitions. This function returns the
+    /// number of plugins that have been defined.
+    ///
+    /// See the [DSP Plug-in API guide](https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-dsp-plugin-api.html#multiple-plugins-within-one-file)
+    /// for more information.
     pub fn get_num_tested_plugins(&self, handle: PluginHandle) -> Result<i32> {
-        let handle = PluginHandle::into_raw(handle);
         let mut count = 0;
         fmod_try!(FMOD_System_GetNumNestedPlugins(
             self.as_raw(),
-            handle,
+            handle.into_raw(),
             &mut count,
         ));
         Ok(count)
     }
 
+    /// Retrieves the handle of a nested plugin.
+    ///
+    /// This function is used to iterate handles for plugins that have a list of
+    /// definitions.
+    ///
+    /// Most plugins contain a single definition. If this is the case, only
+    /// index 0 is valid, and the returned handle is the same as the handle
+    /// passed in.
     pub fn get_nested_plugin(&self, handle: PluginHandle, index: i32) -> Result<PluginHandle> {
-        let handle = PluginHandle::into_raw(handle);
-        let mut nestedhandle = 0;
+        let mut nested_handle = PluginHandle::default();
         fmod_try!(FMOD_System_GetNestedPlugin(
             self.as_raw(),
-            handle,
+            handle.into_raw(),
             index,
-            &mut nestedhandle,
+            nested_handle.as_raw_mut(),
         ));
-        Ok(unsafe { PluginHandle::from_raw(nestedhandle) })
+        Ok(nested_handle)
     }
 
-    // pub fn get_num_plugins(&self, plugin_type: FMOD_PLUGINTYPE) -> Result<i32>;
-    // pub fn get_plugin_handle(&self, plugin_type: FMOD_PLUGINTYPE) -> Result<PluginHandle>;
-    // pub fn get_plugin_info(&self, handle: PluginHandle) -> (FMOD_PLUGINTYPE, String, u32);
+    /// Retrieves the number of loaded plugins.
+    pub fn get_num_plugins(&self, plugin_type: PluginType) -> Result<i32> {
+        let mut num_plugins = 0;
+        fmod_try!(FMOD_System_GetNumPlugins(
+            self.as_raw(),
+            plugin_type.into_raw(),
+            &mut num_plugins,
+        ));
+        Ok(num_plugins)
+    }
 
+    /// Retrieves the handle of a plugin based on its type and relative index.
+    ///
+    /// All plugins whether built in or loaded can be enumerated using this and
+    /// [System::get_num_plugins].
+    pub fn get_plugin_handle(&self, plugin_type: PluginType, index: i32) -> Result<PluginHandle> {
+        let mut handle = PluginHandle::default();
+        fmod_try!(FMOD_System_GetPluginHandle(
+            self.as_raw(),
+            plugin_type.into_raw(),
+            index,
+            handle.as_raw_mut(),
+        ));
+        Ok(handle)
+    }
+
+    // NB: we split get_plugin_info/name into separate calls for two reasons:
+    // getting everything *but* the name is cheap, and the name has extra retry
+    // requirements to validate non-truncation and UTF-8. This does, however,
+    // mean that getting all of the plugin info requires an extra FFI call.
+
+    /// Retrieves information for the selected plugin.
+    pub fn get_plugin_info(&self, handle: PluginHandle) -> Result<PluginInfo> {
+        let mut kind = PluginType::zeroed();
+        let mut version = 0;
+        fmod_try!(FMOD_System_GetPluginInfo(
+            self.as_raw(),
+            handle.raw,
+            kind.as_raw_mut(),
+            ptr::null_mut(),
+            0,
+            &mut version,
+        ));
+        Ok(PluginInfo { kind, version })
+    }
+
+    /// Retrieves name for the selected plugin.
+    pub fn get_plugin_name(&self, handle: PluginHandle, name: &mut String) -> Result {
+        unsafe {
+            fmod_get_string(name, |buf| {
+                Error::from_raw(FMOD_System_GetPluginInfo(
+                    self.as_raw(),
+                    handle.raw,
+                    ptr::null_mut(),
+                    buf.as_mut_ptr().cast(),
+                    buf.len() as _,
+                    ptr::null_mut(),
+                ))
+            })
+        }
+    }
+
+    /// Selects an output type given a plugin handle.
+    ///
+    /// (Windows Only) This function can be called after FMOD is already
+    /// initialized. You can use it to change the output mode at runtime. If
+    /// [raw::FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED] is specified use the
+    /// set_output call to change to [OutputType::NoSound] if no more sound card
+    /// drivers exist.
     pub fn set_output_by_plugin(&self, handle: PluginHandle) -> Result {
-        let handle = PluginHandle::into_raw(handle);
-        fmod_try!(FMOD_System_SetOutputByPlugin(self.as_raw(), handle));
+        fmod_try!(FMOD_System_SetOutputByPlugin(
+            self.as_raw(),
+            handle.into_raw(),
+        ));
         Ok(())
     }
 
+    /// Retrieves the plugin handle for the currently selected output type.
     pub fn get_output_by_plugin(&self) -> Result<PluginHandle> {
-        let mut handle = 0;
-        fmod_try!(FMOD_System_GetOutputByPlugin(self.as_raw(), &mut handle));
-        Ok(unsafe { PluginHandle::from_raw(handle) })
+        let mut handle = PluginHandle::default();
+        fmod_try!(FMOD_System_GetOutputByPlugin(
+            self.as_raw(),
+            handle.as_raw_mut(),
+        ));
+        Ok(handle)
     }
 
+    /// Create a DSP object given a plugin handle.
+    ///
+    /// A DSP object is a module that can be inserted into the mixing graph to
+    /// allow sound filtering or sound generation. See the [DSP architecture guide](https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-dsp-architecture.html)
+    /// for more information.
+    ///
+    /// A handle can come from a newly loaded plugin with [System::load_plugin]
+    /// or an existing plugin with [System::get_plugin_handle].
+    ///
+    /// DSPs must be attached to the DSP graph before they become active, either
+    /// via [ChannelControl::add_dsp] or [Dsp::add_input].
     pub fn create_dsp_by_plugin(&self, handle: PluginHandle) -> Result<Handle<'_, Dsp>> {
-        let handle = PluginHandle::into_raw(handle);
         let mut dsp = ptr::null_mut();
         fmod_try!(FMOD_System_CreateDSPByPlugin(
             self.as_raw(),
-            handle,
+            handle.into_raw(),
             &mut dsp,
         ));
         Ok(unsafe { Handle::new(dsp) })
     }
 
-    // pub fn get_dsp_info_by_plugin
-    // pub fn register_codec(priority: u32) -> Result<(FMOD_CODEC_DESCRIPTION, PluginHandle)>;
-    // pub fn register_dsp(description: FMOD_DSP_DESCRIPTION) -> Result<PluginHandle>;
-    // pub fn register_output(description: FMOD_OUTPUT_DESCRIPTION) -> Result<PluginHandle>;
+    // this functionality needs to wait for custom plugin author binding work.
+    // pub fn get_dsp_info_by_plugin(&self, handle: PluginHandle) -> Result<DspDescription> {
+    // pub fn register_codec(priority: u32, desc: CodecPluginDescription) -> Result<PluginHandle>;
+    // pub fn register_dsp(description: DspDescription) -> Result<PluginHandle>;
+    // pub fn register_output(description: OutputDescription) -> Result<PluginHandle>;
 }
 
 /// Network configuration.
