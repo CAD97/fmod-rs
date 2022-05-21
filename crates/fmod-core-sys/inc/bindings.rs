@@ -2,7 +2,7 @@
 
 /* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2022. */
 
-pub const FMOD_VERSION: u32 = 131590;
+pub const FMOD_VERSION: u32 = 131591;
 pub const FMOD_DEBUG_LEVEL_NONE: u32 = 0;
 pub const FMOD_DEBUG_LEVEL_ERROR: u32 = 1;
 pub const FMOD_DEBUG_LEVEL_WARNING: u32 = 2;
