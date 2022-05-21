@@ -1,7 +1,6 @@
 use {
     crate::utils::{decode_sbcd_u8, string_from_utf16be_lossy, string_from_utf16le_lossy},
     fmod::{raw::*, *},
-    smart_default::SmartDefault,
     std::{
         borrow::Cow,
         ffi::CStr,
