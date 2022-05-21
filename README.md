@@ -33,10 +33,10 @@ In order to better comply with the FMOD license, we do _not_ redistribute the
 FMOD Engine. You should [download](https://www.fmod.com/download#fmodengine)
 the engine yourself.
 
-The currently vendored headers are for FMOD Engine 2.02.06 (build 124257). To
+The currently vendored headers are for FMOD Engine 2.02.07 (build 125130). To
 pin the headers to a specific version, pin `fmod-sys` and `fmod-studio-sys`. The
 sys libraries are versioned based on the FMOD version for convenient pinning;
-for example, FMOD version 2.02.06 is served by sys crates version 2.6.patch.
+for example, FMOD version 2.02.07 is served by sys crates version 2.7.patch.
 
 We add `lib/{arch}` to the search path, and link the logging version of FMOD
 for development builds and production libraries for release builds. The dynamic

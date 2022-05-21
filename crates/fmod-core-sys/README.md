@@ -17,7 +17,7 @@ a version mismatch occurs, FMOD will fail to initialize.
 
 If you need an older header version, open an issue.
 
-The currently vendored headers are for FMOD Engine 2.02.06 (build 124257).
+The currently vendored headers are for FMOD Engine 2.02.07 (build 125130).
 
 ## Linking
 

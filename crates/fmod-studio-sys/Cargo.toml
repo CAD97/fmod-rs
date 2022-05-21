@@ -1,6 +1,6 @@
 [package]
 name = "fmod-studio-sys"
-version = "2.6.0+2.02.06-124257"
+version = "2.7.0+2.02.07-125130"
 edition = "2021"
 rust-version = "1.56"
 license-file = "LICENSE.txt"
@@ -20,7 +20,7 @@ include = [
 ]
 
 [dependencies]
-fmod-core-sys = { version = "=2.6.0", path = "../fmod-core-sys" }
+fmod-core-sys = { version = "=2.7.0", path = "../fmod-core-sys" }
 
 [build-dependencies]
 build-rs = "0.1.2"
