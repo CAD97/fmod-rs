@@ -596,7 +596,7 @@ pub type FMOD_DEBUG_CALLBACK = ::std::option::Option<
 pub type FMOD_SYSTEM_CALLBACK = ::std::option::Option<
     unsafe extern "system" fn(
         system: *mut FMOD_SYSTEM,
-        type_: FMOD_SYSTEM_CALLBACK_TYPE,
+        r#type: FMOD_SYSTEM_CALLBACK_TYPE,
         commanddata1: *mut ::std::os::raw::c_void,
         commanddata2: *mut ::std::os::raw::c_void,
         userdata: *mut ::std::os::raw::c_void,
@@ -677,7 +677,7 @@ pub type FMOD_FILE_ASYNCDONE_FUNC = ::std::option::Option<
 pub type FMOD_MEMORY_ALLOC_CALLBACK = ::std::option::Option<
     unsafe extern "system" fn(
         size: ::std::os::raw::c_uint,
-        type_: FMOD_MEMORY_TYPE,
+        r#type: FMOD_MEMORY_TYPE,
         sourcestr: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_void,
 >;
@@ -685,14 +685,14 @@ pub type FMOD_MEMORY_REALLOC_CALLBACK = ::std::option::Option<
     unsafe extern "system" fn(
         ptr: *mut ::std::os::raw::c_void,
         size: ::std::os::raw::c_uint,
-        type_: FMOD_MEMORY_TYPE,
+        r#type: FMOD_MEMORY_TYPE,
         sourcestr: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_void,
 >;
 pub type FMOD_MEMORY_FREE_CALLBACK = ::std::option::Option<
     unsafe extern "system" fn(
         ptr: *mut ::std::os::raw::c_void,
-        type_: FMOD_MEMORY_TYPE,
+        r#type: FMOD_MEMORY_TYPE,
         sourcestr: *const ::std::os::raw::c_char,
     ),
 >;
@@ -980,7 +980,7 @@ fn bindgen_test_layout_FMOD_GUID() {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_PLUGINLIST {
-    pub type_: FMOD_PLUGINTYPE,
+    pub r#type: FMOD_PLUGINTYPE,
     pub description: *mut ::std::os::raw::c_void,
 }
 #[test]
@@ -996,13 +996,13 @@ fn bindgen_test_layout_FMOD_PLUGINLIST() {
         concat!("Alignment of ", stringify!(FMOD_PLUGINLIST))
     );
     assert_eq!(
-        unsafe { &(*(::std::ptr::null::<FMOD_PLUGINLIST>())).type_ as *const _ as usize },
+        unsafe { &(*(::std::ptr::null::<FMOD_PLUGINLIST>())).r#type as *const _ as usize },
         0usize,
         concat!(
             "Offset of field: ",
             stringify!(FMOD_PLUGINLIST),
             "::",
-            stringify!(type_)
+            stringify!(r#type)
         )
     );
     assert_eq!(
@@ -1324,7 +1324,7 @@ fn bindgen_test_layout_FMOD_ADVANCEDSETTINGS() {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_TAG {
-    pub type_: FMOD_TAGTYPE,
+    pub r#type: FMOD_TAGTYPE,
     pub datatype: FMOD_TAGDATATYPE,
     pub name: *mut ::std::os::raw::c_char,
     pub data: *mut ::std::os::raw::c_void,
@@ -1344,13 +1344,13 @@ fn bindgen_test_layout_FMOD_TAG() {
         concat!("Alignment of ", stringify!(FMOD_TAG))
     );
     assert_eq!(
-        unsafe { &(*(::std::ptr::null::<FMOD_TAG>())).type_ as *const _ as usize },
+        unsafe { &(*(::std::ptr::null::<FMOD_TAG>())).r#type as *const _ as usize },
         0usize,
         concat!(
             "Offset of field: ",
             stringify!(FMOD_TAG),
             "::",
-            stringify!(type_)
+            stringify!(r#type)
         )
     );
     assert_eq!(
@@ -3539,7 +3539,7 @@ pub type FMOD_DSP_SYSTEM_MIX_CALLBACK = ::std::option::Option<
 pub type FMOD_DSP_ALLOC_FUNC = ::std::option::Option<
     unsafe extern "system" fn(
         size: ::std::os::raw::c_uint,
-        type_: FMOD_MEMORY_TYPE,
+        r#type: FMOD_MEMORY_TYPE,
         sourcestr: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_void,
 >;
@@ -3547,14 +3547,14 @@ pub type FMOD_DSP_REALLOC_FUNC = ::std::option::Option<
     unsafe extern "system" fn(
         ptr: *mut ::std::os::raw::c_void,
         size: ::std::os::raw::c_uint,
-        type_: FMOD_MEMORY_TYPE,
+        r#type: FMOD_MEMORY_TYPE,
         sourcestr: *const ::std::os::raw::c_char,
     ) -> *mut ::std::os::raw::c_void,
 >;
 pub type FMOD_DSP_FREE_FUNC = ::std::option::Option<
     unsafe extern "system" fn(
         ptr: *mut ::std::os::raw::c_void,
-        type_: FMOD_MEMORY_TYPE,
+        r#type: FMOD_MEMORY_TYPE,
         sourcestr: *const ::std::os::raw::c_char,
     ),
 >;
@@ -3885,7 +3885,7 @@ fn bindgen_test_layout_FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR() {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_PARAMETER_FLOAT_MAPPING {
-    pub type_: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE,
+    pub r#type: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE,
     pub piecewiselinearmapping: FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR,
 }
 #[test]
@@ -3905,14 +3905,14 @@ fn bindgen_test_layout_FMOD_DSP_PARAMETER_FLOAT_MAPPING() {
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_FLOAT_MAPPING>())).type_ as *const _ as usize
+            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_FLOAT_MAPPING>())).r#type as *const _ as usize
         },
         0usize,
         concat!(
             "Offset of field: ",
             stringify!(FMOD_DSP_PARAMETER_FLOAT_MAPPING),
             "::",
-            stringify!(type_)
+            stringify!(r#type)
         )
     );
     assert_eq!(
@@ -4153,86 +4153,79 @@ fn bindgen_test_layout_FMOD_DSP_PARAMETER_DESC_DATA() {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FMOD_DSP_PARAMETER_DESC {
-    pub type_: FMOD_DSP_PARAMETER_TYPE,
+    pub r#type: FMOD_DSP_PARAMETER_TYPE,
     pub name: [::std::os::raw::c_char; 16usize],
     pub label: [::std::os::raw::c_char; 16usize],
     pub description: *const ::std::os::raw::c_char,
-    pub __bindgen_anon_1: FMOD_DSP_PARAMETER_DESC__bindgen_ty_1,
+    pub payload: FMOD_DSP_PARAMETER_DESC_PAYLOAD,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union FMOD_DSP_PARAMETER_DESC__bindgen_ty_1 {
+pub union FMOD_DSP_PARAMETER_DESC_PAYLOAD {
     pub floatdesc: FMOD_DSP_PARAMETER_DESC_FLOAT,
     pub intdesc: FMOD_DSP_PARAMETER_DESC_INT,
     pub booldesc: FMOD_DSP_PARAMETER_DESC_BOOL,
     pub datadesc: FMOD_DSP_PARAMETER_DESC_DATA,
 }
 #[test]
-fn bindgen_test_layout_FMOD_DSP_PARAMETER_DESC__bindgen_ty_1() {
+fn bindgen_test_layout_FMOD_DSP_PARAMETER_DESC_PAYLOAD() {
     assert_eq!(
-        ::std::mem::size_of::<FMOD_DSP_PARAMETER_DESC__bindgen_ty_1>(),
+        ::std::mem::size_of::<FMOD_DSP_PARAMETER_DESC_PAYLOAD>(),
         48usize,
-        concat!(
-            "Size of: ",
-            stringify!(FMOD_DSP_PARAMETER_DESC__bindgen_ty_1)
-        )
+        concat!("Size of: ", stringify!(FMOD_DSP_PARAMETER_DESC_PAYLOAD))
     );
     assert_eq!(
-        ::std::mem::align_of::<FMOD_DSP_PARAMETER_DESC__bindgen_ty_1>(),
+        ::std::mem::align_of::<FMOD_DSP_PARAMETER_DESC_PAYLOAD>(),
         8usize,
-        concat!(
-            "Alignment of ",
-            stringify!(FMOD_DSP_PARAMETER_DESC__bindgen_ty_1)
-        )
+        concat!("Alignment of ", stringify!(FMOD_DSP_PARAMETER_DESC_PAYLOAD))
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC__bindgen_ty_1>())).floatdesc as *const _
+            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC_PAYLOAD>())).floatdesc as *const _
                 as usize
         },
         0usize,
         concat!(
             "Offset of field: ",
-            stringify!(FMOD_DSP_PARAMETER_DESC__bindgen_ty_1),
+            stringify!(FMOD_DSP_PARAMETER_DESC_PAYLOAD),
             "::",
             stringify!(floatdesc)
         )
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC__bindgen_ty_1>())).intdesc as *const _
-                as usize
+            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC_PAYLOAD>())).intdesc as *const _ as usize
         },
         0usize,
         concat!(
             "Offset of field: ",
-            stringify!(FMOD_DSP_PARAMETER_DESC__bindgen_ty_1),
+            stringify!(FMOD_DSP_PARAMETER_DESC_PAYLOAD),
             "::",
             stringify!(intdesc)
         )
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC__bindgen_ty_1>())).booldesc as *const _
+            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC_PAYLOAD>())).booldesc as *const _
                 as usize
         },
         0usize,
         concat!(
             "Offset of field: ",
-            stringify!(FMOD_DSP_PARAMETER_DESC__bindgen_ty_1),
+            stringify!(FMOD_DSP_PARAMETER_DESC_PAYLOAD),
             "::",
             stringify!(booldesc)
         )
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC__bindgen_ty_1>())).datadesc as *const _
+            &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC_PAYLOAD>())).datadesc as *const _
                 as usize
         },
         0usize,
         concat!(
             "Offset of field: ",
-            stringify!(FMOD_DSP_PARAMETER_DESC__bindgen_ty_1),
+            stringify!(FMOD_DSP_PARAMETER_DESC_PAYLOAD),
             "::",
             stringify!(datadesc)
         )
@@ -4251,13 +4244,13 @@ fn bindgen_test_layout_FMOD_DSP_PARAMETER_DESC() {
         concat!("Alignment of ", stringify!(FMOD_DSP_PARAMETER_DESC))
     );
     assert_eq!(
-        unsafe { &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC>())).type_ as *const _ as usize },
+        unsafe { &(*(::std::ptr::null::<FMOD_DSP_PARAMETER_DESC>())).r#type as *const _ as usize },
         0usize,
         concat!(
             "Offset of field: ",
             stringify!(FMOD_DSP_PARAMETER_DESC),
             "::",
-            stringify!(type_)
+            stringify!(r#type)
         )
     );
     assert_eq!(
@@ -6041,7 +6034,7 @@ extern "system" {
 }
 extern "system" {
     pub fn FMOD_Thread_SetAttributes(
-        type_: FMOD_THREAD_TYPE,
+        r#type: FMOD_THREAD_TYPE,
         affinity: FMOD_THREAD_AFFINITY,
         priority: FMOD_THREAD_PRIORITY,
         stacksize: FMOD_THREAD_STACK_SIZE,
@@ -6468,7 +6461,7 @@ extern "system" {
 extern "system" {
     pub fn FMOD_System_CreateDSPByType(
         system: *mut FMOD_SYSTEM,
-        type_: FMOD_DSP_TYPE,
+        r#type: FMOD_DSP_TYPE,
         dsp: *mut *mut FMOD_DSP,
     ) -> FMOD_RESULT;
 }
@@ -6520,7 +6513,7 @@ extern "system" {
 extern "system" {
     pub fn FMOD_System_GetDSPInfoByType(
         system: *mut FMOD_SYSTEM,
-        type_: FMOD_DSP_TYPE,
+        r#type: FMOD_DSP_TYPE,
         description: *mut *const FMOD_DSP_DESCRIPTION,
     ) -> FMOD_RESULT;
 }
@@ -6810,7 +6803,7 @@ extern "system" {
 extern "system" {
     pub fn FMOD_Sound_GetFormat(
         sound: *mut FMOD_SOUND,
-        type_: *mut FMOD_SOUND_TYPE,
+        r#type: *mut FMOD_SOUND_TYPE,
         format: *mut FMOD_SOUND_FORMAT,
         channels: *mut ::std::os::raw::c_int,
         bits: *mut ::std::os::raw::c_int,
@@ -7993,7 +7986,7 @@ extern "system" {
         dsp: *mut FMOD_DSP,
         input: *mut FMOD_DSP,
         connection: *mut *mut FMOD_DSPCONNECTION,
-        type_: FMOD_DSPCONNECTION_TYPE,
+        r#type: FMOD_DSPCONNECTION_TYPE,
     ) -> FMOD_RESULT;
 }
 extern "system" {
@@ -8200,7 +8193,7 @@ extern "system" {
     ) -> FMOD_RESULT;
 }
 extern "system" {
-    pub fn FMOD_DSP_GetType(dsp: *mut FMOD_DSP, type_: *mut FMOD_DSP_TYPE) -> FMOD_RESULT;
+    pub fn FMOD_DSP_GetType(dsp: *mut FMOD_DSP, r#type: *mut FMOD_DSP_TYPE) -> FMOD_RESULT;
 }
 extern "system" {
     pub fn FMOD_DSP_GetIdle(dsp: *mut FMOD_DSP, idle: *mut FMOD_BOOL) -> FMOD_RESULT;
@@ -8290,7 +8283,7 @@ extern "system" {
 extern "system" {
     pub fn FMOD_DSPConnection_GetType(
         dspconnection: *mut FMOD_DSPCONNECTION,
-        type_: *mut FMOD_DSPCONNECTION_TYPE,
+        r#type: *mut FMOD_DSPCONNECTION_TYPE,
     ) -> FMOD_RESULT;
 }
 extern "system" {

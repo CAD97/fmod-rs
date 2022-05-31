@@ -257,7 +257,7 @@ pub struct FMOD_STUDIO_PARAMETER_DESCRIPTION {
     pub minimum: f32,
     pub maximum: f32,
     pub defaultvalue: f32,
-    pub type_: FMOD_STUDIO_PARAMETER_TYPE,
+    pub r#type: FMOD_STUDIO_PARAMETER_TYPE,
     pub flags: FMOD_STUDIO_PARAMETER_FLAGS,
     pub guid: FMOD_GUID,
 }
@@ -341,14 +341,15 @@ fn bindgen_test_layout_FMOD_STUDIO_PARAMETER_DESCRIPTION() {
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_STUDIO_PARAMETER_DESCRIPTION>())).type_ as *const _ as usize
+            &(*(::std::ptr::null::<FMOD_STUDIO_PARAMETER_DESCRIPTION>())).r#type as *const _
+                as usize
         },
         28usize,
         concat!(
             "Offset of field: ",
             stringify!(FMOD_STUDIO_PARAMETER_DESCRIPTION),
             "::",
-            stringify!(type_)
+            stringify!(r#type)
         )
     );
     assert_eq!(
@@ -380,83 +381,80 @@ fn bindgen_test_layout_FMOD_STUDIO_PARAMETER_DESCRIPTION() {
 #[derive(Copy, Clone)]
 pub struct FMOD_STUDIO_USER_PROPERTY {
     pub name: *const ::std::os::raw::c_char,
-    pub type_: FMOD_STUDIO_USER_PROPERTY_TYPE,
-    pub __bindgen_anon_1: FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1,
+    pub r#type: FMOD_STUDIO_USER_PROPERTY_TYPE,
+    pub payload: FMOD_STUDIO_USER_PROPERTY_PAYLOAD,
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1 {
+pub union FMOD_STUDIO_USER_PROPERTY_PAYLOAD {
     pub intvalue: ::std::os::raw::c_int,
     pub boolvalue: FMOD_BOOL,
     pub floatvalue: f32,
     pub stringvalue: *const ::std::os::raw::c_char,
 }
 #[test]
-fn bindgen_test_layout_FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1() {
+fn bindgen_test_layout_FMOD_STUDIO_USER_PROPERTY_PAYLOAD() {
     assert_eq!(
-        ::std::mem::size_of::<FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1>(),
+        ::std::mem::size_of::<FMOD_STUDIO_USER_PROPERTY_PAYLOAD>(),
         8usize,
-        concat!(
-            "Size of: ",
-            stringify!(FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1)
-        )
+        concat!("Size of: ", stringify!(FMOD_STUDIO_USER_PROPERTY_PAYLOAD))
     );
     assert_eq!(
-        ::std::mem::align_of::<FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1>(),
+        ::std::mem::align_of::<FMOD_STUDIO_USER_PROPERTY_PAYLOAD>(),
         8usize,
         concat!(
             "Alignment of ",
-            stringify!(FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1)
+            stringify!(FMOD_STUDIO_USER_PROPERTY_PAYLOAD)
         )
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1>())).intvalue as *const _
+            &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY_PAYLOAD>())).intvalue as *const _
                 as usize
         },
         0usize,
         concat!(
             "Offset of field: ",
-            stringify!(FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1),
+            stringify!(FMOD_STUDIO_USER_PROPERTY_PAYLOAD),
             "::",
             stringify!(intvalue)
         )
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1>())).boolvalue
-                as *const _ as usize
+            &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY_PAYLOAD>())).boolvalue as *const _
+                as usize
         },
         0usize,
         concat!(
             "Offset of field: ",
-            stringify!(FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1),
+            stringify!(FMOD_STUDIO_USER_PROPERTY_PAYLOAD),
             "::",
             stringify!(boolvalue)
         )
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1>())).floatvalue
-                as *const _ as usize
+            &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY_PAYLOAD>())).floatvalue as *const _
+                as usize
         },
         0usize,
         concat!(
             "Offset of field: ",
-            stringify!(FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1),
+            stringify!(FMOD_STUDIO_USER_PROPERTY_PAYLOAD),
             "::",
             stringify!(floatvalue)
         )
     );
     assert_eq!(
         unsafe {
-            &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1>())).stringvalue
-                as *const _ as usize
+            &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY_PAYLOAD>())).stringvalue as *const _
+                as usize
         },
         0usize,
         concat!(
             "Offset of field: ",
-            stringify!(FMOD_STUDIO_USER_PROPERTY__bindgen_ty_1),
+            stringify!(FMOD_STUDIO_USER_PROPERTY_PAYLOAD),
             "::",
             stringify!(stringvalue)
         )
@@ -485,13 +483,15 @@ fn bindgen_test_layout_FMOD_STUDIO_USER_PROPERTY() {
         )
     );
     assert_eq!(
-        unsafe { &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY>())).type_ as *const _ as usize },
+        unsafe {
+            &(*(::std::ptr::null::<FMOD_STUDIO_USER_PROPERTY>())).r#type as *const _ as usize
+        },
         8usize,
         concat!(
             "Offset of field: ",
             stringify!(FMOD_STUDIO_USER_PROPERTY),
             "::",
-            stringify!(type_)
+            stringify!(r#type)
         )
     );
 }
@@ -1335,14 +1335,14 @@ fn bindgen_test_layout_FMOD_STUDIO_MEMORY_USAGE() {
 pub type FMOD_STUDIO_SYSTEM_CALLBACK = ::std::option::Option<
     unsafe extern "system" fn(
         system: *mut FMOD_STUDIO_SYSTEM,
-        type_: FMOD_STUDIO_SYSTEM_CALLBACK_TYPE,
+        r#type: FMOD_STUDIO_SYSTEM_CALLBACK_TYPE,
         commanddata: *mut ::std::os::raw::c_void,
         userdata: *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_STUDIO_EVENT_CALLBACK = ::std::option::Option<
     unsafe extern "system" fn(
-        type_: FMOD_STUDIO_EVENT_CALLBACK_TYPE,
+        r#type: FMOD_STUDIO_EVENT_CALLBACK_TYPE,
         event: *mut FMOD_STUDIO_EVENTINSTANCE,
         parameters: *mut ::std::os::raw::c_void,
     ) -> FMOD_RESULT,
