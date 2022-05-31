@@ -397,7 +397,7 @@ impl Tag<'_> {
                 },
             };
             Ok(Tag {
-                kind: TagType::from_raw(tag.type_),
+                kind: TagType::from_raw(tag.r#type),
                 name,
                 data,
                 updated: tag.updated == 0,
