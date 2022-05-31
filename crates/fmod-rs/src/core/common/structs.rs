@@ -1,5 +1,7 @@
 use {
-    crate::utils::{decode_sbcd_u8, string_from_utf16be_lossy, string_from_utf16le_lossy},
+    crate::utils::{
+        decode_sbcd_u16, decode_sbcd_u8, string_from_utf16be_lossy, string_from_utf16le_lossy,
+    },
     fmod::{raw::*, *},
     std::{
         borrow::Cow,
@@ -15,11 +17,11 @@ use {
 /// FMOD version number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Version {
-    /// Product version
-    pub product: u8,
-    /// Major version
+    /// Product version.
+    pub product: u16,
+    /// Major version.
     pub major: u8,
-    /// Minor version
+    /// Minor version.
     pub minor: u8,
 }
 
@@ -28,9 +30,9 @@ impl Version {
         #[allow(clippy::identity_op)]
         pub const fn from_raw(raw: u32) -> Version {
             Version {
-                product: decode_sbcd_u8(((raw & 0x000000FF) >> 0) as u8),
+                product: decode_sbcd_u16(((raw & 0xFFFF0000) >> 8) as u16),
                 major: decode_sbcd_u8(((raw & 0x0000FF00) >> 4) as u8),
-                minor: decode_sbcd_u8(((raw & 0x00FF0000) >> 8) as u8),
+                minor: decode_sbcd_u8(((raw & 0x000000FF) >> 0) as u8),
             }
         }
     }

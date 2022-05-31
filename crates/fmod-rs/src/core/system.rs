@@ -1,10 +1,9 @@
-use crate::utils::fmod_get_string;
-
 use {
+    crate::utils::fmod_get_string,
     fmod::{raw::*, *},
     parking_lot::RwLockUpgradableReadGuard,
     smart_default::SmartDefault,
-    std::{ffi::CStr, mem, ptr},
+    std::{ffi::CStr, mem, ptr, time::Duration},
 };
 
 opaque! {
@@ -1276,18 +1275,102 @@ impl System {
 
 /// Network configuration.
 impl System {
-    // pub fn set_network_proxy
-    // pub fn get_network_proxy
-    // pub fn set_network_timeout
-    // pub fn get_network_timeout
+    /// Set a proxy server to use for all subsequent internet connections.
+    ///
+    /// Specify the proxy in `host:port` format e.g. `www.fmod.com:8888`
+    /// (defaults to port 80 if no port is specified).
+    ///
+    /// Basic authentication is supported using `user:password@host:port` format
+    /// e.g. `bob:sekrit123@www.fmod.com:8888`.
+    pub fn set_network_proxy(&self, proxy: &CStr) -> Result {
+        fmod_try!(FMOD_System_SetNetworkProxy(self.as_raw(), proxy.as_ptr()));
+        Ok(())
+    }
+
+    /// Retrieves the URL of the proxy server used in internet streaming.
+    pub fn get_network_proxy(&self, proxy: &mut String) -> Result {
+        unsafe {
+            fmod_get_string(proxy, |buf| {
+                Error::from_raw(FMOD_System_GetNetworkProxy(
+                    self.as_raw(),
+                    buf.as_mut_ptr().cast(),
+                    buf.len() as _,
+                ))
+            })
+        }
+    }
+
+    /// Set the timeout for network streams.
+    pub fn set_network_timeout(&self, timeout: Duration) -> Result {
+        let timeout = timeout.as_millis() as _;
+        fmod_try!(FMOD_System_SetNetworkTimeout(self.as_raw(), timeout));
+        Ok(())
+    }
+
+    /// Retrieve the timeout value for network streams.
+    pub fn get_network_timeout(&self) -> Result<Duration> {
+        let mut timeout = 0;
+        fmod_try!(FMOD_System_GetNetworkTimeout(self.as_raw(), &mut timeout));
+        Ok(Duration::from_millis(timeout as _))
+    }
 }
+
+/// A number of playing channels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ChannelUsage {
+    /// Number of playing [Channel]s (both real and virtual).
+    pub channels: i32,
+    /// Number of playing real (non-virtual) [Channel]s.
+    pub real_channels: i32,
+}
+
+/// Runnint total information about file reads.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FileUsage {
+    /// Total bytes read from file for loading sample data.
+    pub sample_bytes_read: i64,
+    /// Total bytes read from file for streaming sounds.
+    pub stream_bytes_read: i64,
+    /// Total bytes read for non-audio data such as FMOD Studio banks.
+    pub other_bytes_read: i64,
+}
+
+type MixMatrix = [f32; (FMOD_MAX_CHANNEL_WIDTH * FMOD_MAX_CHANNEL_WIDTH) as usize];
 
 /// Information.
 impl System {
-    // pub fn get_version
-    // pub fn get_output_handle
+    /// Retrieves the FMOD version number.
+    ///
+    /// Compare against `fmod::VERSION` to make sure header and runtime library
+    /// versions match.
+    pub fn get_version(&self) -> Result<Version> {
+        let mut version = 0;
+        fmod_try!(FMOD_System_GetVersion(self.as_raw(), &mut version));
+        Ok(Version::from_raw(version))
+    }
 
-    pub fn get_channels_playing(&self) -> Result<(i32, i32)> {
+    /// Retrieves an output type specific internal native interface.
+    ///
+    /// Reinterpret the returned handle based on the selected output type, not
+    /// all types return something.
+    ///
+    /// - [`OutputType::WavWriter`]: Pointer to stdio `FILE` is returned.
+    /// - [`OutputType::WavWriterNrt`]: Pointer to stdio `FILE` is returned.
+    /// - [`OutputType::Wasapi`]: Pointer to type `IAudioClient` is returned.
+    /// - [`OutputType::Alsa`]: Pointer to type `snd_pcm_t` is returned.
+    /// - [`OutputType::CoreAudio`]: Handle of type `AudioUnit` is returned.
+    /// - [`OutputType::AudioOut`]: Pointer to type `i32` is returned. Handle returned from `sceAudioOutOpen`.
+    pub fn get_output_handle(&self) -> Result<*mut ()> {
+        let mut output = ptr::null_mut();
+        fmod_try!(FMOD_System_GetOutputHandle(self.as_raw(), &mut output));
+        Ok(output.cast())
+    }
+
+    /// Retrieves the number of currently playing Channels.
+    ///
+    /// For differences between real and virtual voices see the Virtual Voices
+    /// guide for more information.
+    pub fn get_channels_playing(&self) -> Result<ChannelUsage> {
         let mut channels = 0;
         let mut real_channels = 0;
         fmod_try!(FMOD_System_GetChannelsPlaying(
@@ -1295,13 +1378,74 @@ impl System {
             &mut channels,
             &mut real_channels,
         ));
-        Ok((channels, real_channels))
+        Ok(ChannelUsage {
+            channels,
+            real_channels,
+        })
     }
 
-    // pub fn get_cpu_usage
-    // pub fn get_file_usage
-    // pub fn get_default_mix_matrix
-    // pub fn get_speaker_mode_channels
+    /// Retrieves the amount of CPU used for different parts of the Core engine.
+    ///
+    /// For readability, the percentage values are smoothed to provide a more
+    /// stable output.
+    pub fn get_cpu_usage(&self) -> Result<CpuUsage> {
+        let mut usage = CpuUsage::default();
+        fmod_try!(FMOD_System_GetCPUUsage(self.as_raw(), usage.as_raw_mut()));
+        Ok(usage)
+    }
+
+    /// Retrieves information about file reads.
+    pub fn get_file_usage(&self) -> Result<FileUsage> {
+        let mut sample_bytes_read = 0;
+        let mut stream_bytes_read = 0;
+        let mut other_bytes_read = 0;
+        fmod_try!(FMOD_System_GetFileUsage(
+            self.as_raw(),
+            &mut sample_bytes_read,
+            &mut stream_bytes_read,
+            &mut other_bytes_read,
+        ));
+        Ok(FileUsage {
+            sample_bytes_read,
+            stream_bytes_read,
+            other_bytes_read,
+        })
+    }
+
+    /// Retrieves the default matrix used to convert from one speaker mode to
+    /// another.
+    ///
+    /// The gain for source channel `s` to target channel `t` is
+    /// `matrix[t * system.get_speaker_mode_channels(source_mode) + s]`.
+    ///
+    /// If `source_mode` or `target_mode` is `SpeakerMode::Raw`, this function
+    /// will return `Error::InvalidParam`.
+    pub fn get_default_mix_matrix(
+        &self,
+        source_mode: SpeakerMode,
+        target_mode: SpeakerMode,
+        matrix: &mut MixMatrix,
+    ) -> Result {
+        fmod_try!(FMOD_System_GetDefaultMixMatrix(
+            self.as_raw(),
+            source_mode.into_raw(),
+            target_mode.into_raw(),
+            matrix.as_mut_ptr(),
+            0,
+        ));
+        Ok(())
+    }
+
+    /// Retrieves the channel count for a given speaker mode.
+    pub fn get_speaker_mode_channels(&self, mode: SpeakerMode) -> Result<usize> {
+        let mut channels = 0;
+        fmod_try!(FMOD_System_GetSpeakerModeChannels(
+            self.as_raw(),
+            mode.into_raw(),
+            &mut channels,
+        ));
+        Ok(channels as _)
+    }
 }
 
 /// Creation and retrieval.
