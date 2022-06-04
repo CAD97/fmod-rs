@@ -32,20 +32,9 @@ impl System {
         // guard against creating multiple systems
         let system_exists = GLOBAL_SYSTEM_STATE.upgradable_read();
         if *system_exists != 0 {
-            if cfg!(debug_assertions) {
-                panic!("Only one FMOD system may be created safely. \
-                    Read the docs on `System::new_unchecked` if you actually mean to create more than one system. \
-                    Note: constructing a studio system automatically creates a core system for you!");
-            }
-
-            #[cfg(feature = "tracing")]
-            tracing::error!(
-                parent: crate::span(),
-                "Only one FMOD system may be created safely. \
-                    Read the docs on `System::new_unchecked` if you actually mean to create more than one system. \
-                    Note: constructing a studio system automatically creates a core system for you!"
-            );
-
+            whoops!("Only one FMOD system may be created safely. \
+                Read the docs on `System::new_unchecked` if you actually mean to create more than one system. \
+                Note: constructing a studio system automatically creates a core system for you!");
             return Err(Error::Initialized);
         }
 
@@ -1451,19 +1440,21 @@ impl System {
 /// Creation and retrieval.
 impl System {
     // TODO: create_sound_ex
+    /// Loads a sound into memory, opens it for streaming or sets it up for
+    /// callback based sounds.
     pub fn create_sound(&self, name: &CStr, mode: Mode) -> Result<Handle<'_, Sound>> {
         if matches!(
             mode,
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
         ) {
-            if cfg!(debug_assertions) {
-                panic!("System::create_sound cannot be called with extended mode {mode:?}; use create_sound_ex instead");
-            }
-            #[cfg(feature = "tracing")]
-            tracing::error!(
-                parent: crate::span(),
-                ?mode,
-                "System::create_sound called with extended mode; use create_sound_ex instead",
+            whoops!(
+                trace(
+                    ?mode,
+                    "System::create_sound called with extended mode; use create_sound_ex instead",
+                ),
+                panic(
+                    "System::create_sound cannot be called with extended mode {mode:?}; use create_sound_ex instead"
+                ),
             );
             return Err(Error::InvalidParam);
         }
@@ -1487,14 +1478,14 @@ impl System {
             mode,
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
         ) {
-            if cfg!(debug_assertions) {
-                panic!("System::create_stream cannot be called with extended mode {mode:?}; use create_stream_ex instead");
-            }
-            #[cfg(feature = "tracing")]
-            tracing::error!(
-                parent: crate::span(),
-                ?mode,
-                "System::create_stream called with extended mode; use create_stream_ex instead",
+            whoops!(
+                trace(
+                    ?mode,
+                    "System::create_stream called with extended mode; use create_stream_ex instead",
+                ),
+                panic(
+                    "System::create_stream cannot be called with extended mode {mode:?}; use create_stream_ex instead",
+                ),
             );
             return Err(Error::InvalidParam);
         }

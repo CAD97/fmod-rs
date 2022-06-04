@@ -1,3 +1,32 @@
+macro_rules! whoops {
+    {
+        trace($($trace:tt)*),
+        panic($($panic:tt)*) $(,)?
+    } => {{
+        #[cfg(feature = "tracing")]
+        tracing::error!(parent: crate::span(), $($trace)*);
+        if cfg!(debug_assertions) {
+            if !::std::thread::panicking() {
+                panic!($($panic)*);
+            }
+            use ::std::io::prelude::*;
+            let _ = writeln!(::std::io::stderr(), $($panic)*);
+        }
+    }};
+    {
+        trace($($trace:tt)*),
+        stderr($($panic:tt)*) $(,)?
+    } => {{
+        #[cfg(feature = "tracing")]
+        tracing::error!(parent: crate::span(), $($trace)*);
+        if cfg!(debug_assertions) {
+            use ::std::io::prelude::*;
+            let _ = writeln!(::std::io::stderr(), $($panic)*);
+        }
+    }};
+    ($($args:tt)*) => { whoops!{trace($($args)*, panic($($args)*))} };
+}
+
 macro_rules! opaque {
     {
         $(#[$meta:meta])*

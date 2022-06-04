@@ -61,14 +61,19 @@ impl<T: ?Sized + FmodResource> Drop for Handle<'_, T> {
                 );
             },
             Err(error) => {
-                let _ = error;
-                #[cfg(feature = "tracing")]
-                tracing::error!(
-                    parent: crate::span(),
-                    error = error.into_raw(),
-                    "Error releasing {}({:p}): {error}",
-                    std::any::type_name::<T>(),
-                    raw,
+                whoops!(
+                    trace(
+                        error = error.into_raw(),
+                        "Error releasing {}({:p}): {error}",
+                        std::any::type_name::<T>(),
+                        raw,
+                    ),
+                    panic(
+                        "Error releasing {}({:p}): {error}",
+                        std::any::type_name::<T>(),
+                        raw,
+                        error
+                    )
                 );
             },
         }

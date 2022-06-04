@@ -390,11 +390,10 @@ impl Tag<'_> {
                 TagDataType::StringUtf16 => TagData::Str(Cow::Owned(string_from_utf16le_lossy(data))),
                 TagDataType::StringUtf16be => TagData::Str(Cow::Owned(string_from_utf16be_lossy(data))),
                 r#type => {
-                    if cfg!(debug_assertions) {
-                        unreachable!("unknown {type:?} (len {}) encountered", tag.datalen)
-                    }
-                    #[cfg(feature = "tracing")]
-                    tracing::error!(tag.datatype, tag.datalen, tag.data = ?data, "Unknown {type:?} encountered");
+                    whoops!(
+                        trace(tag.datatype, tag.datalen, tag.data = ?data, "Unknown {type:?} encountered"),
+                        panic("unknown {type:?} (len {}) encountered", tag.datalen)
+                    );
                     return Err(Error::InternalRs);
                 },
             };
