@@ -159,29 +159,15 @@ where
         Err(err) => {
             let callback = std::any::type_name::<F>();
             if let Some(e) = cool_asserts::get_panic_message(&err) {
-                cfg_if! {
-                    if #[cfg(feature = "tracing")] {
-                        tracing::error!(
-                            parent: crate::span(),
-                            callback,
-                            "FMOD.rs panicked in a callback: {e}",
-                        );
-                    } else {
-                        eprintln!("FMOD.rs panicked in {callback}: {e}");
-                    }
-                }
+                whoops!(
+                    trace(callback, "FMOD.rs panicked in a callback: {e}"),
+                    stderr("FMOD.rs panicked in {callback}: {e}")
+                );
             } else {
-                cfg_if! {
-                    if #[cfg(feature = "tracing")] {
-                        tracing::error!(
-                            parent: crate::span(),
-                            callback,
-                            "FMOD.rs panicked in a callback",
-                        );
-                    } else {
-                        eprintln!("FMOD.rs panicked in {callback}: {e}");
-                    }
-                }
+                whoops!(
+                    trace(callback, "FMOD.rs panicked in a callback"),
+                    stderr("FMOD.rs panicked in {callback}"),
+                );
             }
             None
         },

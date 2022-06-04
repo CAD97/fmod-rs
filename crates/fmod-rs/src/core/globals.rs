@@ -603,10 +603,7 @@ pub mod debug {
                 tracing::info!(parent: crate::span(), "FMOD debug disabled");
             },
             error => {
-                tracing::error!(
-                    parent: crate::span(),
-                    "Error during FMOD debug initialization: {error}",
-                )
+                whoops!("Error during FMOD debug initialization: {error}");
             },
         }
     }
@@ -714,12 +711,7 @@ pub mod file {
             match set_disk_busy(false) {
                 Ok(()) => (),
                 Err(error) => {
-                    #[cfg(feature = "tracing")]
-                    tracing::error!(
-                        parent: crate::span(),
-                        error = error.into_raw(),
-                        "Error unlocking file busy state: {error}",
-                    );
+                    whoops!("Error unlocking file busy state: {error}");
                 },
             }
         }
