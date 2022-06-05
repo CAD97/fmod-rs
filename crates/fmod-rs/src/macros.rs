@@ -24,7 +24,7 @@ macro_rules! whoops {
             let _ = writeln!(::std::io::stderr(), $($panic)*);
         }
     }};
-    ($($args:tt)*) => { whoops!{trace($($args)*, panic($($args)*))} };
+    ($($args:tt)*) => { whoops!{trace($($args)*), panic($($args)*)} };
 }
 
 macro_rules! opaque {
