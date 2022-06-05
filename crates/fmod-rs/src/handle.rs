@@ -62,18 +62,9 @@ impl<T: ?Sized + FmodResource> Drop for Handle<'_, T> {
             },
             Err(error) => {
                 whoops!(
-                    trace(
-                        error = error.into_raw(),
-                        "Error releasing {}({:p}): {error}",
-                        std::any::type_name::<T>(),
-                        raw,
-                    ),
-                    panic(
-                        "Error releasing {}({:p}): {error}",
-                        std::any::type_name::<T>(),
-                        raw,
-                        error
-                    )
+                    "Error releasing {}({:p}): {error}",
+                    std::any::type_name::<T>(),
+                    raw,
                 );
             },
         }

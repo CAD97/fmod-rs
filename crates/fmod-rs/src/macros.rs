@@ -374,7 +374,7 @@ macro_rules! enum_struct {
         }
 
         impl std::fmt::Debug for $Name {
-            #[allow(unreachable_patterns)]
+            #[allow(deprecated, unreachable_patterns)]
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match *self {
                     $($Name::$Variant => f.debug_struct(stringify!($Variant)).finish(),)*
