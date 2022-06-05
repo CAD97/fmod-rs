@@ -898,13 +898,31 @@ pub mod file {
     /// 'Piggyback' on FMOD file reading routines to capture data as it's read.
     pub trait ListenFileSystem {
         /// Callback for after a file is opened.
-        fn open(name: &CStr, size: u32, handle: usize);
+        fn open(name: &CStr, size: u32, handle: usize) {
+            let _ = (name, size, handle);
+        }
         /// Callback for after a file is closed.
-        fn close(handle: usize);
+        fn close(handle: usize) {
+            let _ = handle;
+        }
         /// Callback for after a read operation.
-        fn read(handle: usize, buffer: &[u8], eof: bool);
+        fn read(handle: usize, buffer: &[u8], eof: bool) {
+            let _ = (handle, buffer, eof);
+        }
         /// Callback for after a seek operation.
-        fn seek(handle: usize, pos: u32);
+        fn seek(handle: usize, pos: u32) {
+            let _ = (handle, pos);
+        }
+    }
+
+    #[allow(clippy::missing_safety_doc)]
+    pub trait AsyncListenFileSystem: ListenFileSystem {
+        unsafe fn async_read(info: AsyncReadInfo<()>) {
+            let _ = info;
+        }
+        unsafe fn async_cancel(info: AsyncReadInfo<()>) {
+            let _ = info;
+        }
     }
 
     pub(crate) unsafe extern "system" fn useropen_listen<FS: ListenFileSystem>(
@@ -945,6 +963,22 @@ pub mod file {
         _userdata: *mut c_void,
     ) -> FMOD_RESULT {
         catch_user_unwind(|| FS::seek(handle as usize, pos));
+        FMOD_OK
+    }
+
+    pub(crate) unsafe extern "system" fn userasyncread_listen<FS: AsyncListenFileSystem>(
+        info: *mut FMOD_ASYNCREADINFO,
+        _userdata: *mut c_void,
+    ) -> FMOD_RESULT {
+        catch_user_unwind(|| FS::async_read(AsyncReadInfo::from_raw(info)));
+        FMOD_OK
+    }
+
+    pub(crate) unsafe extern "system" fn userasynccancel_listen<FS: AsyncListenFileSystem>(
+        info: *mut FMOD_ASYNCREADINFO,
+        _userdata: *mut c_void,
+    ) -> FMOD_RESULT {
+        catch_user_unwind(|| FS::async_cancel(AsyncReadInfo::from_raw(info)));
         FMOD_OK
     }
 }
