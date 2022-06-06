@@ -2,7 +2,7 @@ use fmod::{raw::*, *};
 
 flags! {
     /// Specify the requested information to be output when using the logging version of FMOD.
-    pub struct DebugFlags: u32 {
+    pub struct DebugFlags: FMOD_DEBUG_FLAGS {
         /// Disable all messages.
         LevelNone          = FMOD_DEBUG_LEVEL_NONE,
         /// Enable only error messages.
@@ -29,7 +29,7 @@ flags! {
     }
 
     /// Bitfields for memory allocation type being passed into FMOD memory callbacks.
-    pub struct MemoryType: u32 {
+    pub struct MemoryType: FMOD_MEMORY_TYPE {
         #[default]
         /// Standard memory.
         Normal       = FMOD_MEMORY_NORMAL,
@@ -50,7 +50,7 @@ flags! {
     }
 
     /// Configuration flags used when initializing the System object.
-    pub struct InitFlags: u32 {
+    pub struct InitFlags: FMOD_INITFLAGS {
         #[default]
         /// Initialize normally
         Normal                 = FMOD_INIT_NORMAL,
@@ -84,7 +84,7 @@ flags! {
     ///
     /// Using [SystemCallbackType::All] or [SystemCallbackType::DeviceListChanged] will disable any automated device ejection/insertion handling. Use this callback to control the behavior yourself.
     /// Using [SystemCallbackType::DeviceListChanged] (Mac only) requires the application to be running an event loop which will allow external changes to device list to be detected.
-    pub struct SystemCallbackType: u32 {
+    pub struct SystemCallbackType: FMOD_SYSTEM_CALLBACK_TYPE {
         /// Called from [System::update] when the enumerated list of devices has changed. Called from the main (calling) thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
         DeviceListChanged      = FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED,
         /// Deprecated.
@@ -132,7 +132,7 @@ flags! {
     /// With [Mode::OpemMemoryPoint], for PCM formats, only WAV, FSB, and RAW are supported. For compressed formats, only those formats supported by [Mode::CreateCompressedSample] are supported.
     ///
     /// With [Mode::OpenMemoryPoint] and [Mode::OpenRaw] or PCM, if using them together, note that you must pad the data on each side by 16 bytes. This is so fmod can modify the ends of the data for looping / interpolation / mixing purposes. If a wav file, you will need to insert silence, and then reset loop points to stop the playback from playing that silence.
-    pub struct Mode: u32 {
+    pub struct Mode: FMOD_MODE {
         #[default]
         /// Default for all modes listed below. [Mode::LoopOff], [Mode::D2], [Mode::WorldRelative3d], [Mode::InverseRolloff3d]
         Default                 = FMOD_DEFAULT,
@@ -195,7 +195,7 @@ flags! {
     }
 
     /// Flags that describe the speakers present in a given signal.
-    pub struct ChannelMask: u32 {
+    pub struct ChannelMask: FMOD_CHANNELMASK {
         /// Front left channel.
         FrontLeft       = FMOD_CHANNELMASK_FRONT_LEFT,
         /// Front right channel.
@@ -243,7 +243,7 @@ flags! {
     /// If an explicit core affinity is given, i.e. [ThreadAffinity::Core11] and that core is unavailable a fatal error will be produced.
     ///
     /// Explicit core assignment up to [ThreadAffinity::Core(61)][Self::Core] is supported for platforms with that many cores.
-    pub struct ThreadAffinity: i64 {
+    pub struct ThreadAffinity: FMOD_THREAD_AFFINITY {
         // Platform agnostic thread groupings
         #[default]
         /// For a given thread use the default listed below, i.e. [ThreadType::Mixer] uses [ThreadAffinity::Mixer].
