@@ -1,5 +1,4 @@
 use {
-    cfg_if::cfg_if,
     fmod::{Error, Result},
     std::{
         borrow::Cow,
