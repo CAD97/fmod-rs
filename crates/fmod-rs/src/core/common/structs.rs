@@ -585,6 +585,13 @@ impl ReverbProperties {
     pub const UNDERWATER: Self =        reverb! {  1500.0,    7.0,  11.0, 5000.0,  10.0, 100.0, 100.0, 250.0, 0.0,   500.0,  92.0,   7.0 };
 }
 
+/// The maximum number of global/physical reverb instances.
+///
+/// Each instance of a physical reverb is an instance of a [DspSfxReverb] dsp in
+/// the mix graph. This is unrelated to the number of possible Reverb3D objects,
+/// which is unlimited.
+pub const REVERB_MAX_INSTANCES: usize = FMOD_REVERB_MAXINSTANCES as usize;
+
 // FMOD_ERRORCALLBACK_INFO
 
 fmod_struct! {

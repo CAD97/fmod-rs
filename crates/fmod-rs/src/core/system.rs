@@ -1841,8 +1841,156 @@ impl System {
     }
 }
 
+/// Position, velocity, and orientation of a 3D sound listener.
+#[derive(Debug, Copy, Clone, Default, PartialEq)]
+pub struct ListenerAttributes3d {
+    /// Position in 3D space used for panning and attenuation.
+    pub pos: Vector,
+    /// Velocity in 3D space used for doppler.
+    pub vel: Vector,
+    /// Forwards orientation.
+    pub forward: Vector,
+    /// Upwards orientation.
+    pub up: Vector,
+}
+
 /// Runtime control.
-impl System {}
+impl System {
+    /// Sets the position, velocity and orientation of the specified 3D sound
+    /// listener.
+    ///
+    /// The `forward` and `up` vectors must be perpendicular and be of unit
+    /// length (magnitude of each vector should be 1).
+    ///
+    /// Vectors must be provided in the correct [handedness].
+    ///
+    /// [handedness]: https://fmod.com/resources/documentation-api?version=2.02&page=glossary.html#handedness
+    ///
+    /// For velocity, remember to use units per **second**, and not units per
+    /// frame. This is a common mistake and will make the doppler effect sound
+    /// wrong if velocity is based on movement per frame rather than a fixed
+    /// time period.  
+    /// If velocity per frame is calculated, it can be converted to velocity per
+    /// second by dividing it by the time taken between frames as a fraction of
+    /// a second.  
+    /// i.e.
+    ///
+    /// ```rust
+    /// # let [position_currentframe, position_lastframe, time_taken_since_last_frame_in_seconds] = [0; 3]
+    /// let velocity_units_per_second =
+    ///     (position_currentframe - position_lastframe)
+    ///         / time_taken_since_last_frame_in_seconds;
+    /// ```
+    ///
+    /// At 60fps, `time_taken_since_last_frame_in_seconds` will be 1/60.
+    ///
+    /// Users of the Studio API should call
+    /// [studio::System::set_listener_attributes] instead of this function.
+    pub fn set_3d_listener_attributes(
+        &self,
+        listener: i32,
+        attributes: ListenerAttributes3d,
+    ) -> Result<()> {
+        fmod_try!(FMOD_System_Set3DListenerAttributes(
+            self.as_raw(),
+            listener,
+            attributes.pos.as_raw(),
+            attributes.vel.as_raw(),
+            attributes.forward.as_raw(),
+            attributes.up.as_raw(),
+        ));
+        Ok(())
+    }
+
+    /// Retrieves the position, velocity and orientation of the specified 3D sound listener.
+    ///
+    /// Users of the Studio API should call
+    /// [studio::System::get_listener_attributes] instead of this function.
+    pub fn get_3d_listener_attributes(&self, listener: i32) -> Result<ListenerAttributes3d> {
+        let mut attributes = ListenerAttributes3d::default();
+        fmod_try!(FMOD_System_Get3DListenerAttributes(
+            self.as_raw(),
+            listener,
+            attributes.pos.as_raw_mut(),
+            attributes.vel.as_raw_mut(),
+            attributes.forward.as_raw_mut(),
+            attributes.up.as_raw_mut(),
+        ));
+        Ok(attributes)
+    }
+
+    /// Sets parameters for the global reverb environment.
+    ///
+    /// To assist in defining reverb properties there are several presets
+    /// available, see [ReverbProperties]' associated constants.
+    ///
+    /// When using each instance for the first time, FMOD will create a physical
+    /// SFX reverb DSP unit that takes up several hundred kilobytes of memory
+    /// and some CPU.
+    pub fn set_reverb_properties(
+        &self,
+        instance: i32,
+        properties: Option<&ReverbProperties>,
+    ) -> Result<()> {
+        fmod_try!(FMOD_System_SetReverbProperties(
+            self.as_raw(),
+            instance,
+            properties.map_or(ptr::null(), |x| x.as_raw()),
+        ));
+        Ok(())
+    }
+
+    /// Retrieves the current reverb environment for the specified reverb
+    /// instance.
+    pub fn get_reverb_properties(&self, instance: i32) -> Result<ReverbProperties> {
+        let mut properties = ReverbProperties::default();
+        fmod_try!(FMOD_System_GetReverbProperties(
+            self.as_raw(),
+            instance,
+            properties.as_raw_mut(),
+        ));
+        Ok(properties)
+    }
+
+    /// Connect the output of the specified ChannelGroup to an audio port on the
+    /// output driver.
+    ///
+    /// Ports are additional outputs supported by some [OutputType] plugins and
+    /// can include things like controller headsets or dedicated background
+    /// music streams. See the Port Support section (where applicable) of each
+    /// platform's getting started guide found in the [platform details] chapter.
+    ///
+    /// [platform details]: https://fmod.com/resources/documentation-api?version=2.02&page=platforms.html
+    pub fn attach_channel_group_to_port(
+        &self,
+        port_type: PortType,
+        port_index: PortIndex,
+        group: &ChannelGroup,
+        pass_thru: bool,
+    ) -> Result<()> {
+        fmod_try!(FMOD_System_AttachChannelGroupToPort(
+            self.as_raw(),
+            port_type.into_raw(),
+            port_index.into_raw(),
+            group.as_raw(),
+            pass_thru as _,
+        ));
+        Ok(())
+    }
+
+    /// Disconnect the output of the specified ChannelGroup from an audio port
+    /// on the output driver.
+    ///
+    /// Removing a [ChannelGroup] from a port will reroute the audio back to the
+    /// main mix.
+    pub fn detach_channel_group_from_port(&self, channel_group: &ChannelGroup) -> Result<()> {
+        fmod_try!(FMOD_System_DetachChannelGroupFromPort(
+            self.as_raw(),
+            channel_group.as_raw(),
+        ));
+        Ok(())
+    }
+}
 
 /// Recording.
 impl System {}
