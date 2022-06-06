@@ -2,7 +2,7 @@ use fmod::{raw::*, *};
 
 enum_struct! {
     /// Flags that provide additional information about a particular driver.
-    pub enum DriverState: u32 {
+    pub enum DriverState: FMOD_DRIVER_STATE {
         /// Device is currently plugged in.
         Connected = FMOD_DRIVER_STATE_CONNECTED,
         #[default]
@@ -11,7 +11,7 @@ enum_struct! {
     }
 
     /// Time types used for position or length.
-    pub enum TimeUnit: u32 {
+    pub enum TimeUnit: FMOD_TIMEUNIT {
         /// Milliseconds.
         Ms              = FMOD_TIMEUNIT_MS,
         /// PCM samples, related to milliseconds * samplerate / 1000.
@@ -38,7 +38,7 @@ enum_struct! {
     ///
     /// Explicit platform specific priorities can be given within the range of [ThreadPriority::PlatformMin] to [ThreadPriority::PlatformMax].
     /// See platform documentation for details on the available priority values for a given operating system.
-    pub enum ThreadPriority: i32 {
+    pub enum ThreadPriority: FMOD_THREAD_PRIORITY {
         // Platform specific priority range
         /// Lower bound of platform specific priority range.
         PlatformMin = FMOD_THREAD_PRIORITY_PLATFORM_MIN,
@@ -92,7 +92,7 @@ enum_struct! {
     /// Stack space available to the given thread.
     ///
     /// Stack size can be specified explicitly, however for each thread you should provide a size equal to or larger than the expected default or risk causing a stack overflow at runtime.
-    pub enum ThreadStackSize: u32 {
+    pub enum ThreadStackSize: FMOD_THREAD_STACK_SIZE {
         #[default]
         /// For a given thread use the default listed below, i.e. [ThreadType::Mixer] uses [ThreadStackSize::Mixer].
         Default          = FMOD_THREAD_STACK_SIZE_DEFAULT,
@@ -125,7 +125,7 @@ enum_struct! {
     }
 
     /// Named constants for threads created at runtime.
-    pub enum ThreadType: i32 {
+    pub enum ThreadType: FMOD_THREAD_TYPE {
         /// Thread responsible for mixing and processing blocks of audio.
         Mixer            = FMOD_THREAD_TYPE_MIXER,
         /// Thread used by some output plugins for transferring buffered audio from [ThreadType::Mixer] to the sound output device.
@@ -155,7 +155,7 @@ enum_struct! {
     }
 
     /// Identifier used to distinguish between Channel and ChannelGroup in the ChannelControl callback.
-    pub enum ChannelControlType: i32 {
+    pub enum ChannelControlType: FMOD_CHANNELCONTROL_TYPE {
         /// Type representing [Channel]
         Channel      = FMOD_CHANNELCONTROL_CHANNEL,
         /// Type representing [ChannelGroup]
@@ -174,7 +174,7 @@ enum_struct! {
     /// Currently these are the only FMOD drivers that take extra information. Other unknown plugins may have different requirements.
     ///
     /// If [OutputType::WavWriterNrt] or [OutputType::NoSoundNrt] are used, and if the [System::update] function is being called very quickly (ie for a non realtime decode) it may be being called too quickly for the FMOD streamer thread to respond to. The result will be a skipping/stuttering output in the captured audio. To remedy this, disable the FMOD streamer thread, and use [InitFlags::StreamFromUpdate] to avoid skipping in the output stream, as it will lock the mixer and the streamer together in the same thread.
-    pub enum OutputType: i32 {
+    pub enum OutputType: FMOD_OUTPUTTYPE {
         /// Picks the best output mode for the platform. This is the default.
         AutoDetect   = FMOD_OUTPUTTYPE_AUTODETECT,
         /// All - 3rd party plugin, unknown. This is for use with [System::get_output] only.
@@ -223,7 +223,7 @@ raw! {
         /// Specify the destination of log output when using the logging version of FMOD.
         ///
         /// TTY destination can vary depending on platform, common examples include the Visual Studio / Xcode output window, stderr and LogCat.
-        pub enum DebugMode: i32 {
+        pub enum DebugMode: FMOD_DEBUG_MODE {
             /// Default log location per platform, i.e. Visual Studio output window, stderr, LogCat, etc.
             Tty      = FMOD_DEBUG_MODE_TTY,
             /// Write log to specified file path.
@@ -242,7 +242,7 @@ enum_struct! {
     /// For example a mono sound has 1 sound channel, a stereo sound has 2 sound channels, and an AC3 or 6 channel wav file have 6 "sound channels".
     ///
     /// See the FMOD Studio Mixing Guide for graphical depictions of each speaker mode.
-    pub enum SpeakerMode: i32 {
+    pub enum SpeakerMode: FMOD_SPEAKERMODE {
         #[default]
         /// Default speaker mode for the chosen output mode which will resolve after [System::init].
         Default     = FMOD_SPEAKERMODE_DEFAULT,
@@ -308,7 +308,7 @@ enum_struct! {
     }
 
     /// Assigns an enumeration for a speaker index.
-    pub enum Speaker: i32 {
+    pub enum Speaker: FMOD_SPEAKER {
         /// No speaker
         None          = FMOD_SPEAKER_NONE,
         /// The front left speaker
@@ -338,7 +338,7 @@ enum_struct! {
     }
 
     /// Speaker ordering for multichannel signals.
-    pub enum ChannelOrder: i32 {
+    pub enum ChannelOrder: FMOD_CHANNELORDER {
         #[default]
         /// Left, Right, Center, LFE, Surround Left, Surround Right, Back Left, Back Right (see [Speaker] enumeration)
         Default    = FMOD_CHANNELORDER_DEFAULT,
@@ -355,7 +355,7 @@ enum_struct! {
     }
 
     /// Types of plugin used to extend functionality.
-    pub enum PluginType: i32 {
+    pub enum PluginType: FMOD_PLUGINTYPE {
         /// Audio output interface plugin represented with [OutputDescription].
         Output = FMOD_PLUGINTYPE_OUTPUT,
         /// File format codec plugin represented with [CodecDescription].
@@ -365,7 +365,7 @@ enum_struct! {
     }
 
     /// Recognized audio formats that can be loaded into a Sound.
-    pub enum SoundType: i32 {
+    pub enum SoundType: FMOD_SOUND_TYPE {
         /// Unknown or custom codec plugin.
         Unknown         = FMOD_SOUND_TYPE_UNKNOWN,
         /// Audio Interchange File Format (.aif, .aiff). Uncompressed integer formats only.
@@ -419,7 +419,7 @@ enum_struct! {
     }
 
     /// These definitions describe the native format of the hardware or software buffer that will be used.
-    pub enum SoundFormat: i32 {
+    pub enum SoundFormat: FMOD_SOUND_FORMAT {
         /// Uninitalized / unknown.
         None      = FMOD_SOUND_FORMAT_NONE,
         /// 8bit integer PCM data.
@@ -441,7 +441,7 @@ enum_struct! {
     /// With streams, if you are using [Mode::NonBlocking], note that if the user calls [Sound::get_sub_sound], a stream will go into [OpenState::Seeking] state and sound related commands will return [Error::NotReady].
     ///
     ///With streams, if you are using [Mode::NonBlocking], note that if the user calls [Channel::get_position], a stream will go into [OpenState::SetPosition] state and sound related commands will return [Error::NotReady].
-    pub enum OpenState: i32 {
+    pub enum OpenState: FMOD_OPENSTATE {
         /// Opened and ready to play.
         Ready       = FMOD_OPENSTATE_READY,
         /// Initial load in progress.
@@ -464,7 +464,7 @@ enum_struct! {
     ///
     /// When using [SoundGroupBehavior::Mute], [SoundGroup::set_mute_fade_speed] can be used to stop a sudden transition.
     /// Instead, the time specified will be used to cross fade between the sounds that go silent and the ones that become audible.
-    pub enum SoundGroupBehavior: i32 {
+    pub enum SoundGroupBehavior: FMOD_SOUNDGROUP_BEHAVIOR {
         /// Excess sounds will fail when calling [System::play_sound].
         Fail        = FMOD_SOUNDGROUP_BEHAVIOR_FAIL,
         /// Excess sounds will begin mute and will become audible when sufficient sounds are stopped.
@@ -474,7 +474,7 @@ enum_struct! {
     }
 
     /// Types of callbacks called by Channels and ChannelGroups.
-    pub enum ChannelControlCallbackType: i32 {
+    pub enum ChannelControlCallbackType: FMOD_CHANNELCONTROL_CALLBACK_TYPE {
         /// Called when a sound ends. Supported by [Channel] only.
         End          = FMOD_CHANNELCONTROL_CALLBACK_END,
         /// Called when a [Channel] is made virtual or real. Supported by [Channel] objects only.
@@ -493,7 +493,7 @@ enum_struct! {
     ///
     /// Before any [Dsp]s have been added by the user, there is only one [Dsp] available for a [Channel] or [ChannelGroup]. This is of type [DspType::Fader]. This handles volume and panning for a [Channel] or [ChannelGroup].
     /// As only 1 [Dsp] exists by default, initially [ChannelControlDspIndex::Head], [ChannelControlDspIndex::Tail] and [ChannelControlDspIndex::Fader] all reference the same DSP.
-    pub enum ChannelControlDspIndex: i32 {
+    pub enum ChannelControlDspIndex: FMOD_CHANNELCONTROL_DSP_INDEX {
         /// Head of the DSP chain, equivalent of index 0.
         Head  = FMOD_CHANNELCONTROL_DSP_HEAD,
         /// Built in fader DSP.
@@ -503,7 +503,7 @@ enum_struct! {
     }
 
     /// Identifier used to represent the different types of instance in the error callback.
-    pub enum ErrorCallbackInstaceType: i32 {
+    pub enum ErrorCallbackInstaceType: FMOD_ERRORCALLBACK_INSTANCETYPE {
         /// Type representing no known instance type.
         None                    = FMOD_ERRORCALLBACK_INSTANCETYPE_NONE,
         /// Type representing [System].
@@ -547,7 +547,7 @@ enum_struct! {
     /// List of interpolation types used for resampling.
     ///
     /// Use [System::set_advanced_settings] and [AdvancedSettings::resampler_method] to configure the resampling quality you require for sample rate conversion during sound playback.
-    pub enum DspResampler: i32 {
+    pub enum DspResampler: FMOD_DSP_RESAMPLER {
         #[default]
         /// Default interpolation method, same as [DspResampler::Linear].
         Default  = FMOD_DSP_RESAMPLER_DEFAULT,
@@ -562,7 +562,7 @@ enum_struct! {
     }
 
     /// List of connection types between 2 DSP nodes.
-    pub enum DspConnectionType: i32 {
+    pub enum DspConnectionType: FMOD_DSPCONNECTION_TYPE {
         #[default]
         /// Default connection type. Audio is mixed from the input to the output [Dsp]'s audible buffer.
         ///
@@ -597,7 +597,7 @@ enum_struct! {
     }
 
     /// List of tag data / metadata types that could be stored within a sound. These include id3 tags, metadata from netstreams and vorbis/asf data.
-    pub enum TagType: i32 {
+    pub enum TagType: FMOD_TAGTYPE {
         /// Tag type that is not recognized by FMOD
         Unknown       = FMOD_TAGTYPE_UNKNOWN,
         /// MP3 ID3 Tag 1.0. Typically 1 tag stored 128 bytes from end of an MP3 file.
@@ -630,7 +630,7 @@ raw! {
         /// List of tag data / metadata types.
         ///
         /// See [Tag] structure for tag length in bytes.
-        pub enum TagDataType: i32 {
+        pub enum TagDataType: FMOD_TAGDATATYPE {
             /// Raw binary data. see [Tag] structure for length of data in bytes.
             Binary        = FMOD_TAGDATATYPE_BINARY,
             /// Integer - Note this integer could be 8bit / 16bit / 32bit / 64bit. See [Tag] structure for integer size (1 vs 2 vs 4 vs 8 bytes).
@@ -651,7 +651,7 @@ raw! {
 
 enum_struct! {
     /// Port types available for routing audio.
-    pub enum PortType: i32 {
+    pub enum PortType: FMOD_PORT_TYPE {
         Music          = FMOD_PORT_TYPE_MUSIC,
         CopyrightMusic = FMOD_PORT_TYPE_COPYRIGHT_MUSIC,
         Voice          = FMOD_PORT_TYPE_VOICE,
@@ -667,7 +667,7 @@ enum_struct! {
     ///
     /// Every devices has a single hardware decoder and unlimited software
     /// decoders.
-    pub enum AudioQueueCodecPolicy: i32 {
+    pub enum AudioQueueCodecPolicy: FMOD_AUDIOQUEUE_CODECPOLICY {
         /// Try hardware first, if it's in use or prohibited by audio session,
         /// try software.
         Default      = FMOD_AUDIOQUEUE_CODECPOLICY_DEFAULT,
@@ -677,5 +677,11 @@ enum_struct! {
         /// `kAudioQueueHardwareCodecPolicy_UseHardwareOnly` ~ try hardware,
         /// if not available fail.
         HardwareOnly = FMOD_AUDIOQUEUE_CODECPOLICY_HARDWAREONLY,
+    }
+
+    /// Output type specific index for when there are multiple instances of a port type.
+    pub enum PortIndex: FMOD_PORT_INDEX {
+        /// Use when a port index is not required
+        None = FMOD_PORT_INDEX_NONE as _,
     }
 }
