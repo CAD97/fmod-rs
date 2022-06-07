@@ -74,7 +74,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
 
-            let (channels_playing, _) = system.get_channels_playing()?;
+            let channels_playing = system.get_channels_playing()?.all;
 
             example.draw("==================================================");
             example.draw("Play Sound Example.");

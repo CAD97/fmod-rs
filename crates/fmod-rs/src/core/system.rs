@@ -1308,9 +1308,9 @@ impl System {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ChannelUsage {
     /// Number of playing [Channel]s (both real and virtual).
-    pub channels: i32,
+    pub all: i32,
     /// Number of playing real (non-virtual) [Channel]s.
-    pub real_channels: i32,
+    pub real: i32,
 }
 
 /// Runnint total information about file reads.
@@ -1368,8 +1368,8 @@ impl System {
             &mut real_channels,
         ));
         Ok(ChannelUsage {
-            channels,
-            real_channels,
+            all: channels,
+            real: real_channels,
         })
     }
 

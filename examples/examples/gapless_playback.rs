@@ -158,7 +158,7 @@ fn main() -> anyhow::Result<()> {
                 Err(fmod::Error::InvalidHandle) => false,
                 Err(e) => return Err(e)?,
             };
-            let (chans_playing, _) = system.get_channels_playing()?;
+            let chans_playing = system.get_channels_playing()?.all;
 
             example.draw("==================================================");
             example.draw("Gapless Playback example.");
