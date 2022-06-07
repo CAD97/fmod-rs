@@ -98,8 +98,8 @@ fn main() -> anyhow::Result<()> {
             system_a.update()?;
             system_b.update()?;
 
-            let (channels_playing_a, _) = system_a.get_channels_playing()?;
-            let (channels_playing_b, _) = system_b.get_channels_playing()?;
+            let channels_playing_a = system_a.get_channels_playing()?.all;
+            let channels_playing_b = system_b.get_channels_playing()?.all;
 
             example.draw("==================================================");
             example.draw("Multiple System Example.");
