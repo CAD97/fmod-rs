@@ -19,8 +19,5 @@ include = [
     "/README.md",
 ]
 
-[dependencies]
-cstr = "0.2.10"
-
 [build-dependencies]
 build-rs = "0.1.2"
