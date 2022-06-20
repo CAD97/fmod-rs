@@ -3,6 +3,7 @@
 include!("../inc/bindings.rs");
 
 // fmod_errors.h `static const char *FMOD_ErrorString(FMOD_RESULT errcode)`
+#[inline]
 #[allow(clippy::missing_safety_doc)]
 pub const unsafe fn FMOD_ErrorString(errcode: FMOD_RESULT) -> *const std::os::raw::c_char {
     match errcode {
