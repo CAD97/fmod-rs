@@ -3,7 +3,7 @@ use {
     fmod::{raw::*, *},
     parking_lot::RwLockUpgradableReadGuard,
     smart_default::SmartDefault,
-    std::{ffi::CStr, mem, ptr, time::Duration},
+    std::{mem, ptr, time::Duration},
 };
 
 opaque! {
@@ -1077,8 +1077,8 @@ pub struct PluginInfo {
 impl System {
     /// Specify a base search path for plugins so they can be placed somewhere
     /// else than the directory of the main executable.
-    pub fn set_plugin_path(&self, path: &CStr) -> Result {
-        fmod_try!(FMOD_System_SetPluginPath(self.as_raw(), path.as_ptr()));
+    pub fn set_plugin_path(&self, path: &CStr8) -> Result {
+        fmod_try!(FMOD_System_SetPluginPath(self.as_raw(), path.as_ptr() as _));
         Ok(())
     }
 
@@ -1093,11 +1093,11 @@ impl System {
     /// numbers represent less importance.
     ///
     /// The format of the plugin is dependant on the operating system.
-    pub fn load_plugin(&self, filename: &CStr, priority: u32) -> Result<PluginHandle> {
+    pub fn load_plugin(&self, filename: &CStr8, priority: u32) -> Result<PluginHandle> {
         let mut handle = PluginHandle::default();
         fmod_try!(FMOD_System_LoadPlugin(
             self.as_raw(),
-            filename.as_ptr(),
+            filename.as_ptr() as _,
             handle.as_raw_mut(),
             priority,
         ));
@@ -1271,8 +1271,11 @@ impl System {
     ///
     /// Basic authentication is supported using `user:password@host:port` format
     /// e.g. `bob:sekrit123@www.fmod.com:8888`.
-    pub fn set_network_proxy(&self, proxy: &CStr) -> Result {
-        fmod_try!(FMOD_System_SetNetworkProxy(self.as_raw(), proxy.as_ptr()));
+    pub fn set_network_proxy(&self, proxy: &CStr8) -> Result {
+        fmod_try!(FMOD_System_SetNetworkProxy(
+            self.as_raw(),
+            proxy.as_ptr() as _,
+        ));
         Ok(())
     }
 
@@ -1480,7 +1483,7 @@ impl System {
     /// <pre class="ignore" style="white-space:normal;font:inherit;">
     /// Use of Mode::Nonblocking is currently not supported for Wasm.
     /// </pre>
-    pub fn create_sound(&self, name: &CStr, mode: Mode) -> Result<Handle<'_, Sound>> {
+    pub fn create_sound(&self, name: &CStr8, mode: Mode) -> Result<Handle<'_, Sound>> {
         if matches!(
             mode,
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
@@ -1502,7 +1505,7 @@ impl System {
         let mut sound = ptr::null_mut();
         fmod_try!(FMOD_System_CreateSound(
             self.as_raw(),
-            name.as_ptr(),
+            name.as_ptr() as _,
             mode,
             exinfo,
             &mut sound,
@@ -1554,7 +1557,7 @@ impl System {
     ///
     /// If you need access to the extended options, use
     /// [`System::create_sound_ex`] instead and set [`Mode::CreateStream`].
-    pub fn create_stream(&self, name: &CStr, mode: Mode) -> Result<Handle<'_, Sound>> {
+    pub fn create_stream(&self, name: &CStr8, mode: Mode) -> Result<Handle<'_, Sound>> {
         if matches!(
             mode,
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
@@ -1576,7 +1579,7 @@ impl System {
         let mut sound = ptr::null_mut();
         fmod_try!(FMOD_System_CreateStream(
             self.as_raw(),
-            name.as_ptr(),
+            name.as_ptr() as _,
             mode,
             exinfo,
             &mut sound,
@@ -1626,11 +1629,11 @@ impl System {
     /// All [ChannelGroup]s will initially output directly to the master
     /// [ChannelGroup] (See [System::get_master_channel_group]).[ChannelGroup]s
     /// can be re-parented this with [ChannelGroup::add_group].
-    pub fn create_channel_group(&self, name: &CStr) -> Result<Handle<'_, ChannelGroup>> {
+    pub fn create_channel_group(&self, name: &CStr8) -> Result<Handle<'_, ChannelGroup>> {
         let mut channel_group = ptr::null_mut();
         fmod_try!(FMOD_System_CreateChannelGroup(
             self.as_raw(),
-            name.as_ptr(),
+            name.as_ptr() as _,
             &mut channel_group,
         ));
         Ok(unsafe { Handle::new(channel_group) })
@@ -1646,11 +1649,11 @@ impl System {
     ///   [SoundGroup::stop].
     /// - Playback behavior such as 'max audible', to limit playback of certain
     ///   types of Sounds. See [SoundGroup::set_max_audible].
-    pub fn create_sound_group(&self, name: &CStr) -> Result<Handle<'_, SoundGroup>> {
+    pub fn create_sound_group(&self, name: &CStr8) -> Result<Handle<'_, SoundGroup>> {
         let mut sound_group = ptr::null_mut();
         fmod_try!(FMOD_System_CreateSoundGroup(
             self.as_raw(),
-            name.as_ptr(),
+            name.as_ptr() as _,
             &mut sound_group,
         ));
         Ok(unsafe { Handle::new(sound_group) })
