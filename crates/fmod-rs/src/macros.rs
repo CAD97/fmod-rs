@@ -62,7 +62,7 @@ macro_rules! opaque {
             #[allow(clippy::redundant_closure_call)]
             unsafe fn release(this: *mut Self::Raw) -> fmod::Result {
                 std::ptr::drop_in_place(Self::from_raw(this) as *const Self as *mut Self);
-                fmod_try!(($release)(this));
+                ffi!(($release)(this))?;
                 Ok(())
             }
         }
@@ -118,11 +118,11 @@ macro_rules! raw {
     };
 }
 
-macro_rules! fmod_try {
-    ($e:expr) => {
+macro_rules! ffi {
+    ($e:expr) => {{
         #[allow(unused_unsafe)]
-        fmod::Error::from_raw(unsafe { $e })?
-    };
+        fmod::Error::from_raw(unsafe { $e })
+    }};
 }
 
 macro_rules! flags_ops {

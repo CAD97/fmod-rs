@@ -9,11 +9,11 @@ impl Sound {
     pub fn get_defaults(&self) -> Result<(f32, i32)> {
         let mut frequency = 0.0;
         let mut priority = 0;
-        fmod_try!(FMOD_Sound_GetDefaults(
+        ffi!(FMOD_Sound_GetDefaults(
             self.as_raw(),
             &mut frequency,
             &mut priority,
-        ));
+        ))?;
         Ok((frequency, priority))
     }
 
@@ -22,7 +22,7 @@ impl Sound {
     pub fn get_length(&self, length_type: TimeUnit) -> Result<u32> {
         let mut length = 0;
         let lengthtype = TimeUnit::into_raw(length_type);
-        fmod_try!(FMOD_Sound_GetLength(self.as_raw(), &mut length, lengthtype));
+        ffi!(FMOD_Sound_GetLength(self.as_raw(), &mut length, lengthtype))?;
         Ok(length)
     }
 
@@ -33,13 +33,13 @@ impl Sound {
         let mut percent_buffered = 0;
         let mut starving = 0;
         let mut disk_busy = 0;
-        fmod_try!(FMOD_Sound_GetOpenState(
+        ffi!(FMOD_Sound_GetOpenState(
             self.as_raw(),
             state.as_raw_mut(),
             &mut percent_buffered,
             &mut starving,
             &mut disk_busy
-        ));
+        ))?;
         Ok((state, percent_buffered, starving != 0, disk_busy != 0))
     }
 }
@@ -55,7 +55,7 @@ impl Sound {
 impl Sound {
     pub fn set_mode(&self, mode: Mode) -> Result {
         let mode = Mode::into_raw(mode);
-        fmod_try!(FMOD_Sound_SetMode(self.as_raw(), mode));
+        ffi!(FMOD_Sound_SetMode(self.as_raw(), mode))?;
         Ok(())
     }
 

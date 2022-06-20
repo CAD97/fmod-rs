@@ -109,13 +109,13 @@ impl CreateSoundEx<'_> {
         mode: Mode,
     ) -> Result<Handle<'a, Sound>> {
         let mut sound = ptr::null_mut();
-        fmod_try!(FMOD_System_CreateSound(
+        ffi!(FMOD_System_CreateSound(
             system.as_raw(),
             name_or_data.cast(),
             mode.into_raw(),
             &self.info as *const _ as *mut _,
             &mut sound
-        ));
+        ))?;
         Ok(Handle::from_raw(sound))
     }
 }

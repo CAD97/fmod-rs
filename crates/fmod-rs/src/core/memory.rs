@@ -37,11 +37,11 @@ pub fn get_stats(blocking: bool) -> Result<MemoryStats> {
 
     let mut current_alloced = 0;
     let mut max_alloced = 0;
-    fmod_try!(FMOD_Memory_GetStats(
+    ffi!(FMOD_Memory_GetStats(
         &mut current_alloced,
         &mut max_alloced,
         if blocking { 1 } else { 0 }
-    ));
+    ))?;
 
     Ok(MemoryStats {
         current_alloced,
@@ -59,14 +59,14 @@ pub fn get_stats(blocking: bool) -> Result<MemoryStats> {
 ///
 /// This function must be called before any FMOD [System] object is created.
 pub unsafe fn initialize() -> Result {
-    fmod_try!(FMOD_Memory_Initialize(
+    ffi!(FMOD_Memory_Initialize(
         ptr::null_mut(),
         0,
         None,
         None,
         None,
         0
-    ));
+    ))?;
     Ok(())
 }
 
@@ -88,14 +88,14 @@ pub unsafe fn initialize() -> Result {
 /// This function must be called before any FMOD [System] object is created.
 pub unsafe fn initialize_pool(pool: &'static mut [MaybeUninit<u8>]) -> Result {
     let pool_len = pool.len() % 512;
-    fmod_try!(FMOD_Memory_Initialize(
+    ffi!(FMOD_Memory_Initialize(
         pool.as_mut_ptr().cast(),
         pool_len.try_into().unwrap_or(i32::MAX),
         None,
         None,
         None,
         0
-    ));
+    ))?;
     Ok(())
 }
 
@@ -206,14 +206,14 @@ unsafe extern "system" fn userfree<A: FmodAlloc>(
 ///
 /// This function must be called before any FMOD [System] object is created.
 pub unsafe fn initialize_alloc<A: FmodAlloc>(mem_type_flags: MemoryType) -> Result {
-    fmod_try!(FMOD_Memory_Initialize(
+    ffi!(FMOD_Memory_Initialize(
         ptr::null_mut(),
         0,
         Some(useralloc::<A>),
         None,
         Some(userfree::<A>),
         mem_type_flags.into_raw(),
-    ));
+    ))?;
     Ok(())
 }
 
@@ -229,14 +229,14 @@ pub unsafe fn initialize_alloc<A: FmodAlloc>(mem_type_flags: MemoryType) -> Resu
 //
 // FEAT(specialization): automatically do this via specialization
 pub unsafe fn initialize_realloc<A: FmodRealloc>(mem_type_flags: MemoryType) -> Result {
-    fmod_try!(FMOD_Memory_Initialize(
+    ffi!(FMOD_Memory_Initialize(
         ptr::null_mut(),
         0,
         Some(useralloc::<A>),
         Some(userrealloc::<A>),
         Some(userfree::<A>),
         mem_type_flags.into_raw(),
-    ));
+    ))?;
     Ok(())
 }
 

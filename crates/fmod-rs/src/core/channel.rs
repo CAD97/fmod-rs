@@ -11,34 +11,34 @@ impl Channel {
 
     pub fn set_paused(&self, paused: bool) -> Result {
         let paused = paused as i32;
-        fmod_try!(FMOD_Channel_SetPaused(self.as_raw(), paused));
+        ffi!(FMOD_Channel_SetPaused(self.as_raw(), paused))?;
         Ok(())
     }
 
     pub fn get_paused(&self) -> Result<bool> {
         let mut paused = 0;
-        fmod_try!(FMOD_Channel_GetPaused(self.as_raw(), &mut paused));
+        ffi!(FMOD_Channel_GetPaused(self.as_raw(), &mut paused))?;
         Ok(paused != 0)
     }
 
     // snip
 
     pub fn set_pitch(&self, pitch: f32) -> Result {
-        fmod_try!(FMOD_Channel_SetPitch(self.as_raw(), pitch));
+        ffi!(FMOD_Channel_SetPitch(self.as_raw(), pitch))?;
         Ok(())
     }
 
     pub fn get_pitch(&self) -> Result<f32> {
         let mut pitch = 0.0;
-        fmod_try!(FMOD_Channel_GetPitch(self.as_raw(), &mut pitch));
+        ffi!(FMOD_Channel_GetPitch(self.as_raw(), &mut pitch))?;
         Ok(pitch)
     }
 
     pub fn set_mute(&self, mute: bool) -> Result {
-        fmod_try!(FMOD_Channel_SetMute(
+        ffi!(FMOD_Channel_SetMute(
             self.as_raw(),
             if mute { 1 } else { 0 },
-        ));
+        ))?;
         Ok(())
     }
 
@@ -46,7 +46,7 @@ impl Channel {
 
     pub fn is_playing(&self) -> Result<bool> {
         let mut isplaying = 0;
-        fmod_try!(FMOD_Channel_IsPlaying(self.as_raw(), &mut isplaying));
+        ffi!(FMOD_Channel_IsPlaying(self.as_raw(), &mut isplaying))?;
         Ok(isplaying != 0)
     }
 }
@@ -63,11 +63,11 @@ impl Channel {
     pub fn get_dsp_clock(&self) -> Result<(u64, u64)> {
         let mut dsp_clock = 0;
         let mut parent_clock = 0;
-        fmod_try!(FMOD_Channel_GetDSPClock(
+        ffi!(FMOD_Channel_GetDSPClock(
             self.as_raw(),
             &mut dsp_clock,
             &mut parent_clock,
-        ));
+        ))?;
         Ok((dsp_clock, parent_clock))
     }
 
@@ -78,12 +78,12 @@ impl Channel {
         stop_channels: bool,
     ) -> Result {
         let stop_channels = stop_channels as i32;
-        fmod_try!(FMOD_Channel_SetDelay(
+        ffi!(FMOD_Channel_SetDelay(
             self.as_raw(),
             dsp_clock_start,
             dsp_clock_end,
             stop_channels,
-        ));
+        ))?;
         Ok(())
     }
 
@@ -112,11 +112,11 @@ impl Channel {
     pub fn get_position(&self, pos_type: TimeUnit) -> Result<u32> {
         let mut position = 0;
         let postype = TimeUnit::into_raw(pos_type);
-        fmod_try!(FMOD_Channel_GetPosition(
+        ffi!(FMOD_Channel_GetPosition(
             self.as_raw(),
             &mut position,
             postype,
-        ));
+        ))?;
         Ok(position)
     }
 
@@ -129,7 +129,7 @@ impl Channel {
 
     pub fn get_current_sound(&self) -> Result<&Sound> {
         let mut sound = ptr::null_mut();
-        fmod_try!(FMOD_Channel_GetCurrentSound(self.as_raw(), &mut sound));
+        ffi!(FMOD_Channel_GetCurrentSound(self.as_raw(), &mut sound))?;
         Ok(unsafe { Sound::from_raw(sound) })
     }
 

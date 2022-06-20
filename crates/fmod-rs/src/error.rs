@@ -1,8 +1,6 @@
-#[cfg(doc)]
-use fmod::*;
 use {
-    fmod::raw::*,
-    std::{error::Error as _, ffi::CStr, fmt, num::NonZeroI32},
+    fmod::{raw::*, *},
+    std::{error::Error as _, fmt, num::NonZeroI32},
 };
 
 static_assertions::assert_type_eq_all!(i32, FMOD_RESULT);
@@ -41,7 +39,7 @@ macro_rules! error_enum_struct {
             const fn cook(raw: i32) -> Self {
                 match Self::from_raw(raw) {
                     Err(this) => this,
-                    Ok(()) => panic!("provided zero-valued FMOD_RESULT (FMOD_OK) as an error"),
+                    Ok(()) => panic!("cooked FMOD_OK as an error"),
                 }
             }
 
@@ -248,10 +246,7 @@ impl std::error::Error for Error {
         // SAFETY: FMOD_ErrorString is a C `static` function which thus isn't
         // bindgen'd, but hand implemented in fmod-core-sys. As such, we're
         // 100% sure that it always returns valid nul-terminated ASCII.
-        unsafe {
-            let error_string = CStr::from_ptr(FMOD_ErrorString(self.raw.into()));
-            error_string.to_str().unwrap_unchecked()
-        }
+        unsafe { CStr8::from_ptr(FMOD_ErrorString(self.raw.into()) as _) }
     }
 }
 
