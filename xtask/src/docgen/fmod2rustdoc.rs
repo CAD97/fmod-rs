@@ -252,6 +252,15 @@ impl Converter<'_> {
                                 self.out.push_str("``````````\n\n");
                                 Ok(())
                             },
+                            "highlight language-csharp" => {
+                                let text = get_text_transitively(children.iter().cloned());
+                                self.out.push_str("``````````csharp\n");
+                                for child in text {
+                                    self.out.push_str(&*child);
+                                }
+                                self.out.push_str("``````````\n\n");
+                                Ok(())
+                            },
                             "toc" => {
                                 // skip
                                 Ok(())
@@ -260,6 +269,15 @@ impl Converter<'_> {
                                 for child in children.iter() {
                                     self.convert(child)?;
                                 }
+                                Ok(())
+                            },
+                            "admonition important" => {
+                                self.out.push_str(r#"<pre class="ignore" style="white-space:normal;font:inherit;">"#);
+                                self.out.push('\n');
+                                for child in children.iter() {
+                                    self.convert(child)?;
+                                }
+                                self.out.push_str("</pre>\n");
                                 Ok(())
                             },
                             _ => Err(eyre!(r#"unhandled element <{name} class="{class}">"#)),
