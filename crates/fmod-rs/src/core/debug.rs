@@ -88,12 +88,12 @@ pub fn initialize(flags: DebugFlags) -> Result {
     // suppress default debug init
     DEBUG_LAYER_INITIALIZED.store(true, Ordering::Release);
 
-    fmod_try!(FMOD_Debug_Initialize(
+    ffi!(FMOD_Debug_Initialize(
         flags.into_raw(),
         DebugMode::Tty.into_raw(),
         None,
         ptr::null()
-    ));
+    ))?;
     Ok(())
 }
 
@@ -126,12 +126,12 @@ pub fn initialize_callback<D: FmodDebug>(flags: DebugFlags) -> Result {
     // suppress default debug init
     DEBUG_LAYER_INITIALIZED.store(true, Ordering::Release);
 
-    fmod_try!(FMOD_Debug_Initialize(
+    ffi!(FMOD_Debug_Initialize(
         flags.into_raw(),
         DebugMode::Callback.into_raw(),
         Some(callback::<D>),
         ptr::null()
-    ));
+    ))?;
     Ok(())
 }
 
@@ -164,12 +164,12 @@ pub fn initialize_file(flags: DebugFlags, file: &CStr8) -> Result {
     // suppress default debug init
     DEBUG_LAYER_INITIALIZED.store(true, Ordering::Release);
 
-    fmod_try!(FMOD_Debug_Initialize(
+    ffi!(FMOD_Debug_Initialize(
         flags.into_raw(),
         DebugMode::File.into_raw(),
         None,
         file.as_ptr() as _
-    ));
+    ))?;
     Ok(())
 }
 
@@ -329,13 +329,13 @@ pub(crate) unsafe fn initialize_default() {
             .is_ok()
         {
             let flags = FmodDebugTracing::ideal_debug_flags();
-            let error = FMOD_Debug_Initialize(
+            let result = ffi!(FMOD_Debug_Initialize(
                 flags.into_raw(),
                 DebugMode::Callback.into_raw(),
                 Some(callback::<FmodDebugTracing>),
                 ptr::null(),
-            );
-            match Error::from_raw(error) {
+            ));
+            match result {
                 Ok(()) => (),
                 Err(error) => handle_init_failure(error),
             }
