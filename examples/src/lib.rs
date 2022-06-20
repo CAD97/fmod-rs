@@ -197,9 +197,6 @@ pub fn sleep_ms(ms: u64) {
 #[macro_export]
 macro_rules! media {
     ($fname:expr) => {
-        ::std::ffi::CStr::from_bytes_with_nul(
-            concat!(env!("CARGO_MANIFEST_DIR"), "/../media/", $fname, "\0").as_bytes(),
-        )
-        .map_err(|_| ::fmod::Error::FileNotFound)?
+        ::fmod::cstr8!(concat!(env!("CARGO_MANIFEST_DIR"), "/../media/", $fname))
     };
 }
