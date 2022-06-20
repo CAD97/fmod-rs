@@ -132,7 +132,7 @@ impl System {
         debug::initialize_default(); // setup debug logging
 
         let mut raw = ptr::null_mut();
-        fmod_try!(FMOD_System_Create(&mut raw, FMOD_VERSION));
+        ffi!(FMOD_System_Create(&mut raw, FMOD_VERSION))?;
         *system_count += 1;
         Ok(Handle::new(raw))
     }
@@ -179,12 +179,12 @@ impl System {
         extra_driver_data: *const (),
     ) -> Result {
         let flags = InitFlags::into_raw(flags);
-        fmod_try!(FMOD_System_Init(
+        ffi!(FMOD_System_Init(
             self.as_raw(),
             max_channels,
             flags,
             extra_driver_data as *mut _,
-        ));
+        ))?;
         Ok(())
     }
 
@@ -202,7 +202,7 @@ impl System {
     /// Sound, ChannelGroup, Geometry and DSP objects are released before
     /// calling this.
     pub unsafe fn close(&self) -> Result {
-        fmod_try!(FMOD_System_Close(self.as_raw()));
+        ffi!(FMOD_System_Close(self.as_raw()))?;
         Ok(())
     }
 
@@ -242,7 +242,7 @@ impl System {
     /// stream engine. Combining this with the non realtime output will mean
     /// smoother captured output.
     pub fn update(&self) -> Result {
-        fmod_try!(FMOD_System_Update(self.as_raw()));
+        ffi!(FMOD_System_Update(self.as_raw()))?;
         Ok(())
     }
 
@@ -259,7 +259,7 @@ impl System {
     ///
     /// No FMOD API calls may be made until [System::mixer_resume] is called.
     pub unsafe fn mixer_suspend(&self) -> Result {
-        fmod_try!(FMOD_System_MixerSuspend(self.as_raw()));
+        ffi!(FMOD_System_MixerSuspend(self.as_raw()))?;
         Ok(())
     }
 
@@ -279,7 +279,7 @@ impl System {
     ///
     /// Must be called on the same thread as [System::mixer_suspend].
     pub unsafe fn mixer_resume(&self) -> Result {
-        fmod_try!(FMOD_System_MixerResume(self.as_raw()));
+        ffi!(FMOD_System_MixerResume(self.as_raw()))?;
         Ok(())
     }
 }
@@ -314,14 +314,14 @@ impl System {
     /// disconnections, see [SystemCallback::DeviceListChanged].
     pub fn set_output(&self, output: fmod::OutputType) -> Result {
         let output = output.into_raw();
-        fmod_try!(FMOD_System_SetOutput(self.as_raw(), output));
+        ffi!(FMOD_System_SetOutput(self.as_raw(), output))?;
         Ok(())
     }
 
     /// Retrieves the type of output interface used to run the mixer.
     pub fn get_output(&self) -> Result<fmod::OutputType> {
         let mut output = OutputType::zeroed();
-        fmod_try!(FMOD_System_GetOutput(self.as_raw(), output.as_raw_mut()));
+        ffi!(FMOD_System_GetOutput(self.as_raw(), output.as_raw_mut()))?;
         Ok(output)
     }
 
@@ -336,7 +336,7 @@ impl System {
     /// attributes.
     pub fn get_num_drivers(&self) -> Result<i32> {
         let mut numdrivers = 0;
-        fmod_try!(FMOD_System_GetNumDrivers(self.as_raw(), &mut numdrivers));
+        ffi!(FMOD_System_GetNumDrivers(self.as_raw(), &mut numdrivers))?;
         Ok(numdrivers)
     }
 
@@ -357,7 +357,7 @@ impl System {
         let mut speaker_mode = SpeakerMode::default();
         let mut speaker_mode_channels = 0;
 
-        fmod_try!(FMOD_System_GetDriverInfo(
+        ffi!(FMOD_System_GetDriverInfo(
             self.as_raw(),
             id,
             ptr::null_mut(),
@@ -366,7 +366,7 @@ impl System {
             &mut system_rate,
             speaker_mode.as_raw_mut(),
             &mut speaker_mode_channels,
-        ));
+        ))?;
 
         Ok(DriverInfo {
             guid,
@@ -385,7 +385,7 @@ impl System {
     pub fn get_driver_name(&self, id: i32, name: &mut String) -> Result {
         unsafe {
             fmod_get_string(name, |buf| {
-                Error::from_raw(FMOD_System_GetDriverInfo(
+                ffi!(FMOD_System_GetDriverInfo(
                     self.as_raw(),
                     id,
                     buf.as_mut_ptr().cast(),
@@ -411,7 +411,7 @@ impl System {
     /// <dt>Range</dt><dd>[0, System::get_num_drivers]</dd>
     /// </dl>
     pub fn set_driver(&self, id: i32) -> Result {
-        fmod_try!(FMOD_System_SetDriver(self.as_raw(), id));
+        ffi!(FMOD_System_SetDriver(self.as_raw(), id))?;
         Ok(())
     }
 
@@ -420,7 +420,7 @@ impl System {
     /// 0 represents the default for the output type.
     pub fn get_driver(&self) -> Result<i32> {
         let mut driver = 0;
-        fmod_try!(FMOD_System_GetDriver(self.as_raw(), &mut driver));
+        ffi!(FMOD_System_GetDriver(self.as_raw(), &mut driver))?;
         Ok(driver)
     }
 }
@@ -531,20 +531,20 @@ impl System {
     /// <dt>Default</dt><dd>64</dd>
     /// </dl>
     pub fn set_software_channels(&self, num_software_channels: i32) -> Result {
-        fmod_try!(FMOD_System_SetSoftwareChannels(
+        ffi!(FMOD_System_SetSoftwareChannels(
             self.as_raw(),
             num_software_channels,
-        ));
+        ))?;
         Ok(())
     }
 
     /// Retrieves the maximum number of software mixed channels possible.
     pub fn get_software_channels(&self) -> Result<i32> {
         let mut num_software_channels = 0;
-        fmod_try!(FMOD_System_GetSoftwareChannels(
+        ffi!(FMOD_System_GetSoftwareChannels(
             self.as_raw(),
             &mut num_software_channels,
-        ));
+        ))?;
         Ok(num_software_channels)
     }
 
@@ -573,12 +573,12 @@ impl System {
             speaker_mode,
             num_raw_speakers,
         } = format;
-        fmod_try!(FMOD_System_SetSoftwareFormat(
+        ffi!(FMOD_System_SetSoftwareFormat(
             self.as_raw(),
             sample_rate,
             speaker_mode.into_raw(),
             num_raw_speakers,
-        ));
+        ))?;
         Ok(())
     }
 
@@ -587,12 +587,12 @@ impl System {
         let mut sample_rate = 0;
         let mut speaker_mode = SpeakerMode::default();
         let mut num_raw_speakers = 0;
-        fmod_try!(FMOD_System_GetSoftwareFormat(
+        ffi!(FMOD_System_GetSoftwareFormat(
             self.as_raw(),
             &mut sample_rate,
             speaker_mode.as_raw_mut(),
             &mut num_raw_speakers
-        ));
+        ))?;
         Ok(SoftwareFormat {
             sample_rate,
             speaker_mode,
@@ -664,11 +664,11 @@ impl System {
             buffer_length,
             num_buffers,
         } = buffer_size;
-        fmod_try!(FMOD_System_SetDSPBufferSize(
+        ffi!(FMOD_System_SetDSPBufferSize(
             self.as_raw(),
             buffer_length,
             num_buffers,
-        ));
+        ))?;
         Ok(())
     }
 
@@ -694,11 +694,11 @@ impl System {
     pub fn get_dsp_buffer_size(&self) -> Result<(u32, i32)> {
         let mut bufferlength = 0;
         let mut numbuffers = 0;
-        fmod_try!(FMOD_System_GetDSPBufferSize(
+        ffi!(FMOD_System_GetDSPBufferSize(
             self.as_raw(),
             &mut bufferlength,
             &mut numbuffers,
-        ));
+        ))?;
         Ok((bufferlength, numbuffers))
     }
 
@@ -746,11 +746,11 @@ impl System {
         file_buffer_size: u32,
         file_buffer_size_type: TimeUnit,
     ) -> Result {
-        fmod_try!(FMOD_System_SetStreamBufferSize(
+        ffi!(FMOD_System_SetStreamBufferSize(
             self.as_raw(),
             file_buffer_size,
             file_buffer_size_type.into_raw(),
-        ));
+        ))?;
         Ok(())
     }
 
@@ -761,31 +761,31 @@ impl System {
     pub fn get_stream_buffer_size(&self) -> Result<(u32, TimeUnit)> {
         let mut file_buffer_size = 0;
         let mut file_buffer_size_type = TimeUnit::zeroed();
-        fmod_try!(FMOD_System_GetStreamBufferSize(
+        ffi!(FMOD_System_GetStreamBufferSize(
             self.as_raw(),
             &mut file_buffer_size,
             file_buffer_size_type.as_raw_mut(),
-        ));
+        ))?;
         Ok((file_buffer_size, file_buffer_size_type))
     }
 
     /// Sets advanced settings for the system object, typically to allow
     /// adjusting of settings related to resource usage or audio quality.
     pub fn set_advanced_settings(&self, mut advanced_settings: AdvancedSettings) -> Result {
-        fmod_try!(FMOD_System_SetAdvancedSettings(
+        ffi!(FMOD_System_SetAdvancedSettings(
             self.as_raw(),
             advanced_settings.as_raw_mut(),
-        ));
+        ))?;
         Ok(())
     }
 
     /// Retrieves the advanced settings for the system object.
     pub fn get_advanced_settings(&self) -> Result<AdvancedSettings> {
         let mut advanced_settings = AdvancedSettings::default();
-        fmod_try!(FMOD_System_GetAdvancedSettings(
+        ffi!(FMOD_System_GetAdvancedSettings(
             self.as_raw(),
             advanced_settings.as_raw_mut(),
-        ));
+        ))?;
         Ok(advanced_settings)
     }
 
@@ -797,13 +797,13 @@ impl System {
     /// game.
     pub fn set_speaker_position(&self, speaker: Speaker, position: SpeakerPosition) -> Result {
         let SpeakerPosition { x, y, active } = position;
-        fmod_try!(FMOD_System_SetSpeakerPosition(
+        ffi!(FMOD_System_SetSpeakerPosition(
             self.as_raw(),
             speaker.into_raw(),
             x,
             y,
             if active { 1 } else { 0 },
-        ));
+        ))?;
         Ok(())
     }
 
@@ -812,13 +812,13 @@ impl System {
     pub fn get_speaker_position(&self, speaker: Speaker) -> Result<SpeakerPosition> {
         let mut speaker_position = SpeakerPosition::default();
         let mut active = 0;
-        fmod_try!(FMOD_System_GetSpeakerPosition(
+        ffi!(FMOD_System_GetSpeakerPosition(
             self.as_raw(),
             speaker.into_raw(),
             &mut speaker_position.x,
             &mut speaker_position.y,
             &mut active,
-        ));
+        ))?;
         speaker_position.active = active != 1;
         Ok(speaker_position)
     }
@@ -833,24 +833,24 @@ impl System {
             distance_factor,
             rolloff_scale,
         } = settings;
-        fmod_try!(FMOD_System_Set3DSettings(
+        ffi!(FMOD_System_Set3DSettings(
             self.as_raw(),
             doppler_scale,
             distance_factor,
             rolloff_scale,
-        ));
+        ))?;
         Ok(())
     }
 
     /// Retrieves the global doppler scale, distance factor and rolloff scale for all 3D sounds.
     pub fn get_3d_settings(&self) -> Result<Settings3d> {
         let mut settings = Settings3d::default();
-        fmod_try!(FMOD_System_Get3DSettings(
+        ffi!(FMOD_System_Get3DSettings(
             self.as_raw(),
             &mut settings.doppler_scale,
             &mut settings.distance_factor,
             &mut settings.rolloff_scale,
-        ));
+        ))?;
         Ok(settings)
     }
 
@@ -866,7 +866,7 @@ impl System {
     /// Users of the Studio API should call [studio::System::set_num_listeners]
     /// instead of this function.
     pub fn set_3d_num_listeners(&self, num_listeners: i32) -> Result {
-        fmod_try!(FMOD_System_Set3DNumListeners(self.as_raw(), num_listeners));
+        ffi!(FMOD_System_Set3DNumListeners(self.as_raw(), num_listeners))?;
         Ok(())
     }
 
@@ -876,10 +876,10 @@ impl System {
     /// instead of this function.
     pub fn get_3d_num_listeners(&self) -> Result<i32> {
         let mut num_listeners = 0;
-        fmod_try!(FMOD_System_Get3DNumListeners(
+        ffi!(FMOD_System_Get3DNumListeners(
             self.as_raw(),
             &mut num_listeners,
-        ));
+        ))?;
         Ok(num_listeners)
     }
 
@@ -889,10 +889,10 @@ impl System {
     /// [Mode::LinearRolloff3d], [Mode::LinearSquareRolloff3d],
     /// [Mode::InverseTaperedRolloff3d], and [Mode::CustomRolloff3d].
     pub fn set_3d_rolloff_callback(&self, callback: Option<Rolloff3dCallback>) -> Result {
-        fmod_try!(FMOD_System_Set3DRolloffCallback(
+        ffi!(FMOD_System_Set3DRolloffCallback(
             self.as_raw(),
             mem::transmute(callback),
-        ));
+        ))?;
         Ok(())
     }
 }
@@ -909,7 +909,7 @@ impl System {
     /// is tuned for memory usage vs performance. Be mindful of the I/O
     /// capabilities of the platform before increasing this default.
     pub fn set_file_system_default(&self, block_align: i32) -> Result {
-        fmod_try!(FMOD_System_SetFileSystem(
+        ffi!(FMOD_System_SetFileSystem(
             self.as_raw(),
             None,
             None,
@@ -918,7 +918,7 @@ impl System {
             None,
             None,
             block_align,
-        ));
+        ))?;
         Ok(())
     }
 
@@ -933,7 +933,7 @@ impl System {
     /// is tuned for memory usage vs performance. Be mindful of the I/O
     /// capabilities of the platform before increasing this default.
     pub fn set_file_system_sync<FS: file::SyncFileSystem>(&self, block_align: i32) -> Result {
-        fmod_try!(FMOD_System_SetFileSystem(
+        ffi!(FMOD_System_SetFileSystem(
             self.as_raw(),
             Some(file::useropen::<FS>),
             Some(file::userclose::<FS>),
@@ -942,7 +942,7 @@ impl System {
             None,
             None,
             block_align,
-        ));
+        ))?;
         Ok(())
     }
 
@@ -976,7 +976,7 @@ impl System {
     /// - [AsyncFileSystem::cancel] must either service or prevent an async read
     /// issued previously via [AsyncFileSystem::read] before returning.
     pub fn set_file_system_async<FS: file::AsyncFileSystem>(&self, block_align: i32) -> Result {
-        fmod_try!(FMOD_System_SetFileSystem(
+        ffi!(FMOD_System_SetFileSystem(
             self.as_raw(),
             Some(file::useropen::<FS>),
             Some(file::userclose::<FS>),
@@ -985,7 +985,7 @@ impl System {
             Some(file::userasyncread::<FS>),
             Some(file::userasynccancel::<FS>),
             block_align,
-        ));
+        ))?;
         Ok(())
     }
 
@@ -1000,26 +1000,26 @@ impl System {
     /// Note: This function is not to replace FMOD's file system. For this
     /// functionality, see [System::set_file_system].
     pub fn attach_file_system<FS: file::ListenFileSystem>(&self) -> Result {
-        fmod_try!(FMOD_System_AttachFileSystem(
+        ffi!(FMOD_System_AttachFileSystem(
             self.as_raw(),
             Some(file::useropen_listen::<FS>),
             Some(file::userclose_listen::<FS>),
             Some(file::userread_listen::<FS>),
             Some(file::userseek_listen::<FS>),
-        ));
+        ))?;
         Ok(())
     }
 
     /// Detach a previously [attached](Self::attach_file_system) file system
     /// listener.
     pub fn detach_file_system(&self) -> Result {
-        fmod_try!(FMOD_System_AttachFileSystem(
+        ffi!(FMOD_System_AttachFileSystem(
             self.as_raw(),
             None,
             None,
             None,
             None,
-        ));
+        ))?;
         Ok(())
     }
 }
@@ -1078,7 +1078,7 @@ impl System {
     /// Specify a base search path for plugins so they can be placed somewhere
     /// else than the directory of the main executable.
     pub fn set_plugin_path(&self, path: &CStr8) -> Result {
-        fmod_try!(FMOD_System_SetPluginPath(self.as_raw(), path.as_ptr() as _));
+        ffi!(FMOD_System_SetPluginPath(self.as_raw(), path.as_ptr() as _))?;
         Ok(())
     }
 
@@ -1095,18 +1095,18 @@ impl System {
     /// The format of the plugin is dependant on the operating system.
     pub fn load_plugin(&self, filename: &CStr8, priority: u32) -> Result<PluginHandle> {
         let mut handle = PluginHandle::default();
-        fmod_try!(FMOD_System_LoadPlugin(
+        ffi!(FMOD_System_LoadPlugin(
             self.as_raw(),
             filename.as_ptr() as _,
             handle.as_raw_mut(),
             priority,
-        ));
+        ))?;
         Ok(handle)
     }
 
     /// Unloads an FMOD (DSP, Output or Codec) plugin.
     pub fn unload_plugin(&self, handle: PluginHandle) -> Result {
-        fmod_try!(FMOD_System_UnloadPlugin(self.as_raw(), handle.into_raw()));
+        ffi!(FMOD_System_UnloadPlugin(self.as_raw(), handle.into_raw()))?;
         Ok(())
     }
 
@@ -1120,11 +1120,11 @@ impl System {
     /// for more information.
     pub fn get_num_tested_plugins(&self, handle: PluginHandle) -> Result<i32> {
         let mut count = 0;
-        fmod_try!(FMOD_System_GetNumNestedPlugins(
+        ffi!(FMOD_System_GetNumNestedPlugins(
             self.as_raw(),
             handle.into_raw(),
             &mut count,
-        ));
+        ))?;
         Ok(count)
     }
 
@@ -1138,23 +1138,23 @@ impl System {
     /// passed in.
     pub fn get_nested_plugin(&self, handle: PluginHandle, index: i32) -> Result<PluginHandle> {
         let mut nested_handle = PluginHandle::default();
-        fmod_try!(FMOD_System_GetNestedPlugin(
+        ffi!(FMOD_System_GetNestedPlugin(
             self.as_raw(),
             handle.into_raw(),
             index,
             nested_handle.as_raw_mut(),
-        ));
+        ))?;
         Ok(nested_handle)
     }
 
     /// Retrieves the number of loaded plugins.
     pub fn get_num_plugins(&self, plugin_type: PluginType) -> Result<i32> {
         let mut num_plugins = 0;
-        fmod_try!(FMOD_System_GetNumPlugins(
+        ffi!(FMOD_System_GetNumPlugins(
             self.as_raw(),
             plugin_type.into_raw(),
             &mut num_plugins,
-        ));
+        ))?;
         Ok(num_plugins)
     }
 
@@ -1164,12 +1164,12 @@ impl System {
     /// [System::get_num_plugins].
     pub fn get_plugin_handle(&self, plugin_type: PluginType, index: i32) -> Result<PluginHandle> {
         let mut handle = PluginHandle::default();
-        fmod_try!(FMOD_System_GetPluginHandle(
+        ffi!(FMOD_System_GetPluginHandle(
             self.as_raw(),
             plugin_type.into_raw(),
             index,
             handle.as_raw_mut(),
-        ));
+        ))?;
         Ok(handle)
     }
 
@@ -1182,14 +1182,14 @@ impl System {
     pub fn get_plugin_info(&self, handle: PluginHandle) -> Result<PluginInfo> {
         let mut kind = PluginType::zeroed();
         let mut version = 0;
-        fmod_try!(FMOD_System_GetPluginInfo(
+        ffi!(FMOD_System_GetPluginInfo(
             self.as_raw(),
             handle.raw,
             kind.as_raw_mut(),
             ptr::null_mut(),
             0,
             &mut version,
-        ));
+        ))?;
         Ok(PluginInfo { kind, version })
     }
 
@@ -1197,7 +1197,7 @@ impl System {
     pub fn get_plugin_name(&self, handle: PluginHandle, name: &mut String) -> Result {
         unsafe {
             fmod_get_string(name, |buf| {
-                Error::from_raw(FMOD_System_GetPluginInfo(
+                ffi!(FMOD_System_GetPluginInfo(
                     self.as_raw(),
                     handle.raw,
                     ptr::null_mut(),
@@ -1217,20 +1217,20 @@ impl System {
     /// set_output call to change to [OutputType::NoSound] if no more sound card
     /// drivers exist.
     pub fn set_output_by_plugin(&self, handle: PluginHandle) -> Result {
-        fmod_try!(FMOD_System_SetOutputByPlugin(
+        ffi!(FMOD_System_SetOutputByPlugin(
             self.as_raw(),
             handle.into_raw(),
-        ));
+        ))?;
         Ok(())
     }
 
     /// Retrieves the plugin handle for the currently selected output type.
     pub fn get_output_by_plugin(&self) -> Result<PluginHandle> {
         let mut handle = PluginHandle::default();
-        fmod_try!(FMOD_System_GetOutputByPlugin(
+        ffi!(FMOD_System_GetOutputByPlugin(
             self.as_raw(),
             handle.as_raw_mut(),
-        ));
+        ))?;
         Ok(handle)
     }
 
@@ -1247,11 +1247,11 @@ impl System {
     /// via [ChannelControl::add_dsp] or [Dsp::add_input].
     pub fn create_dsp_by_plugin(&self, handle: PluginHandle) -> Result<Handle<'_, Dsp>> {
         let mut dsp = ptr::null_mut();
-        fmod_try!(FMOD_System_CreateDSPByPlugin(
+        ffi!(FMOD_System_CreateDSPByPlugin(
             self.as_raw(),
             handle.into_raw(),
             &mut dsp,
-        ));
+        ))?;
         Ok(unsafe { Handle::new(dsp) })
     }
 
@@ -1272,10 +1272,10 @@ impl System {
     /// Basic authentication is supported using `user:password@host:port` format
     /// e.g. `bob:sekrit123@www.fmod.com:8888`.
     pub fn set_network_proxy(&self, proxy: &CStr8) -> Result {
-        fmod_try!(FMOD_System_SetNetworkProxy(
+        ffi!(FMOD_System_SetNetworkProxy(
             self.as_raw(),
             proxy.as_ptr() as _,
-        ));
+        ))?;
         Ok(())
     }
 
@@ -1283,7 +1283,7 @@ impl System {
     pub fn get_network_proxy(&self, proxy: &mut String) -> Result {
         unsafe {
             fmod_get_string(proxy, |buf| {
-                Error::from_raw(FMOD_System_GetNetworkProxy(
+                ffi!(FMOD_System_GetNetworkProxy(
                     self.as_raw(),
                     buf.as_mut_ptr().cast(),
                     buf.len() as _,
@@ -1295,14 +1295,14 @@ impl System {
     /// Set the timeout for network streams.
     pub fn set_network_timeout(&self, timeout: Duration) -> Result {
         let timeout = timeout.as_millis() as _;
-        fmod_try!(FMOD_System_SetNetworkTimeout(self.as_raw(), timeout));
+        ffi!(FMOD_System_SetNetworkTimeout(self.as_raw(), timeout))?;
         Ok(())
     }
 
     /// Retrieve the timeout value for network streams.
     pub fn get_network_timeout(&self) -> Result<Duration> {
         let mut timeout = 0;
-        fmod_try!(FMOD_System_GetNetworkTimeout(self.as_raw(), &mut timeout));
+        ffi!(FMOD_System_GetNetworkTimeout(self.as_raw(), &mut timeout))?;
         Ok(Duration::from_millis(timeout as _))
     }
 }
@@ -1337,7 +1337,7 @@ impl System {
     /// versions match.
     pub fn get_version(&self) -> Result<Version> {
         let mut version = 0;
-        fmod_try!(FMOD_System_GetVersion(self.as_raw(), &mut version));
+        ffi!(FMOD_System_GetVersion(self.as_raw(), &mut version))?;
         Ok(Version::from_raw(version))
     }
 
@@ -1354,7 +1354,7 @@ impl System {
     /// - [`OutputType::AudioOut`]: Pointer to type `i32` is returned. Handle returned from `sceAudioOutOpen`.
     pub fn get_output_handle(&self) -> Result<*mut ()> {
         let mut output = ptr::null_mut();
-        fmod_try!(FMOD_System_GetOutputHandle(self.as_raw(), &mut output));
+        ffi!(FMOD_System_GetOutputHandle(self.as_raw(), &mut output))?;
         Ok(output.cast())
     }
 
@@ -1365,11 +1365,11 @@ impl System {
     pub fn get_channels_playing(&self) -> Result<ChannelUsage> {
         let mut channels = 0;
         let mut real_channels = 0;
-        fmod_try!(FMOD_System_GetChannelsPlaying(
+        ffi!(FMOD_System_GetChannelsPlaying(
             self.as_raw(),
             &mut channels,
             &mut real_channels,
-        ));
+        ))?;
         Ok(ChannelUsage {
             all: channels,
             real: real_channels,
@@ -1382,7 +1382,7 @@ impl System {
     /// stable output.
     pub fn get_cpu_usage(&self) -> Result<CpuUsage> {
         let mut usage = CpuUsage::default();
-        fmod_try!(FMOD_System_GetCPUUsage(self.as_raw(), usage.as_raw_mut()));
+        ffi!(FMOD_System_GetCPUUsage(self.as_raw(), usage.as_raw_mut()))?;
         Ok(usage)
     }
 
@@ -1391,12 +1391,12 @@ impl System {
         let mut sample_bytes_read = 0;
         let mut stream_bytes_read = 0;
         let mut other_bytes_read = 0;
-        fmod_try!(FMOD_System_GetFileUsage(
+        ffi!(FMOD_System_GetFileUsage(
             self.as_raw(),
             &mut sample_bytes_read,
             &mut stream_bytes_read,
             &mut other_bytes_read,
-        ));
+        ))?;
         Ok(FileUsage {
             sample_bytes_read,
             stream_bytes_read,
@@ -1418,24 +1418,24 @@ impl System {
         target_mode: SpeakerMode,
         matrix: &mut MixMatrix,
     ) -> Result {
-        fmod_try!(FMOD_System_GetDefaultMixMatrix(
+        ffi!(FMOD_System_GetDefaultMixMatrix(
             self.as_raw(),
             source_mode.into_raw(),
             target_mode.into_raw(),
             matrix.as_mut_ptr(),
             0,
-        ));
+        ))?;
         Ok(())
     }
 
     /// Retrieves the channel count for a given speaker mode.
     pub fn get_speaker_mode_channels(&self, mode: SpeakerMode) -> Result<usize> {
         let mut channels = 0;
-        fmod_try!(FMOD_System_GetSpeakerModeChannels(
+        ffi!(FMOD_System_GetSpeakerModeChannels(
             self.as_raw(),
             mode.into_raw(),
             &mut channels,
-        ));
+        ))?;
         Ok(channels as _)
     }
 }
@@ -1503,13 +1503,13 @@ impl System {
         let mode = Mode::into_raw(mode);
         let exinfo = ptr::null_mut();
         let mut sound = ptr::null_mut();
-        fmod_try!(FMOD_System_CreateSound(
+        ffi!(FMOD_System_CreateSound(
             self.as_raw(),
             name.as_ptr() as _,
             mode,
             exinfo,
             &mut sound,
-        ));
+        ))?;
         Ok(unsafe { Handle::new(sound) })
     }
 
@@ -1577,13 +1577,13 @@ impl System {
         let mode = Mode::into_raw(mode);
         let exinfo = ptr::null_mut();
         let mut sound = ptr::null_mut();
-        fmod_try!(FMOD_System_CreateStream(
+        ffi!(FMOD_System_CreateStream(
             self.as_raw(),
             name.as_ptr() as _,
             mode,
             exinfo,
             &mut sound,
-        ));
+        ))?;
         Ok(unsafe { Handle::new(sound) })
     }
 
@@ -1605,11 +1605,11 @@ impl System {
     /// types, use [System::create_dsp_by_plugin] instead.
     pub fn create_dsp_by_type(&self, kind: DspType) -> Result<Handle<'_, Dsp>> {
         let mut dsp = ptr::null_mut();
-        fmod_try!(FMOD_System_CreateDSPByType(
+        ffi!(FMOD_System_CreateDSPByType(
             self.as_raw(),
             kind.into_raw(),
             &mut dsp,
-        ));
+        ))?;
         Ok(unsafe { Handle::new(dsp) })
     }
 
@@ -1631,11 +1631,11 @@ impl System {
     /// can be re-parented this with [ChannelGroup::add_group].
     pub fn create_channel_group(&self, name: &CStr8) -> Result<Handle<'_, ChannelGroup>> {
         let mut channel_group = ptr::null_mut();
-        fmod_try!(FMOD_System_CreateChannelGroup(
+        ffi!(FMOD_System_CreateChannelGroup(
             self.as_raw(),
             name.as_ptr() as _,
             &mut channel_group,
-        ));
+        ))?;
         Ok(unsafe { Handle::new(channel_group) })
     }
 
@@ -1651,11 +1651,11 @@ impl System {
     ///   types of Sounds. See [SoundGroup::set_max_audible].
     pub fn create_sound_group(&self, name: &CStr8) -> Result<Handle<'_, SoundGroup>> {
         let mut sound_group = ptr::null_mut();
-        fmod_try!(FMOD_System_CreateSoundGroup(
+        ffi!(FMOD_System_CreateSoundGroup(
             self.as_raw(),
             name.as_ptr() as _,
             &mut sound_group,
-        ));
+        ))?;
         Ok(unsafe { Handle::new(sound_group) })
     }
 
@@ -1711,7 +1711,7 @@ impl System {
     /// [studio::EventInstance::set_reverb_level] on each event instance.
     pub fn create_reverb_3d(&self) -> Result<Handle<'_, Reverb3d>> {
         let mut reverb = ptr::null_mut();
-        fmod_try!(FMOD_System_CreateReverb3D(self.as_raw(), &mut reverb));
+        ffi!(FMOD_System_CreateReverb3D(self.as_raw(), &mut reverb))?;
         Ok(unsafe { Handle::new(reverb) })
     }
 
@@ -1749,13 +1749,13 @@ impl System {
             .map(ChannelGroup::as_raw)
             .unwrap_or(ptr::null_mut());
         let mut channel = ptr::null_mut();
-        fmod_try!(FMOD_System_PlaySound(
+        ffi!(FMOD_System_PlaySound(
             self.as_raw(),
             sound,
             channelgroup,
             paused as _,
             &mut channel,
-        ));
+        ))?;
         Ok(unsafe { Handle::new(channel) })
     }
 
@@ -1785,13 +1785,13 @@ impl System {
             .map(ChannelGroup::as_raw)
             .unwrap_or(ptr::null_mut());
         let mut channel = ptr::null_mut();
-        fmod_try!(FMOD_System_PlayDSP(
+        ffi!(FMOD_System_PlayDSP(
             self.as_raw(),
             dsp,
             channelgroup,
             paused as _,
             &mut channel,
-        ));
+        ))?;
         Ok(unsafe { Handle::new(channel) })
     }
 
@@ -1803,11 +1803,11 @@ impl System {
     /// [System::play_dsp].
     pub fn get_channel_count(&self, channel_id: i32) -> Result<Handle<'_, Channel>> {
         let mut channel = ptr::null_mut();
-        fmod_try!(FMOD_System_GetChannel(
+        ffi!(FMOD_System_GetChannel(
             self.as_raw(),
             channel_id,
             &mut channel,
-        ));
+        ))?;
         Ok(unsafe { Handle::new(channel) })
     }
 
@@ -1822,10 +1822,10 @@ impl System {
     /// volume' for all playing [Channel]s. See [ChannelControl::set_volume].
     pub fn get_master_channel_group(&self) -> Result<&ChannelGroup> {
         let mut channelgroup = ptr::null_mut();
-        fmod_try!(FMOD_System_GetMasterChannelGroup(
+        ffi!(FMOD_System_GetMasterChannelGroup(
             self.as_raw(),
             &mut channelgroup,
-        ));
+        ))?;
         Ok(unsafe { ChannelGroup::from_raw(channelgroup) })
     }
 
@@ -1836,10 +1836,10 @@ impl System {
     /// [SoundGroup].
     pub fn get_master_sound_group(&self) -> Result<&SoundGroup> {
         let mut soundgroup = ptr::null_mut();
-        fmod_try!(FMOD_System_GetMasterSoundGroup(
+        ffi!(FMOD_System_GetMasterSoundGroup(
             self.as_raw(),
             &mut soundgroup,
-        ));
+        ))?;
         Ok(unsafe { SoundGroup::from_raw(soundgroup) })
     }
 }
@@ -1894,14 +1894,14 @@ impl System {
         listener: i32,
         attributes: ListenerAttributes3d,
     ) -> Result<()> {
-        fmod_try!(FMOD_System_Set3DListenerAttributes(
+        ffi!(FMOD_System_Set3DListenerAttributes(
             self.as_raw(),
             listener,
             attributes.pos.as_raw(),
             attributes.vel.as_raw(),
             attributes.forward.as_raw(),
             attributes.up.as_raw(),
-        ));
+        ))?;
         Ok(())
     }
 
@@ -1911,14 +1911,14 @@ impl System {
     /// [studio::System::get_listener_attributes] instead of this function.
     pub fn get_3d_listener_attributes(&self, listener: i32) -> Result<ListenerAttributes3d> {
         let mut attributes = ListenerAttributes3d::default();
-        fmod_try!(FMOD_System_Get3DListenerAttributes(
+        ffi!(FMOD_System_Get3DListenerAttributes(
             self.as_raw(),
             listener,
             attributes.pos.as_raw_mut(),
             attributes.vel.as_raw_mut(),
             attributes.forward.as_raw_mut(),
             attributes.up.as_raw_mut(),
-        ));
+        ))?;
         Ok(attributes)
     }
 
@@ -1935,11 +1935,11 @@ impl System {
         instance: i32,
         properties: Option<&ReverbProperties>,
     ) -> Result<()> {
-        fmod_try!(FMOD_System_SetReverbProperties(
+        ffi!(FMOD_System_SetReverbProperties(
             self.as_raw(),
             instance,
             properties.map_or(ptr::null(), |x| x.as_raw()),
-        ));
+        ))?;
         Ok(())
     }
 
@@ -1947,11 +1947,11 @@ impl System {
     /// instance.
     pub fn get_reverb_properties(&self, instance: i32) -> Result<ReverbProperties> {
         let mut properties = ReverbProperties::default();
-        fmod_try!(FMOD_System_GetReverbProperties(
+        ffi!(FMOD_System_GetReverbProperties(
             self.as_raw(),
             instance,
             properties.as_raw_mut(),
-        ));
+        ))?;
         Ok(properties)
     }
 
@@ -1971,13 +1971,13 @@ impl System {
         group: &ChannelGroup,
         pass_thru: bool,
     ) -> Result<()> {
-        fmod_try!(FMOD_System_AttachChannelGroupToPort(
+        ffi!(FMOD_System_AttachChannelGroupToPort(
             self.as_raw(),
             port_type.into_raw(),
             port_index.into_raw(),
             group.as_raw(),
             pass_thru as _,
-        ));
+        ))?;
         Ok(())
     }
 
@@ -1987,10 +1987,10 @@ impl System {
     /// Removing a [ChannelGroup] from a port will reroute the audio back to the
     /// main mix.
     pub fn detach_channel_group_from_port(&self, channel_group: &ChannelGroup) -> Result<()> {
-        fmod_try!(FMOD_System_DetachChannelGroupFromPort(
+        ffi!(FMOD_System_DetachChannelGroupFromPort(
             self.as_raw(),
             channel_group.as_raw(),
-        ));
+        ))?;
         Ok(())
     }
 }

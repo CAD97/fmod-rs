@@ -23,7 +23,7 @@ pub fn get_disk_busy() -> Result<bool> {
     let _lock = GLOBAL_SYSTEM_STATE.read();
 
     let mut busy = 0;
-    fmod_try!(FMOD_File_GetDiskBusy(&mut busy));
+    ffi!(FMOD_File_GetDiskBusy(&mut busy))?;
     Ok(busy != 0)
 }
 
@@ -39,7 +39,7 @@ pub fn set_disk_busy(busy: bool) -> Result {
     // prevent racing System init
     let _lock = GLOBAL_SYSTEM_STATE.read();
 
-    fmod_try!(FMOD_File_SetDiskBusy(if busy { 1 } else { 0 }));
+    ffi!(FMOD_File_SetDiskBusy(if busy { 1 } else { 0 }))?;
     Ok(())
 }
 
