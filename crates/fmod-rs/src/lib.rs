@@ -58,13 +58,16 @@ mod handle;
 pub(crate) mod utils;
 
 #[doc(no_inline)]
-pub use self::core::*;
+pub use {
+    self::core::*,
+    cstr8::{cstr8, CStr8},
+};
 
 #[doc(inline)]
 pub use self::{error::*, handle::*};
 
 #[doc(hidden)]
-pub use cstr::cstr as _cstr;
+pub use self::macros::*;
 
 raw! {
     /// Raw access to the FMOD C API.
@@ -76,33 +79,6 @@ raw! {
         #[cfg(feature = "studio")]
         pub use fmod_studio_sys::*;
     }
-}
-
-/// A macro for getting `&'static CStr` from literal or identifier.
-///
-/// This macro checks whether the given literal is valid for `CStr` at compile
-/// time, and returns a constant reference of `CStr`.
-///
-/// # Examples
-///
-/// ```rust,ignore
-/// # use {fmod::cstr, std::ffi::CStr};
-/// let a = cstr!(b"hello\xff");
-/// let b = cstr!("hello");
-/// let c = cstr!(hello);
-///
-/// assert_eq!(a, CStr::from_bytes_with_nul(b"hello\xff\0").unwrap());
-/// assert_eq!(b, CStr::from_bytes_with_nul(b"hello\0").unwrap());
-/// assert_eq!(c, CStr::from_bytes_with_nul(b"hello\0").unwrap());
-/// ```
-#[macro_export]
-macro_rules! cstr {
-    ($x:literal) => {
-        $crate::_cstr! { $x }
-    };
-    ($x:ident) => {
-        $crate::_cstr! { $x }
-    };
 }
 
 /// Current FMOD version number.

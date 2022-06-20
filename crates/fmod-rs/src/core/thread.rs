@@ -28,11 +28,11 @@ pub unsafe fn set_attributes(
     priority: ThreadPriority,
     stack_size: ThreadStackSize,
 ) -> Result {
-    fmod_try!(FMOD_Thread_SetAttributes(
+    ffi!(FMOD_Thread_SetAttributes(
         kind.into_raw(),
         affinity.into_raw(),
         priority.into_raw(),
         stack_size.into_raw()
-    ));
+    ))?;
     Ok(())
 }
