@@ -1,5 +1,12 @@
 #![allow(non_upper_case_globals, non_camel_case_types, non_snake_case)]
 
+#[rustfmt::skip]
+#[cfg_attr(all(windows, not(unix),     debug_assertions ), link(name = "fmodL_vc"))]
+#[cfg_attr(all(             unix ,     debug_assertions ), link(name = "fmodL"   ))]
+#[cfg_attr(all(windows, not(unix), not(debug_assertions)), link(name = "fmod_vc" ))]
+#[cfg_attr(all(             unix , not(debug_assertions)), link(name = "fmod"    ))]
+extern {}
+
 include!("../inc/bindings.rs");
 
 // fmod_errors.h `static const char *FMOD_ErrorString(FMOD_RESULT errcode)`
