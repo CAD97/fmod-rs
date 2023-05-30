@@ -15,7 +15,7 @@ pub const NUM_COLUMNS: u16 = 50;
 pub const NUM_ROWS: u16 = 25;
 
 bitflags! {
-    #[derive(Default)]
+    #[derive(Default, Clone, Copy, PartialEq, Eq)]
     pub struct Buttons: u16 {
         const Action1 = 0x1 << 0;
         const Action2 = 0x1 << 1;

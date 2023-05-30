@@ -441,7 +441,7 @@ pub struct SoftwareFormat {
     ///
     /// <dl>
     /// <dt>Range</dt><dd>[0, MAX_CHANNEL_WIDTH]</dd>
-    /// </d>
+    /// </dl>
     pub num_raw_speakers: i32,
 }
 

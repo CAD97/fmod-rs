@@ -14,4 +14,4 @@
 | str replace -as 'type_' 'r#type'
 | str replace -as '__bindgen_anon_1' 'payload'
 | str replace -as '__bindgen_ty_1' '_PAYLOAD'
-| save --raw bindings.rs)
+| save --raw bindings.rs -f)

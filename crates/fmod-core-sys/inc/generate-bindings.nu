@@ -6,6 +6,6 @@
 | str replace -as 'type_' 'r#type'
 | str replace -as '__bindgen_anon_1' 'payload'
 | str replace -as '__bindgen_ty_1' '_PAYLOAD'
-| save --raw bindings.rs)
+| save -f --raw bindings.rs)
 bindgen fmod_android.h --no-prepend-enum-name | save --raw --append bindings.rs
 bindgen fmod_ios.h     --no-prepend-enum-name | save --raw --append bindings.rs

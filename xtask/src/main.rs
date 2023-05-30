@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate html5ever;
 
-use {clap::StructOpt, std::path::PathBuf};
+use {clap::Parser, std::path::PathBuf};
 
 mod docgen;
 
-#[derive(clap::Parser)]
+#[derive(Parser)]
 #[clap(about, long_about = None)]
 enum Cli {
     Docgen { fmod_path: PathBuf },

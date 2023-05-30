@@ -174,7 +174,7 @@ error_enum_struct! {
         Plugin = FMOD_ERR_PLUGIN,
         /// A requested output, dsp unit type or codec was not available.
         PluginMissing = FMOD_ERR_PLUGIN_MISSING,
-        /// A resource that the plugin requires cannot be found. (ie the DLS file for MIDI playback)
+        /// A resource that the plugin requires cannot be allocated or found. (ie the DLS file for MIDI playback)
         PluginResource = FMOD_ERR_PLUGIN_RESOURCE,
         /// A plugin was built with an unsupported SDK version.
         PluginVersion = FMOD_ERR_PLUGIN_VERSION,

@@ -60,6 +60,8 @@ flags! {
         MixFromUpdate          = FMOD_INIT_MIX_FROM_UPDATE,
         /// 3D calculations will be performed in right-handed coordinates.
         RightHanded3d          = FMOD_INIT_3D_RIGHTHANDED,
+        /// Enables hard clipping of output values greater than 1.0 or less than -1.0.
+        ClipOutput             = FMOD_INIT_CLIP_OUTPUT,
         /// Enables usage of [Channel::set_low_pass_gain], [Channel::set_3d_occlusion], or automatic usage by the [Geometry] API. All voices will add a software lowpass filter effect into the DSP chain which is idle unless one of the previous functions/features are used.
         ChannelLowpass         = FMOD_INIT_CHANNEL_LOWPASS,
         /// All [Mode::D3] based voices will add a software lowpass and highpass filter effect into the DSP chain which will act as a distance-automated bandpass filter. Use [System::set_advanced_settings] to adjust the center frequency.
@@ -117,6 +119,8 @@ flags! {
         DeviceReinitialize     = FMOD_SYSTEM_CALLBACK_DEVICEREINITIALIZE,
         /// Called from the mixer thread when the device output attempts to read more samples than are available in the output buffer.
         OutputUnderrun         = FMOD_SYSTEM_CALLBACK_OUTPUTUNDERRUN,
+        /// Called from the mixer thread when the System record position changed.
+        RecordPositionChanged  = FMOD_SYSTEM_CALLBACK_RECORDLISTCHANGED,
         /// Mask representing all callback types.
         All                    = FMOD_SYSTEM_CALLBACK_ALL,
     }
@@ -232,6 +236,14 @@ flags! {
         Surround70      = FMOD_CHANNELMASK_7POINT0,
         /// 7.1 surround channel mask.
         Surround71      = FMOD_CHANNELMASK_7POINT1,
+    }
+
+    /// Output type specific index for when there are multiple instances of a port type.
+    pub struct PortIndex: FMOD_PORT_INDEX {
+        /// Use when a port index is not required
+        None = FMOD_PORT_INDEX_NONE as _,
+        /// Use as a flag to indicate the intended controller is associated with a VR headset
+        VrController = FMOD_PORT_INDEX_FLAG_VR_CONTROLLER as _,
     }
 
     /// Bitfield for specifying the CPU core a given thread runs on.

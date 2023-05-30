@@ -215,6 +215,8 @@ enum_struct! {
         AAudio       = FMOD_OUTPUTTYPE_AAUDIO,
         /// HTML5 - Web Audio AudioWorkletNode output. (Default on HTML5 if available)
         AudioWorklet = FMOD_OUTPUTTYPE_AUDIOWORKLET,
+        /// Mac / iOS - PHASE framework. (Disabled)
+        Phase        = FMOD_OUTPUTTYPE_PHASE,
     }
 }
 
@@ -561,6 +563,14 @@ enum_struct! {
         Spline   = FMOD_DSP_RESAMPLER_SPLINE,
     }
 
+    /// Types of callbacks called by DSPs.
+    ///
+    /// Callbacks are called from the game thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
+    pub enum DspCallbackType: FMOD_DSP_CALLBACK_TYPE {
+        /// Called when a DSP's data parameter can be released.
+        DataParameterInfo = FMOD_DSP_CALLBACK_DATAPARAMETERRELEASE,
+    }
+
     /// List of connection types between 2 DSP nodes.
     pub enum DspConnectionType: FMOD_DSPCONNECTION_TYPE {
         #[default]
@@ -677,11 +687,5 @@ enum_struct! {
         /// `kAudioQueueHardwareCodecPolicy_UseHardwareOnly` ~ try hardware,
         /// if not available fail.
         HardwareOnly = FMOD_AUDIOQUEUE_CODECPOLICY_HARDWAREONLY,
-    }
-
-    /// Output type specific index for when there are multiple instances of a port type.
-    pub enum PortIndex: FMOD_PORT_INDEX {
-        /// Use when a port index is not required
-        None = FMOD_PORT_INDEX_NONE as _,
     }
 }

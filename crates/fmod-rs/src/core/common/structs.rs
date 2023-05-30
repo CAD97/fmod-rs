@@ -619,3 +619,5 @@ fmod_struct! {
         pub convolution2: f32,
     }
 }
+
+// FMOD_DSP_DATA_PARAMETER_INFO
