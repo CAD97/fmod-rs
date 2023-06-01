@@ -13,7 +13,7 @@ fn link_lib() {
     let windows = build::cargo_cfg_target_os() == "windows";
     let lib = match (dev, windows) {
         (true, true) => "fmodstudioL_vc",
-        (true, false) => "fmodstudioL",
+        (true, false) => "fmodstudio_vc",
         (false, true) => "fmodstudio_vc",
         (false, false) => "fmodstudio",
     };
@@ -48,7 +48,7 @@ fn link_search_windows() {
     };
 
     let link_dir = format!(
-        "{program_files}\\FMOD SoundSystem\\FMOD Studio API {fmod_os}\\api\\core\\lib\\{lib_dir}"
+        "{program_files}\\FMOD SoundSystem\\FMOD Studio API {fmod_os}\\api\\studio\\lib\\{lib_dir}"
     );
     build::rerun_if_changed(&*link_dir);
     build::rustc_link_search(&*link_dir);

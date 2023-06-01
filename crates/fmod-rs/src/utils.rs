@@ -138,17 +138,6 @@ pub const fn decode_sbcd_u8(encoded: u8) -> u8 {
         + (((encoded >> (SHIFT * 1)) & MASK) * 10)
 }
 
-/// Decode [Simple Binary Coded Decimal](https://en.wikipedia.org/wiki/Binary-coded_decimal).
-#[allow(clippy::erasing_op, clippy::identity_op)]
-pub const fn decode_sbcd_u16(encoded: u16) -> u16 {
-    const MASK: u16 = 0xF;
-    const SHIFT: u8 = 4;
-    000 + (((encoded >> (SHIFT * 0)) & MASK) * 1)
-        + (((encoded >> (SHIFT * 1)) & MASK) * 10)
-        + (((encoded >> (SHIFT * 2)) & MASK) * 100)
-        + (((encoded >> (SHIFT * 3)) & MASK) * 1000)
-}
-
 pub fn catch_user_unwind<F, R>(f: F) -> Option<R>
 where
     F: UnwindSafe + FnOnce() -> R,

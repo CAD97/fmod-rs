@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "unstable", feature(extern_types, doc_auto_cfg, doc_cfg))]
+#![allow(rustdoc::broken_intra_doc_links)] // TODO: remove once more items exist
 #![warn(rust_2018_idioms)] // lol, this reads backwards
 
 //! # FMOD.rs
@@ -47,7 +48,11 @@ extern crate self as fmod;
 
 #[doc = include_str!("core/README.md")]
 pub mod core;
+#[cfg(feature = "fsbank")]
+#[doc = include_str!("fsbank/README.md")]
+pub mod fsbank;
 #[cfg(doc)]
+#[cfg_attr(feature = "unstable", doc(cfg(doc)))]
 pub mod platform;
 #[cfg(feature = "studio")]
 #[doc = include_str!("studio/README.md")]
@@ -81,8 +86,16 @@ raw! {
     }
 }
 
-/// Current FMOD version number.
+/// Current FMOD version number. (2.02.14)
+///
+/// ```rust
+/// assert_eq!(fmod::VERSION.product, 2);
+/// assert_eq!(fmod::VERSION.major, 2);
+/// assert_eq!(fmod::VERSION.minor, 14);
+/// ```
 pub const VERSION: Version = Version::from_raw(raw::FMOD_VERSION);
+
+const _: () = ();
 
 #[cfg(feature = "tracing")]
 fn span() -> &'static tracing::Span {

@@ -1,7 +1,5 @@
 use {
-    crate::utils::{
-        decode_sbcd_u16, decode_sbcd_u8, string_from_utf16be_lossy, string_from_utf16le_lossy,
-    },
+    crate::utils::{decode_sbcd_u8, string_from_utf16be_lossy, string_from_utf16le_lossy},
     fmod::{raw::*, *},
     std::{
         borrow::Cow,
@@ -18,7 +16,7 @@ use {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Version {
     /// Product version.
-    pub product: u16,
+    pub product: u8,
     /// Major version.
     pub major: u8,
     /// Minor version.
@@ -30,8 +28,8 @@ impl Version {
         #[allow(clippy::identity_op)]
         pub const fn from_raw(raw: u32) -> Version {
             Version {
-                product: decode_sbcd_u16(((raw & 0xFFFF0000) >> 8) as u16),
-                major: decode_sbcd_u8(((raw & 0x0000FF00) >> 4) as u8),
+                product: decode_sbcd_u8(((raw & 0x00FF0000) >> 16) as u8),
+                major: decode_sbcd_u8(((raw & 0x0000FF00) >> 8) as u8),
                 minor: decode_sbcd_u8(((raw & 0x000000FF) >> 0) as u8),
             }
         }
@@ -222,7 +220,7 @@ fmod_struct! {
     ///
     /// [DSP architecture guide]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-dsp-architecture.html
     pub struct AdvancedSettings = FMOD_ADVANCEDSETTINGS {
-        /// Size of this structure. Must be set to size_of::<AdvancedSettings>().
+        /// Size of this structure. Must be set to `size_of::<Self>()`.
         #[default(mem::size_of::<Self>() as i32)]
         size: i32,
         /// Maximum MPEG Sounds created as [Mode::CreateCompressedSample].
@@ -314,6 +312,7 @@ fmod_struct! {
         /// <dt>Units</dt><dd>Hertz</dd>
         /// <dt>Default</dt><dd>1500</dd>
         /// <dt>Range</dt><dd>[10, 22050]</dd>
+        /// </dl>
         pub distance_filter_center_freq: f32,
         /// For use with [Reverb3D], selects which global reverb instance to use.
         /// <dl>

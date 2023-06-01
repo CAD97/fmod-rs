@@ -434,6 +434,7 @@ pub struct SoftwareFormat {
     /// <dt>Range</dt><dd>[8000, 192000]</dd>
     /// <dt>Units</dt><dd>Hertz</dd>
     /// <dt>Default</dt><dd>48000</dd>
+    /// </dl>
     pub sample_rate: i32,
     /// Speaker setup of the mixer.
     pub speaker_mode: SpeakerMode,
@@ -1879,7 +1880,7 @@ impl System {
     /// i.e.
     ///
     /// ```rust
-    /// # let [position_currentframe, position_lastframe, time_taken_since_last_frame_in_seconds] = [0; 3]
+    /// # let [position_currentframe, position_lastframe, time_taken_since_last_frame_in_seconds] = [1; 3];
     /// let velocity_units_per_second =
     ///     (position_currentframe - position_lastframe)
     ///         / time_taken_since_last_frame_in_seconds;
