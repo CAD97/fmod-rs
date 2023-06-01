@@ -52,13 +52,8 @@ impl<T: ?Sized + FmodResource> Drop for Handle<'_, T> {
 
         match unsafe { T::release(raw) } {
             Ok(()) => {
-                #[cfg(feature = "tracing")]
-                tracing::trace!(
-                    parent: crate::span(),
-                    "Released {}({:p})",
-                    std::any::type_name::<T>(),
-                    raw,
-                );
+                #[cfg(feature = "log")]
+                log::trace!("Released {}({raw:p})", std::any::type_name::<T>());
             },
             Err(error) => {
                 whoops!(
@@ -86,13 +81,8 @@ impl<'a, T: ?Sized + FmodResource> Handle<'a, T> {
     }
 
     pub(crate) unsafe fn new(raw: *mut T::Raw) -> Self {
-        #[cfg(feature = "tracing")]
-        tracing::trace!(
-            parent: crate::span(),
-            "Created {}({:p})",
-            std::any::type_name::<T>(),
-            raw,
-        );
+        #[cfg(feature = "log")]
+        log::trace!("Created {}({raw:p})", std::any::type_name::<T>());
 
         Self::from_raw(raw)
     }

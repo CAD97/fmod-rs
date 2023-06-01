@@ -1,10 +1,9 @@
 macro_rules! whoops {
     {
-        trace($($trace:tt)*),
         panic($($panic:tt)*) $(,)?
     } => {{
-        #[cfg(feature = "tracing")]
-        tracing::error!(parent: crate::span(), $($trace)*);
+        #[cfg(feature = "log")]
+        log::error!($($panic)*);
         if cfg!(debug_assertions) {
             if !::std::thread::panicking() {
                 panic!($($panic)*);
@@ -14,17 +13,16 @@ macro_rules! whoops {
         }
     }};
     {
-        trace($($trace:tt)*),
         stderr($($panic:tt)*) $(,)?
     } => {{
-        #[cfg(feature = "tracing")]
-        tracing::error!(parent: crate::span(), $($trace)*);
+        #[cfg(feature = "log")]
+        log::error!($($panic)*);
         if cfg!(debug_assertions) {
             use ::std::io::prelude::*;
             let _ = writeln!(::std::io::stderr(), $($panic)*);
         }
     }};
-    ($($args:tt)*) => { whoops!{trace($($args)*), panic($($args)*)} };
+    ($($args:tt)*) => { whoops!{panic($($args)*)} };
 }
 
 macro_rules! opaque {

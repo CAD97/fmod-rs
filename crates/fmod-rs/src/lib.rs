@@ -94,12 +94,3 @@ raw! {
 /// assert_eq!(fmod::VERSION.minor, 14);
 /// ```
 pub const VERSION: Version = Version::from_raw(raw::FMOD_VERSION);
-
-const _: () = ();
-
-#[cfg(feature = "tracing")]
-fn span() -> &'static tracing::Span {
-    use once_cell::sync::OnceCell;
-    static ONCE: OnceCell<tracing::Span> = OnceCell::new();
-    ONCE.get_or_init(|| tracing::error_span!(target: "fmod", parent: None, "fmod"))
-}

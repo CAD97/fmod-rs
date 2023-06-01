@@ -389,10 +389,7 @@ impl Tag<'_> {
                 TagDataType::StringUtf16 => TagData::Str(Cow::Owned(string_from_utf16le_lossy(data))),
                 TagDataType::StringUtf16be => TagData::Str(Cow::Owned(string_from_utf16be_lossy(data))),
                 r#type => {
-                    whoops!(
-                        trace(tag.datatype, tag.datalen, tag.data = ?data, "Unknown {type:?} encountered"),
-                        panic("unknown {type:?} (len {}) encountered", tag.datalen)
-                    );
+                    whoops!("unknown {type:?} (len {}) encountered", tag.datalen);
                     return Err(Error::InternalRs);
                 },
             };

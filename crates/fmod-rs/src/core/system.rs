@@ -1489,15 +1489,7 @@ impl System {
             mode,
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
         ) {
-            whoops!(
-                trace(
-                    ?mode,
-                    "System::create_sound called with extended mode; use create_sound_ex instead",
-                ),
-                panic(
-                    "System::create_sound cannot be called with extended mode {mode:?}; use create_sound_ex instead"
-                ),
-            );
+            whoops!("System::create_sound called with extended mode {mode:?}; use create_sound_ex instead");
             return Err(Error::InvalidParam);
         }
 
@@ -1563,15 +1555,7 @@ impl System {
             mode,
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
         ) {
-            whoops!(
-                trace(
-                    ?mode,
-                    "System::create_stream called with extended mode; use create_sound_ex instead",
-                ),
-                panic(
-                    "System::create_stream cannot be called with extended mode {mode:?}; use create_sound_ex instead",
-                ),
-            );
+            whoops!("System::create_stream called with extended mode {mode:?}; use create_sound_ex instead");
             return Err(Error::InvalidParam);
         }
 
