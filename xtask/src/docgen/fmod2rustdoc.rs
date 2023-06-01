@@ -65,7 +65,7 @@ impl Converter<'_> {
         match &node.data {
             NodeData::Text { contents } => {
                 let contents = contents.borrow();
-                if contents.is_empty() || re_whitespace().is_match(&**contents) {
+                if contents.is_empty() || re_whitespace().is_match(&contents) {
                     return Ok(false);
                 }
             },
@@ -85,7 +85,7 @@ impl Converter<'_> {
                 let contents = contents.borrow();
                 // Normalize HTML whitespace
                 self.out
-                    .push_str(&*re_whitespace().replace_all(&**contents, " "));
+                    .push_str(&re_whitespace().replace_all(&contents, " "));
                 Ok(())
             },
             NodeData::Comment { .. } => Ok(()),
@@ -220,7 +220,7 @@ impl Converter<'_> {
                                 let text = get_text_transitively(children.iter().cloned());
                                 self.out.push_str("``````````text\n");
                                 for child in text {
-                                    self.out.push_str(&*child);
+                                    self.out.push_str(&child);
                                 }
                                 self.out.push_str("``````````\n\n");
                                 Ok(())
@@ -229,7 +229,7 @@ impl Converter<'_> {
                                 let text = get_text_transitively(children.iter().cloned());
                                 self.out.push_str("``````````cpp\n");
                                 for child in text {
-                                    self.out.push_str(&*child);
+                                    self.out.push_str(&child);
                                 }
                                 self.out.push_str("``````````\n\n");
                                 Ok(())
@@ -238,7 +238,7 @@ impl Converter<'_> {
                                 let text = get_text_transitively(children.iter().cloned());
                                 self.out.push_str("``````````objective-c\n");
                                 for child in text {
-                                    self.out.push_str(&*child);
+                                    self.out.push_str(&child);
                                 }
                                 self.out.push_str("``````````\n\n");
                                 Ok(())
@@ -247,7 +247,7 @@ impl Converter<'_> {
                                 let text = get_text_transitively(children.iter().cloned());
                                 self.out.push_str("``````````java\n");
                                 for child in text {
-                                    self.out.push_str(&*child);
+                                    self.out.push_str(&child);
                                 }
                                 self.out.push_str("``````````\n\n");
                                 Ok(())
@@ -256,7 +256,7 @@ impl Converter<'_> {
                                 let text = get_text_transitively(children.iter().cloned());
                                 self.out.push_str("``````````csharp\n");
                                 for child in text {
-                                    self.out.push_str(&*child);
+                                    self.out.push_str(&child);
                                 }
                                 self.out.push_str("``````````\n\n");
                                 Ok(())

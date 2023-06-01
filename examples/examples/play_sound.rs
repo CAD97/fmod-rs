@@ -33,13 +33,13 @@ fn main() -> anyhow::Result<()> {
         while !example.btn_press(Buttons::Quit) {
             example.update()?;
             if example.btn_press(Buttons::Action1) {
-                channel = Some(system.play_sound(&*sound1, None, false)?);
+                channel = Some(system.play_sound(&sound1, None, false)?);
             }
             if example.btn_press(Buttons::Action2) {
-                channel = Some(system.play_sound(&*sound2, None, false)?);
+                channel = Some(system.play_sound(&sound2, None, false)?);
             }
             if example.btn_press(Buttons::Action3) {
-                channel = Some(system.play_sound(&*sound3, None, false)?);
+                channel = Some(system.play_sound(&sound3, None, false)?);
             }
             system.update()?;
 
