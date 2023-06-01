@@ -1,28 +1,28 @@
 macro_rules! whoops {
     {
-        panic($($panic:tt)*) $(,)?
+        panic: $($args:tt)*
     } => {{
         #[cfg(feature = "log")]
-        log::error!($($panic)*);
+        log::error!($($args)*);
         if cfg!(debug_assertions) {
             if !::std::thread::panicking() {
-                panic!($($panic)*);
+                panic!($($args)*);
             }
             use ::std::io::prelude::*;
-            let _ = writeln!(::std::io::stderr(), $($panic)*);
+            let _ = writeln!(::std::io::stderr(), $($args)*);
         }
     }};
     {
-        stderr($($panic:tt)*) $(,)?
+        no_panic: $($args:tt)*
     } => {{
         #[cfg(feature = "log")]
-        log::error!($($panic)*);
+        log::error!($($args)*);
         if cfg!(debug_assertions) {
             use ::std::io::prelude::*;
-            let _ = writeln!(::std::io::stderr(), $($panic)*);
+            let _ = writeln!(::std::io::stderr(), $($args)*);
         }
     }};
-    ($($args:tt)*) => { whoops!{panic($($args)*)} };
+    ($($args:tt)*) => { whoops!{panic: $($args)*} };
 }
 
 macro_rules! opaque {

@@ -147,9 +147,9 @@ where
         Err(err) => {
             let callback = std::any::type_name::<F>();
             if let Some(e) = cool_asserts::get_panic_message(&err) {
-                whoops!(stderr("FMOD.rs panicked in {callback}: {e}"));
+                whoops!(no_panic: "FMOD.rs panicked in {callback}: {e}");
             } else {
-                whoops!(stderr("FMOD.rs panicked in {callback}"));
+                whoops!(no_panic: "FMOD.rs panicked in {callback}");
             }
             None
         },
