@@ -197,6 +197,6 @@ pub fn sleep_ms(ms: u64) {
 #[macro_export]
 macro_rules! media {
     ($fname:expr) => {
-        ::fmod::cstr8!(concat!(env!("CARGO_MANIFEST_DIR"), "/../media/", $fname))
+        ::fmod::cstr8!(concat!(env!("CARGO_MANIFEST_DIR"), "/media/", $fname))
     };
 }
