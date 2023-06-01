@@ -161,17 +161,17 @@ pub unsafe fn str_from_nonnull_unchecked<'a>(ptr: ptr::NonNull<c_char>) -> &'a s
 }
 
 pub unsafe fn fmod_get_string(
-    buf: &mut String,
+    s: &mut String,
     mut retry: impl FnMut(&mut [MaybeUninit<u8>]) -> Result,
 ) -> Result {
-    buf.clear();
+    s.clear();
 
     // multiple_system.cpp uses a 256 byte buffer for System::get_driver_name
     // follow that example and try a 256 byte buffer before heap reallocation
     const STACK_BUFFER_SIZE: usize = 256;
 
     // only use the stack buffer if the heap buffer isn't that large already
-    if buf.capacity() < STACK_BUFFER_SIZE {
+    if s.capacity() < STACK_BUFFER_SIZE {
         let mut stack_buf: [MaybeUninit<u8>; STACK_BUFFER_SIZE] =
             MaybeUninit::uninit().assume_init();
 
@@ -179,7 +179,7 @@ pub unsafe fn fmod_get_string(
         match retry(&mut stack_buf) {
             Ok(()) => {
                 let cstr = CStr::from_ptr(stack_buf.as_ptr().cast());
-                string_extend_utf8_lossy(buf, cstr.to_bytes());
+                string_extend_utf8_lossy(s, cstr.to_bytes());
                 return Ok(());
             },
             Err(Error::Truncated) => (), // continue
@@ -187,10 +187,10 @@ pub unsafe fn fmod_get_string(
         }
 
         // keep trying with larger buffers
-        buf.reserve(STACK_BUFFER_SIZE * 2);
+        s.reserve(STACK_BUFFER_SIZE * 2);
     }
 
-    let buf = buf.as_mut_vec();
+    let mut buf = mem::take(s.as_mut_vec());
     loop {
         // try again
         match retry(buf.spare_capacity_mut()) {
@@ -205,11 +205,14 @@ pub unsafe fn fmod_get_string(
 
     // now we need to set the vector length and verify proper UTF-8
     buf.set_len(CStr::from_ptr(buf.as_ptr().cast()).to_bytes().len());
-    match String::from_utf8_lossy(buf) {
-        Cow::Borrowed(_) => (), // valid, leave in string buf
+    match String::from_utf8_lossy(&buf) {
+        Cow::Borrowed(_) => {
+            // valid, swap it in
+            mem::swap(s.as_mut_vec(), &mut buf);
+        },
         Cow::Owned(fix) => {
             // swap in the fixed UTF-8
-            mem::swap(buf, &mut fix.into_bytes());
+            mem::swap(s.as_mut_vec(), &mut fix.into_bytes());
         },
     }
 
