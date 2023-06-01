@@ -21,13 +21,18 @@ The currently vendored headers are for FMOD Engine 2.02.14 (build 133546).
 
 ## Linking
 
-We add `lib/{arch}` to the search path, and link `fmodstudioL` for development
-builds, `fmodstudio` for release builds. The dynamic library is implicitly
-loaded from the run directory, or you can load it explicitly.
+By default, this crate links to `fmodstudioL` for development builds and
+`fmodstudio` for release builds. This can be overridden using the
+[`[target.*.fmod]`][links] `config.toml` key.
+
+[links]: https://doc.rust-lang.org/cargo/reference/build-scripts.html#overriding-build-scripts
+
+The `link-search` optional feature will instruct this crate to add the host's
+conventional install location for the FMOD Studio API to the link search path.
+If this is not known for the current host, the buildscript will panic,
+requiring the use of `config.toml` to override the build script link config.
 
 ### Windows Note
 
-FMOD provides the 64 bit windows files in a `x64` folder; we use the convention
-used in the linux distribution and by the Rust toolchain, and thus you need to
-rename the arch folder to `x86_64`. Additionally, the `.lib` files have a `_vc`
-suffix which need to be removed such that cargo/rustc can link them properly.
+The Windows `.lib` files use a `_vc` decoration. The crate expects this to be
+there and appropriately links to `fmodstudio_vc`/`fmodstudioL_vc` on Windows.

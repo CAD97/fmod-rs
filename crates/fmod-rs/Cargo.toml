@@ -29,6 +29,11 @@ tracing = ["dep:tracing", "dep:once_cell"]
 ## Enable access to the raw FMOD API calls.
 raw = []
 
+## Automatically attempt to guess the FMOD Studio API installation path. Will
+## panic the build if the conventional path is not known for this host+target
+## and the link configuration is not manually specified for `fmod`/`fmodstudio`.
+link-search = ["fmod-core-sys/link-search", "fmod-studio-sys?/link-search"]
+
 #! ### Experimental feature flags
 #!
 #! These features can change the public API and can change at any time. Be warned!

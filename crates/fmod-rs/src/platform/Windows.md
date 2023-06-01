@@ -31,26 +31,30 @@
   - **/api/core/lib/$ARCH/fmod_vc.lib** - Release binary for production code (requires fmod.dll at runtime).
  - **/api/core/lib/$ARCH/fmodL_vc.lib** - Release binary with logging enabled for development (requires fmodL.dll at runtime).
  
- 
-<pre class="ignore" style="white-space:normal;font:inherit;">
-FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
-using Cargo standard search path manipulation for <code>fmodL.lib</code> or
-<code>fmod.lib</code> depending on whether <code>cfg(debug_assertions)</code>
-is true or false, respectively.
-</pre>
-
-#### FMOD Studio Engine library (used in conjunction with core library)
+ #### FMOD Studio Engine library (used in conjunction with core library)
 
   - **/api/studio/lib/$ARCH/fmodstudio_vc.lib** - Release binary for production code (requires fmodstudio.dll at runtime).
  - **/api/studio/lib/$ARCH/fmodstudioL_vc.lib** - Release binary with logging enabled for development (requires fmodstudioL.dll at runtime).
  
  
-<pre class="ignore" style="white-space:normal;font:inherit;">
-FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
-using Cargo standard search path manipulation for <code>fmodstudioL.lib</code>
-or <code>fmodstudio.lib</code> depending on whether
-<code>cfg(debug_assertions)</code> is true or false, respectively.
-</pre>
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+The conventional FMOD API installation path is
+<code>%ProgramFiles(x86)%\FMOD&nbsp;SoundSystem\FMOD&nbsp;Studio&nbsp;API&nbsp;Windows</code>
+and FMOD.rs will add the lib directories within to the link lib search path if
+the <code>link-search</code> feature is enabled.
+</span></div></div>
+
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+FMOD.rs links the logging library in development mode builds and the production
+library in release mode builds.
+</span></div></div>
+
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+If this isn't what you want, it can be <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html#overriding-build-scripts">overridden</a>.
+</span></div></div>
 
 ### COM
 
@@ -59,18 +63,27 @@ or <code>fmodstudio.lib</code> depending on whether
  If you fail to initialize COM, FMOD will perform this on-demand for you issuing a warning. FMOD will not uninitialize COM in this case so it will be considered a memory leak.
 
  
-<pre class="ignore" style="white-space:normal;font:inherit;">
-FMOD.rs does not handle COM initialization (it relies on the above on-demand
-initialization done by the FMOD Engine), so if you want to silence this warning,
-you will need to initialize COM yourself.
-</pre>
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+FMOD.rs does not handle COM initialization specially (it relies on the above
+on-demand initialization done by the FMOD Engine), so if you want to silence
+this warning, you will need to initialize COM yourself.
+</span></div></div>
 
 To ensure correct behavior FMOD assumes when using the WASAPI output mode (default for Windows Vista and newer) that you call [`System::get_num_drivers`](System::get_num_drivers), [`System::get_driver_info`](System::get_driver_info) and [`System::init`](System::init) from your UI thread. This ensures that any platform specific dialogs that need to be presented can do so. This recommendation comes from the [IAudioClient](<https://msdn.microsoft.com/en-us/library/windows/desktop/dd370865.aspx>) interface docs on MSDN which state:
 
   > In Windows 8, the first use of IAudioClient to access the audio device should be on the STA thread. Calls from an MTA thread may result in undefined behavior.
 > 
  
- #### ASIO and C#
+ 
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+FMOD.rs does not attempt to restrict the first use of these functions to the UI
+thread. This is a concession to cross-platform usability rather than a niche
+theoretical concern on an out-of-mainstream-support Windows.
+</span></div></div>
+
+#### ASIO and C#
 
  If using [`FMOD_OUTPUTTYPE_ASIO`](FMOD_OUTPUTTYPE_ASIO) with the C# wrapper, FMOD will need to be running on the STA thread to ensure COM is intialized correctly. This can be achieved by adding the [STAThreadAttribute](<https://docs.microsoft.com/en-us/dotnet/api/system.stathreadattribute?view=net-6.0>) to the main method:
 
@@ -84,14 +97,7 @@ static void Main(string[] args)
 }
 ``````````
 
- 
-<pre class="ignore" style="white-space:normal;font:inherit;">
-FMOD.rs does not attempt to restrict the first use of these functions to the UI
-thread. This is a concession to cross-platform usability rather than a niche
-theoretical concern on an out-of-mainstream-support Windows.
-</pre>
-
-### Thread Affinity
+ ### Thread Affinity
 
  All threads will default to [`ThreadAffinity::CoreAll`](ThreadAffinity::CoreAll), this is recommended due to the wide variety of PC hardware but can be customized with [`raw::FMOD_Thread_SetAttributes`](raw::FMOD_Thread_SetAttributes).
 

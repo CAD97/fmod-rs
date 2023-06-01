@@ -4,6 +4,7 @@ version = "2.14.0+2.02.14-133546"
 edition = "2021"
 rust-version = "1.70"
 license-file = "LICENSE.txt"
+links = "fmodstudio"
 
 description = "FMOD Studio bindings"
 repository = "https://github.com/CAD97/fmod-rs"
@@ -24,3 +25,6 @@ fmod-core-sys = { version = "=2.14.0", path = "../fmod-core-sys" }
 
 [build-dependencies]
 build-rs = "0.1.2"
+
+[features]
+link-search = []

@@ -35,8 +35,6 @@ macro_rules! opaque {
             fn release = $release:expr;
         }
     } => {
-        use fmod::FmodResource;
-
         #[cfg(not(feature = "unstable"))]
         pub struct $Name {
             _data: ::std::cell::Cell<[u8; 0]>,
@@ -52,7 +50,7 @@ macro_rules! opaque {
         unsafe impl Send for $Name {}
         unsafe impl Sync for $Name {}
         impl fmod::Sealed for $Name {}
-        unsafe impl FmodResource for $Name {
+        unsafe impl fmod::FmodResource for $Name {
             type Raw = $Raw;
 
             unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self {

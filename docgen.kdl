@@ -30,38 +30,43 @@ job "platforms-win.html" "platform/Windows.md" {
     replace r"(\n.*?)FMOD Studio Engine library" "$1#### FMOD Studio Engine library"
 
     // FMOD.rs notes
-    insert before="#### FMOD Studio Engine library" r#"
-<pre class="ignore" style="white-space:normal;font:inherit;">
-FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
-using Cargo standard search path manipulation for <code>fmodL.lib</code> or
-<code>fmod.lib</code> depending on whether <code>cfg(debug_assertions)</code>
-is true or false, respectively.
-</pre>
-
-"#
     insert before="### COM" r#"
-<pre class="ignore" style="white-space:normal;font:inherit;">
-FMOD.rs searches <code>$CARGO_MANIFEST_DIR/lib/$CARGO_CFG_TARGET_ARCH/</code>
-using Cargo standard search path manipulation for <code>fmodstudioL.lib</code>
-or <code>fmodstudio.lib</code> depending on whether
-<code>cfg(debug_assertions)</code> is true or false, respectively.
-</pre>
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+The conventional FMOD API installation path is
+<code>%ProgramFiles(x86)%\FMOD&nbsp;SoundSystem\FMOD&nbsp;Studio&nbsp;API&nbsp;Windows</code>
+and FMOD.rs will add the lib directories within to the link lib search path if
+the <code>link-search</code> feature is enabled.
+</span></div></div>
+
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+FMOD.rs links the logging library in development mode builds and the production
+library in release mode builds.
+</span></div></div>
+
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+If this isn't what you want, it can be <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html#overriding-build-scripts">overridden</a>.
+</span></div></div>
 
 "#
     insert before="To ensure correct behavior FMOD assumes" r#"
-<pre class="ignore" style="white-space:normal;font:inherit;">
-FMOD.rs does not handle COM initialization (it relies on the above on-demand
-initialization done by the FMOD Engine), so if you want to silence this warning,
-you will need to initialize COM yourself.
-</pre>
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+FMOD.rs does not handle COM initialization specially (it relies on the above
+on-demand initialization done by the FMOD Engine), so if you want to silence
+this warning, you will need to initialize COM yourself.
+</span></div></div>
 
 "#
-    insert before="### Thread Affinity" r#"
-<pre class="ignore" style="white-space:normal;font:inherit;">
+    insert before="#### ASIO and C#" r#"
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
 FMOD.rs does not attempt to restrict the first use of these functions to the UI
 thread. This is a concession to cross-platform usability rather than a niche
 theoretical concern on an out-of-mainstream-support Windows.
-</pre>
+</span></div></div>
 
 "#
 }
