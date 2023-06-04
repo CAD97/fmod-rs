@@ -33,22 +33,28 @@ In order to better comply with the FMOD license, we do _not_ redistribute the
 FMOD Engine. You should [download](https://www.fmod.com/download#fmodengine)
 the engine yourself.
 
-The currently vendored headers are for FMOD Engine 2.02.07 (build 125130). To
-pin the headers to a specific version, pin `fmod-sys` and `fmod-studio-sys`. The
-sys libraries are versioned based on the FMOD version for convenient pinning;
-for example, FMOD version 2.02.07 is served by sys crates version 2.7.patch.
+The currently vendored headers are for FMOD Engine 2.02.14 (build 133546). To
+pin the headers to a specific build, pin `fmod-core-sys` and `fmod-studio-sys`.
+The sys libraries are versioned based on the FMOD version for convenient version
+pins; for example, FMOD version 2.02.14 is served by sys crates version 2.14.X.
+
+
 
 We add `lib/{arch}` to the search path, and link the logging version of FMOD
 for development builds and production libraries for release builds. The dynamic
 library is implicitly loaded from the run directory, or you can load them
 explicitly.
 
-### Windows Note
+By default, this crate links to `fmodL` for development builds and
+`fmod` for release builds. This can be overridden using the
+[`[target.*.fmod]` and `[target.*.fmodstudio]`][links] `config.toml` keys.
 
-FMOD provides the 64 bit windows files in a `x64` folder; we use the convention
-used in the linux distribution and by the Rust toolchain, and thus you need to
-rename the arch folder to `x86_64`. Additionally, the `.lib` files have a `_vc`
-suffix which need to be removed such that cargo/rustc can link them properly.
+[links]: https://doc.rust-lang.org/cargo/reference/build-scripts.html#overriding-build-scripts
+
+The `link-search` optional feature will instruct FMOD-rs to add the host's
+conventional install location for the FMOD Studio API to the link search path.
+If this is not known for the current host, the buildscript will panic,
+requiring the use of `config.toml` to override the build script link config.
 
 ## Functionality
 

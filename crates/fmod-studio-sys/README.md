@@ -23,7 +23,7 @@ The currently vendored headers are for FMOD Engine 2.02.14 (build 133546).
 
 By default, this crate links to `fmodstudioL` for development builds and
 `fmodstudio` for release builds. This can be overridden using the
-[`[target.*.fmod]`][links] `config.toml` key.
+[`[target.*.fmodstudio]`][links] `config.toml` key.
 
 [links]: https://doc.rust-lang.org/cargo/reference/build-scripts.html#overriding-build-scripts
 
