@@ -68,12 +68,8 @@ unsafe impl fmod::file::FileSystem for MyFileSystem {
     fn open(name: &std::ffi::CStr) -> fmod::Result<(u32, Pin<Box<File>>)> {
         let name = name.to_str().map_err(|_| fmod::Error::FileNotFound)?;
         let mut file = Box::pin(File::open(name).map_err(|_| fmod::Error::FileNotFound)?);
-        let size = file
-            .seek(SeekFrom::End(0))
-            .map_err(|_| fmod::Error::FileCouldNotSeek)?
-            .try_into()
-            .unwrap();
-        file.rewind().map_err(|_| fmod::Error::FileCouldNotSeek)?;
+        let meta = file.metadata().map_err(|_| fmod::Error::FileBad)?;
+        let size = meta.len().try_into().map_err(|_| fmod::Error::FileBad)?;
         Ok((size, file))
     }
 
