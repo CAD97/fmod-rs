@@ -21,7 +21,8 @@ default = ["log"]
 
 ## Enable the FMOD Studio API.
 studio = ["dep:fmod-studio-sys"]
-## Enable integration with the log crate in FMOD.rs.
+
+## Enable recording FMOD debug logs using the log crate.
 log = ["dep:log"]
 
 ## Enable access to the raw FMOD API calls.
@@ -39,6 +40,7 @@ link-search = ["fmod-core-sys/link-search", "fmod-studio-sys?/link-search"]
 ## Use unstable Rust features for the safe API. Currently, this means to:
 ## - Use `feature(extern_type)` for FMOD resource types.
 ## - Use `feature(doc_auto_cfg, doc_cfg)` to display cfg gates in documentation.
+## - Use `feature(read_buf)` in `fmod::core::file` to read into uninit memory.
 unstable = []
 
 [dependencies]
