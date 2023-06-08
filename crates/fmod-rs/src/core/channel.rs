@@ -1,61 +1,172 @@
 use {
-    fmod::{raw::*, *},
-    std::ptr,
+    fmod::{raw::*, utils::catch_user_unwind, *},
+    std::{ffi::c_void, ops::Deref, panic::AssertUnwindSafe, ptr},
 };
 
 opaque!(weak class Channel = FMOD_CHANNEL, FMOD_Channel_*);
 
+impl Deref for Channel {
+    type Target = ChannelControl;
+    fn deref(&self) -> &Self::Target {
+        unsafe { ChannelControl::from_raw(self.as_raw() as _) }
+    }
+}
+
 /// General control functionality.
 impl Channel {
-    // snip
-
-    pub fn set_paused(&self, paused: bool) -> Result {
-        let paused = paused as i32;
-        ffi!(FMOD_Channel_SetPaused(self.as_raw(), paused))?;
+    /// Sets the gain of the dry signal when built in lowpass / distance
+    /// filtering is applied.
+    ///
+    /// Requires the built in lowpass to be created with
+    /// [InitFlags::ChannelLowpass] or [InitFlags::ChannelDistanceFilter].
+    pub fn set_low_pass_gain(&self, gain: f32) -> Result {
+        ffi!(FMOD_Channel_SetLowPassGain(self.as_raw(), gain))?;
         Ok(())
     }
 
-    pub fn get_paused(&self) -> Result<bool> {
-        let mut paused = 0;
-        ffi!(FMOD_Channel_GetPaused(self.as_raw(), &mut paused))?;
-        Ok(paused != 0)
+    /// Retrieves the gain of the dry signal when built in lowpass / distance
+    /// filtering is applied.
+    ///
+    /// Requires the built in lowpass to be created with
+    /// [InitFlags::ChannelLowpass] or [InitFlags::ChannelDistanceFilter].
+    pub fn get_low_pass_gain(&self) -> Result<f32> {
+        let mut gain = 0.0;
+        ffi!(FMOD_Channel_GetLowPassGain(self.as_raw(), &mut gain))?;
+        Ok(gain)
     }
 
-    // snip
-
-    pub fn set_pitch(&self, pitch: f32) -> Result {
-        ffi!(FMOD_Channel_SetPitch(self.as_raw(), pitch))?;
-        Ok(())
-    }
-
-    pub fn get_pitch(&self) -> Result<f32> {
-        let mut pitch = 0.0;
-        ffi!(FMOD_Channel_GetPitch(self.as_raw(), &mut pitch))?;
-        Ok(pitch)
-    }
-
-    pub fn set_mute(&self, mute: bool) -> Result {
-        ffi!(FMOD_Channel_SetMute(
+    /// Sets the callback for ChannelControl level notifications.
+    pub fn set_callback<C: ChannelCallback>(&self) -> Result {
+        ffi!(FMOD_Channel_SetCallback(
             self.as_raw(),
-            if mute { 1 } else { 0 },
+            Some(channel_callback::<C>),
+        ))?;
+        Ok(())
+    }
+}
+
+pub trait ChannelCallback {
+    /// Called when a sound ends.
+    fn end(channel: &Channel) {
+        let _ = channel;
+    }
+
+    /// Called when a [Channel] is made virtual or real.
+    fn virtual_voice(channel: &Channel, is_virtual: bool) {
+        let _ = (channel, is_virtual);
+    }
+
+    /// Called when a sync point is encountered.
+    /// Can be from wav file markers or user added.
+    fn sync_point(channel: &Channel, point: i32) {
+        let _ = (channel, point);
+    }
+
+    /// Called when geometry occlusion values are calculated.
+    /// Can be used to clamp or change the value.
+    fn occlusion(channel: &Channel, direct: &mut f32, reverb: &mut f32) {
+        let _ = (channel, direct, reverb);
+    }
+}
+
+pub(crate) unsafe extern "system" fn channel_callback<C: ChannelCallback>(
+    channelcontrol: *mut FMOD_CHANNELCONTROL,
+    controltype: FMOD_CHANNELCONTROL_TYPE,
+    callbacktype: FMOD_CHANNELCONTROL_CALLBACK_TYPE,
+    commanddata1: *mut c_void,
+    commanddata2: *mut c_void,
+) -> FMOD_RESULT {
+    if controltype != FMOD_CHANNELCONTROL_CHANNEL {
+        whoops!(no_panic: "channel callback called with channel group");
+        return FMOD_ERR_INVALID_PARAM;
+    }
+
+    let channel = AssertUnwindSafe(Channel::from_raw(channelcontrol as *mut FMOD_CHANNEL));
+    match callbacktype {
+        FMOD_CHANNELCONTROL_CALLBACK_END => {
+            catch_user_unwind(|| C::end(&channel));
+        },
+        FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE => {
+            let is_virtual = commanddata1 as i32 != 0;
+            catch_user_unwind(|| C::virtual_voice(&channel, is_virtual));
+        },
+        FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT => {
+            let point = commanddata1 as i32;
+            catch_user_unwind(|| C::sync_point(&channel, point));
+        },
+        FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION => {
+            let mut direct = AssertUnwindSafe(&mut *(commanddata1 as *mut f32));
+            let mut reverb = AssertUnwindSafe(&mut *(commanddata2 as *mut f32));
+            catch_user_unwind(move || C::occlusion(&channel, &mut direct, &mut reverb));
+        },
+        _ => {
+            whoops!(no_panic: "unknown channel callback type {:?}", callbacktype);
+            return FMOD_ERR_INVALID_PARAM;
+        },
+    }
+
+    FMOD_OK
+}
+
+/// Panning and level adjustment. Note all 'set' functions alter a final matrix,
+/// this is why the only get function is `get_mix_matrix`, to avoid other get
+/// functions returning incorrect/obsolete values.
+impl Channel {
+    pub fn set_pan(&self, pan: f32) -> Result {
+        ffi!(FMOD_Channel_SetPan(self.as_raw(), pan))?;
+        Ok(())
+    }
+
+    pub fn set_mix_levels_output(
+        &self,
+        front_left: f32,
+        front_right: f32,
+        center: f32,
+        lfe: f32,
+        surround_left: f32,
+        surround_right: f32,
+        back_left: f32,
+        back_right: f32,
+    ) -> Result {
+        ffi!(FMOD_Channel_SetMixLevelsOutput(
+            self.as_raw(),
+            front_left,
+            front_right,
+            center,
+            lfe,
+            surround_left,
+            surround_right,
+            back_left,
+            back_right,
         ))?;
         Ok(())
     }
 
-    // snip
-
-    pub fn is_playing(&self) -> Result<bool> {
-        let mut isplaying = 0;
-        ffi!(FMOD_Channel_IsPlaying(self.as_raw(), &mut isplaying))?;
-        Ok(isplaying != 0)
+    pub fn set_mix_levels_input(&self, levels: &[f32]) -> Result {
+        ffi!(FMOD_Channel_SetMixLevelsInput(
+            self.as_raw(),
+            levels.as_ptr().cast_mut(),
+            levels.len() as i32,
+        ))?;
+        Ok(())
     }
-}
 
-/// Panning and level adjustment. Note all 'set' functions alter a final matrix,
-/// this is why the only get function is `getMixMatrix`, to avoid other get
-/// functions returning incorrect/obsolete values.
-impl Channel {
-    // snip
+    pub fn set_mix_matrix(
+        &self,
+        matrix: &mut [f32],
+        out_channels: i32,
+        in_channels: i32,
+        in_channel_hop: i32,
+    ) -> Result {
+        ffi!(FMOD_Channel_SetMixMatrix(
+            self.as_raw(),
+            matrix.as_mut_ptr(),
+            out_channels,
+            in_channels,
+            in_channel_hop,
+        ))?;
+        Ok(())
+    }
 }
 
 /// Clock based functionality.

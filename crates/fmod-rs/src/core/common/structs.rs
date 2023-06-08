@@ -3,10 +3,10 @@ use {
     fmod::{raw::*, *},
     std::{
         borrow::Cow,
+        ffi::c_char,
         ffi::CStr,
         marker::PhantomData,
         mem::{self, MaybeUninit},
-        os::raw::c_char,
         pin::Pin,
         ptr, slice,
     },

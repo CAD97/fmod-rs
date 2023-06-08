@@ -5,7 +5,7 @@ include!("../inc/bindings.rs");
 // fmod_errors.h `static const char *FMOD_ErrorString(FMOD_RESULT errcode)`
 #[inline]
 #[allow(clippy::missing_safety_doc)]
-pub const unsafe fn FMOD_ErrorString(errcode: FMOD_RESULT) -> *const std::os::raw::c_char {
+pub const unsafe fn FMOD_ErrorString(errcode: FMOD_RESULT) -> *const std::ffi::c_char {
     match errcode {
         FMOD_OK =>                            "No errors.\0",
         FMOD_ERR_BADCOMMAND =>                "Tried to call a function on a data type that does not allow this type of functionality (ie calling Sound::lock on a streaming sound).\0",

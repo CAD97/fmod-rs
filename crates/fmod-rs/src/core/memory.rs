@@ -3,8 +3,8 @@ use {
     fmod::{raw::*, *},
     std::{
         alloc::{alloc, dealloc, realloc, Layout},
+        ffi::{c_char, c_uint, c_void},
         mem::{self, MaybeUninit},
-        os::raw::{c_char, c_uint, c_void},
         ptr,
     },
 };

@@ -3,8 +3,8 @@ use {
     fmod::{raw::*, *},
     std::{
         ffi::CStr,
+        ffi::{c_char, c_void},
         mem::MaybeUninit,
-        os::raw::{c_char, c_void},
         panic::AssertUnwindSafe,
         pin::Pin,
         slice,

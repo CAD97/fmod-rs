@@ -2,7 +2,7 @@ use {
     crate::utils::{catch_user_unwind, str_from_nonnull_unchecked},
     fmod::{raw::*, *},
     std::{
-        os::raw::{c_char, c_int},
+        ffi::{c_char, c_int},
         ptr,
         sync::atomic::{AtomicBool, Ordering},
     },

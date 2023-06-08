@@ -40,6 +40,8 @@ macro_rules! opaque {
         }
 
         #[cfg(feature = "unstable")]
+        #[allow(unused_doc_comments)] // false positive vvvvvv
+        #[doc(cfg(all()))] // doesn't actually require cfg(feature = "unstable")
         extern {
             $(#[$meta])*
             pub type $Name;

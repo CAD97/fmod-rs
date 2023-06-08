@@ -2,9 +2,9 @@ use {
     fmod::{Error, Result},
     std::{
         borrow::Cow,
+        ffi::c_char,
         ffi::CStr,
         mem::{self, MaybeUninit},
-        os::raw::c_char,
         panic::UnwindSafe,
         ptr,
     },

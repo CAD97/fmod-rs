@@ -153,15 +153,21 @@ enum_struct! {
         /// Thread for processing larger size delay lines for [DspType::ConvolutionReverb].
         Convolution2     = FMOD_THREAD_TYPE_CONVOLUTION2,
     }
+}
 
-    /// Identifier used to distinguish between Channel and ChannelGroup in the ChannelControl callback.
-    pub enum ChannelControlType: FMOD_CHANNELCONTROL_TYPE {
-        /// Type representing [Channel]
-        Channel      = FMOD_CHANNELCONTROL_CHANNEL,
-        /// Type representing [ChannelGroup]
-        ChannelGroup = FMOD_CHANNELCONTROL_CHANNELGROUP,
+raw! {
+    enum_struct! {
+        /// Identifier used to distinguish between Channel and ChannelGroup in the ChannelControl callback.
+        pub enum ChannelControlType: FMOD_CHANNELCONTROL_TYPE {
+            /// Type representing [Channel]
+            Channel      = FMOD_CHANNELCONTROL_CHANNEL,
+            /// Type representing [ChannelGroup]
+            ChannelGroup = FMOD_CHANNELCONTROL_CHANNELGROUP,
+        }
     }
+}
 
+enum_struct! {
     /// Built-in output types that can be used to run the mixer.
     ///
     /// To pass information to the driver when initializing use the `extra_driver_data` parameter in [System::init_ex] for the following reasons:
@@ -474,23 +480,29 @@ enum_struct! {
         /// Excess sounds will steal from the quietest [Sound] playing in the group.
         StealLowest = FMOD_SOUNDGROUP_BEHAVIOR_STEALLOWEST,
     }
+}
 
-    /// Types of callbacks called by Channels and ChannelGroups.
-    pub enum ChannelControlCallbackType: FMOD_CHANNELCONTROL_CALLBACK_TYPE {
-        /// Called when a sound ends. Supported by [Channel] only.
-        End          = FMOD_CHANNELCONTROL_CALLBACK_END,
-        /// Called when a [Channel] is made virtual or real. Supported by [Channel] objects only.
-        ///
-        /// - `command_data_1`: (int) 0 represents 'virtual to real' and 1 represents 'real to virtual'.
-        VirtualVoice = FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE,
-        /// Called when a syncpoint is encountered. Can be from wav file markers or user added. Supported by [Channel] only.
-        ///
-        /// - `command_data_1`: (int) representing the index of the sync point for use with [Sound::get_sync_point_info].
-        SyncPoint    = FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT,
-        /// Called when geometry occlusion values are calculated. Can be used to clamp or change the value. Supported by [Channel] and [ChannelGroup].
-        Occlusion    = FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION,
+raw! {
+    enum_struct! {
+        /// Types of callbacks called by Channels and ChannelGroups.
+        pub enum ChannelControlCallbackType: FMOD_CHANNELCONTROL_CALLBACK_TYPE {
+            /// Called when a sound ends. Supported by [Channel] only.
+            End          = FMOD_CHANNELCONTROL_CALLBACK_END,
+            /// Called when a [Channel] is made virtual or real. Supported by [Channel] objects only.
+            ///
+            /// - `command_data_1`: (int) 0 represents 'virtual to real' and 1 represents 'real to virtual'.
+            VirtualVoice = FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE,
+            /// Called when a syncpoint is encountered. Can be from wav file markers or user added. Supported by [Channel] only.
+            ///
+            /// - `command_data_1`: (int) representing the index of the sync point for use with [Sound::get_sync_point_info].
+            SyncPoint    = FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT,
+            /// Called when geometry occlusion values are calculated. Can be used to clamp or change the value. Supported by [Channel] and [ChannelGroup].
+            Occlusion    = FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION,
+        }
     }
+}
 
+enum_struct! {
     /// References to built in DSP positions that reside in a Channel or ChannelGroup DSP chain.
     ///
     /// Before any [Dsp]s have been added by the user, there is only one [Dsp] available for a [Channel] or [ChannelGroup]. This is of type [DspType::Fader]. This handles volume and panning for a [Channel] or [ChannelGroup].
@@ -562,15 +574,21 @@ enum_struct! {
         /// 5 point spline interpolation. Slowest resampling method but best quality.
         Spline   = FMOD_DSP_RESAMPLER_SPLINE,
     }
+}
 
-    /// Types of callbacks called by DSPs.
-    ///
-    /// Callbacks are called from the game thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
-    pub enum DspCallbackType: FMOD_DSP_CALLBACK_TYPE {
-        /// Called when a DSP's data parameter can be released.
-        DataParameterInfo = FMOD_DSP_CALLBACK_DATAPARAMETERRELEASE,
+raw! {
+    enum_struct! {
+        /// Types of callbacks called by DSPs.
+        ///
+        /// Callbacks are called from the game thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
+        pub enum DspCallbackType: FMOD_DSP_CALLBACK_TYPE {
+            /// Called when a DSP's data parameter can be released.
+            DataParameterInfo = FMOD_DSP_CALLBACK_DATAPARAMETERRELEASE,
+        }
     }
+}
 
+enum_struct! {
     /// List of connection types between 2 DSP nodes.
     pub enum DspConnectionType: FMOD_DSPCONNECTION_TYPE {
         #[default]

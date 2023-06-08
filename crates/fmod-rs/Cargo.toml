@@ -40,7 +40,6 @@ link-search = ["fmod-core-sys/link-search", "fmod-studio-sys?/link-search"]
 ## Use unstable Rust features for the safe API. Currently, this means to:
 ## - Use `feature(extern_type)` for FMOD resource types.
 ## - Use `feature(doc_auto_cfg, doc_cfg)` to display cfg gates in documentation.
-## - Use `feature(read_buf)` in `fmod::core::file` to read into uninit memory.
 unstable = []
 
 [dependencies]
@@ -57,3 +56,4 @@ smart-default = "0.7.1"
 static_assertions = "1.1.0"
 
 log = { version = "0.4.18", optional = true }
+either = "1.8.1"
