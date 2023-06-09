@@ -256,3 +256,22 @@ impl fmt::Display for Error {
         f.write_str(self.description())
     }
 }
+
+pub trait ResultExt: Sealed {
+    fn into_raw(self) -> FMOD_RESULT;
+}
+
+use sealed::Sealed;
+mod sealed {
+    pub trait Sealed {}
+}
+
+impl Sealed for Result {}
+impl ResultExt for Result {
+    fn into_raw(self) -> FMOD_RESULT {
+        match self {
+            Ok(()) => FMOD_OK,
+            Err(err) => err.into_raw(),
+        }
+    }
+}
