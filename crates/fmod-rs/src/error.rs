@@ -229,8 +229,8 @@ error_enum_struct! {
         /// The length provided exceeds the allowable limit.
         TooManySamples = FMOD_ERR_TOOMANYSAMPLES,
 
-        /// An error occurred in FMOD.rs that wasn't supposed to. Check the logs and open an issue.
-        InternalRs = -1,
+        /// Rust code panicked in an FMOD callback.
+        RustPanicked = -1,
     }
 }
 
@@ -239,8 +239,8 @@ pub type Result<T = (), E = Error> = std::result::Result<T, E>;
 
 impl std::error::Error for Error {
     fn description(&self) -> &str {
-        if *self == Error::InternalRs {
-            return "An error occurred in FMOD.rs that wasn't supposed to. Check the logs and open an issue.";
+        if *self == Error::RustPanicked {
+            return "Rust code panicked in an FMOD callback.";
         }
 
         // SAFETY: FMOD_ErrorString is a C `static` function which thus isn't

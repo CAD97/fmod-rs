@@ -389,8 +389,8 @@ impl Tag<'_> {
                 TagDataType::StringUtf16 => TagData::Str(Cow::Owned(string_from_utf16le_lossy(data))),
                 TagDataType::StringUtf16be => TagData::Str(Cow::Owned(string_from_utf16be_lossy(data))),
                 r#type => {
-                    whoops!("unknown {type:?} (len {}) encountered", tag.datalen);
-                    return Err(Error::InternalRs);
+                    whoops!(no_panic: "unknown {type:?} (len {}) encountered", tag.datalen);
+                    return Err(Error::RustPanicked);
                 },
             };
             Ok(Tag {
@@ -617,3 +617,12 @@ fmod_struct! {
 }
 
 // FMOD_DSP_DATA_PARAMETER_INFO
+
+/// 3D attenuation factors for the direct and reverb paths.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct Occlusion {
+    /// Occlusion factor for the direct path where 0 represents no occlusion and 1 represents full occlusion.
+    pub direct: f32,
+    /// Occlusion factor for the reverb path where 0 represents no occlusion and 1 represents full occlusion.
+    pub reverb: f32,
+}

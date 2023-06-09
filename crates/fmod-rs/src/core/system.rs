@@ -519,7 +519,7 @@ pub struct Settings3d {
 }
 
 /// Callback to allow custom calculation of distance attenuation.
-pub type Rolloff3dCallback = extern "C" fn(channel: &Channel, distance: f32) -> f32;
+pub type Rolloff3dCallback = extern "system" fn(channel: &Channel, distance: f32) -> f32;
 
 /// Setup.
 impl System {

@@ -502,62 +502,70 @@ raw! {
     }
 }
 
+raw! {
+    enum_struct! {
+        /// References to built in DSP positions that reside in a Channel or ChannelGroup DSP chain.
+        ///
+        /// Before any [Dsp]s have been added by the user, there is only one [Dsp] available for a [Channel] or [ChannelGroup]. This is of type [DspType::Fader]. This handles volume and panning for a [Channel] or [ChannelGroup].
+        /// As only 1 [Dsp] exists by default, initially [ChannelControlDspIndex::Head], [ChannelControlDspIndex::Tail] and [ChannelControlDspIndex::Fader] all reference the same DSP.
+        pub enum ChannelControlDspIndex: FMOD_CHANNELCONTROL_DSP_INDEX {
+            /// Head of the DSP chain, equivalent of index 0.
+            Head  = FMOD_CHANNELCONTROL_DSP_HEAD,
+            /// Built in fader DSP.
+            Fader = FMOD_CHANNELCONTROL_DSP_FADER,
+            /// Tail of the DSP chain, equivalent of the number of [Dsp]s minus 1.
+            Tail  = FMOD_CHANNELCONTROL_DSP_TAIL,
+        }
+    }
+}
+
+raw! {
+    enum_struct! {
+        /// Identifier used to represent the different types of instance in the error callback.
+        pub enum ErrorCallbackInstaceType: FMOD_ERRORCALLBACK_INSTANCETYPE {
+            /// Type representing no known instance type.
+            None                    = FMOD_ERRORCALLBACK_INSTANCETYPE_NONE,
+            /// Type representing [System].
+            System                  = FMOD_ERRORCALLBACK_INSTANCETYPE_SYSTEM,
+            /// Type representing [Channel].
+            Channel                 = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNEL,
+            /// Type representing [ChannelGroup].
+            ChannelGroup            = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNELGROUP,
+            /// Type representing [ChannelControl].
+            ChannelControl          = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNELCONTROL,
+            /// Type representing [Sound].
+            Sound                   = FMOD_ERRORCALLBACK_INSTANCETYPE_SOUND,
+            /// Type representing [SoundGroup].
+            SoundGroup              = FMOD_ERRORCALLBACK_INSTANCETYPE_SOUNDGROUP,
+            /// Type representing [Dsp].
+            Dsp                     = FMOD_ERRORCALLBACK_INSTANCETYPE_DSP,
+            /// Type representing [DspConnection].
+            DspConnection           = FMOD_ERRORCALLBACK_INSTANCETYPE_DSPCONNECTION,
+            /// Type representing [Geometry].
+            Geometry                = FMOD_ERRORCALLBACK_INSTANCETYPE_GEOMETRY,
+            /// Type representing [Reverb3d].
+            Reverb3d                = FMOD_ERRORCALLBACK_INSTANCETYPE_REVERB3D,
+            /// Type representing [studio::System].
+            StudioSystem            = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_SYSTEM,
+            /// Type representing [studio::EventDescription].
+            StudioEventDescription  = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTDESCRIPTION,
+            /// Type representing [studio::EventInstance].
+            StudioEventInstance     = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTINSTANCE,
+            /// Deprecated.
+            StudioParameterInstance = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_PARAMETERINSTANCE,
+            /// Type representing [studio::Bus].
+            StudioBus               = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BUS,
+            /// Type representing [studio::Vca].
+            StudioVca               = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_VCA,
+            /// Type representing [studio::Bank].
+            StudioBank              = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BANK,
+            /// Type representing [studio::CommandReplay].
+            StudioCommandReplay     = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_COMMANDREPLAY,
+        }
+    }
+}
+
 enum_struct! {
-    /// References to built in DSP positions that reside in a Channel or ChannelGroup DSP chain.
-    ///
-    /// Before any [Dsp]s have been added by the user, there is only one [Dsp] available for a [Channel] or [ChannelGroup]. This is of type [DspType::Fader]. This handles volume and panning for a [Channel] or [ChannelGroup].
-    /// As only 1 [Dsp] exists by default, initially [ChannelControlDspIndex::Head], [ChannelControlDspIndex::Tail] and [ChannelControlDspIndex::Fader] all reference the same DSP.
-    pub enum ChannelControlDspIndex: FMOD_CHANNELCONTROL_DSP_INDEX {
-        /// Head of the DSP chain, equivalent of index 0.
-        Head  = FMOD_CHANNELCONTROL_DSP_HEAD,
-        /// Built in fader DSP.
-        Fader = FMOD_CHANNELCONTROL_DSP_FADER,
-        /// Tail of the DSP chain, equivalent of the number of [Dsp]s minus 1.
-        Tail  = FMOD_CHANNELCONTROL_DSP_TAIL,
-    }
-
-    /// Identifier used to represent the different types of instance in the error callback.
-    pub enum ErrorCallbackInstaceType: FMOD_ERRORCALLBACK_INSTANCETYPE {
-        /// Type representing no known instance type.
-        None                    = FMOD_ERRORCALLBACK_INSTANCETYPE_NONE,
-        /// Type representing [System].
-        System                  = FMOD_ERRORCALLBACK_INSTANCETYPE_SYSTEM,
-        /// Type representing [Channel].
-        Channel                 = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNEL,
-        /// Type representing [ChannelGroup].
-        ChannelGroup            = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNELGROUP,
-        /// Type representing [ChannelControl].
-        ChannelControl          = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNELCONTROL,
-        /// Type representing [Sound].
-        Sound                   = FMOD_ERRORCALLBACK_INSTANCETYPE_SOUND,
-        /// Type representing [SoundGroup].
-        SoundGroup              = FMOD_ERRORCALLBACK_INSTANCETYPE_SOUNDGROUP,
-        /// Type representing [Dsp].
-        Dsp                     = FMOD_ERRORCALLBACK_INSTANCETYPE_DSP,
-        /// Type representing [DspConnection].
-        DspConnection           = FMOD_ERRORCALLBACK_INSTANCETYPE_DSPCONNECTION,
-        /// Type representing [Geometry].
-        Geometry                = FMOD_ERRORCALLBACK_INSTANCETYPE_GEOMETRY,
-        /// Type representing [Reverb3d].
-        Reverb3d                = FMOD_ERRORCALLBACK_INSTANCETYPE_REVERB3D,
-        /// Type representing [studio::System].
-        StudioSystem            = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_SYSTEM,
-        /// Type representing [studio::EventDescription].
-        StudioEventDescription  = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTDESCRIPTION,
-        /// Type representing [studio::EventInstance].
-        StudioEventInstance     = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTINSTANCE,
-        /// Deprecated.
-        StudioParameterInstance = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_PARAMETERINSTANCE,
-        /// Type representing [studio::Bus].
-        StudioBus               = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BUS,
-        /// Type representing [studio::Vca].
-        StudioVca               = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_VCA,
-        /// Type representing [studio::Bank].
-        StudioBank              = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BANK,
-        /// Type representing [studio::CommandReplay].
-        StudioCommandReplay     = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_COMMANDREPLAY,
-    }
-
     /// List of interpolation types used for resampling.
     ///
     /// Use [System::set_advanced_settings] and [AdvancedSettings::resampler_method] to configure the resampling quality you require for sample rate conversion during sound playback.

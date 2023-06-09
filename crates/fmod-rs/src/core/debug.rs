@@ -31,7 +31,7 @@ pub trait FmodDebug {
     ) -> Result<()>;
 }
 
-unsafe extern "system" fn callback<D: FmodDebug>(
+unsafe extern "system" fn debug_callback<D: FmodDebug>(
     flags: FMOD_DEBUG_FLAGS,
     file: *const c_char,
     line: c_int,
@@ -53,7 +53,7 @@ unsafe extern "system" fn callback<D: FmodDebug>(
             .map(str::trim_end);
         D::log(flags, file, line, func, message)
     })
-    .unwrap_or(Err(Error::InternalRs))
+    .unwrap_or(Err(Error::RustPanicked))
     .map_or_else(Error::into_raw, |()| FMOD_OK)
 }
 
@@ -139,7 +139,7 @@ pub fn initialize_callback<D: FmodDebug>(flags: DebugFlags) -> Result {
     ffi!(FMOD_Debug_Initialize(
         flags.into_raw(),
         DebugMode::Callback.into_raw(),
-        Some(callback::<D>),
+        Some(debug_callback::<D>),
         ptr::null()
     ))?;
     Ok(())
@@ -240,7 +240,7 @@ impl FmodDebug for FmodDebugLog {
         } else {
             log.level(log::Level::Error).target("fmod");
             log::error!("FMOD debug message with unknown flags: {:?}", flags);
-            Err(Error::InternalRs)
+            Err(Error::RustPanicked)
         };
         log::logger().log(&log.args(format_args!("{message}")).build());
         res
@@ -323,7 +323,7 @@ pub(crate) unsafe fn initialize_default() {
             let result = ffi!(FMOD_Debug_Initialize(
                 flags.into_raw(),
                 DebugMode::Callback.into_raw(),
-                Some(callback::<FmodDebugLog>),
+                Some(debug_callback::<FmodDebugLog>),
                 ptr::null(),
             ));
             match result {
