@@ -12,7 +12,7 @@ opaque! {
     weak class ChannelControl = FMOD_CHANNELCONTROL, FMOD_ChannelControl_*;
 }
 
-/// Playback
+/// # Playback
 impl ChannelControl {
     /// Retrieves the playing state.
     pub fn is_playing(&self) -> Result<bool> {
@@ -68,7 +68,7 @@ impl ChannelControl {
     }
 }
 
-/// Volume levels
+/// # Volume levels
 impl ChannelControl {
     /// Retrieves an estimation of the output volume.
     pub fn get_audibility(&self) -> Result<f32> {
@@ -124,7 +124,7 @@ impl ChannelControl {
     }
 }
 
-/// Spatialization
+/// # Spatialization
 impl ChannelControl {
     /// Sets the 3D position and velocity used to apply panning, attenuation and doppler.
     pub fn set_3d_attributes(&self, pos: &Vector, vel: &Vector) -> Result {
@@ -288,7 +288,7 @@ impl ChannelControl {
     }
 }
 
-/// Panning and level adjustment
+/// # Panning and level adjustment
 impl ChannelControl {
     /// Sets the left/right pan level.
     pub fn set_pan(&self, pan: f32) -> Result {
@@ -365,7 +365,7 @@ impl ChannelControl {
     // get_mix_matrix
 }
 
-/// Filtering
+/// # Filtering
 impl ChannelControl {
     /// Sets the wet / send level for a particular reverb instance.
     pub fn set_reverb_properties(&self, instance: i32, wet: f32) -> Result {
@@ -402,7 +402,7 @@ impl ChannelControl {
     }
 }
 
-/// DSP chain configuration
+/// # DSP chain configuration
 impl ChannelControl {
     /// Head of the DSP chain, equivalent of index 0.
     pub const DSP_HEAD: i32 = FMOD_CHANNELCONTROL_DSP_HEAD;
@@ -452,7 +452,7 @@ impl ChannelControl {
     }
 }
 
-/// Sample accurate scheduling
+/// # Sample accurate scheduling
 impl ChannelControl {
     /// Retrieves the DSP clock value for the tail DSP node.
     pub fn get_dsp_clock(&self) -> Result<u64> {
@@ -521,21 +521,21 @@ impl ChannelControl {
     }
 
     /// Removes all fade points in the specified clock range.
-    pub fn remove_fade_points(&self, dsp_clock: impl RangeBounds<u64>) -> Result {
-        let dsp_clock_start = match dsp_clock.start_bound() {
+    pub fn remove_fade_points(&self, clock: impl RangeBounds<u64>) -> Result {
+        let clock_start = match clock.start_bound() {
             Bound::Included(&start) => start,
-            Bound::Excluded(&start) => start + 1,
+            Bound::Excluded(&start) => start.saturating_add(1),
             Bound::Unbounded => 0,
         };
-        let dsp_clock_end = match dsp_clock.end_bound() {
+        let clock_end = match clock.end_bound() {
             Bound::Included(&end) => end,
-            Bound::Excluded(&end) => end - 1,
+            Bound::Excluded(&end) => end.saturating_sub(1),
             Bound::Unbounded => u64::MAX,
         };
         ffi!(FMOD_Channel_RemoveFadePoints(
             self.as_raw() as _,
-            dsp_clock_start,
-            dsp_clock_end,
+            clock_start,
+            clock_end,
         ))?;
         Ok(())
     }
@@ -548,14 +548,14 @@ impl ChannelControl {
     /// of fadepoints retrieved, which is bounded by the size of the slice(s).
     pub fn get_fade_points(
         &self,
-        dsp_clock: Option<&mut [u64]>,
+        clock: Option<&mut [u64]>,
         volume: Option<&mut [f32]>,
     ) -> Result<usize> {
         let mut num_points = u32::min(
-            dsp_clock.map(|s| s.len() as _).unwrap_or(u32::MAX),
-            volume.map(|s| s.len() as _).unwrap_or(u32::MAX),
+            clock.as_deref().map(|s| s.len() as _).unwrap_or(u32::MAX),
+            volume.as_deref().map(|s| s.len() as _).unwrap_or(u32::MAX),
         );
-        let point_dsp_clock = dsp_clock.map(|s| s.as_mut_ptr()).unwrap_or(ptr::null_mut());
+        let point_dsp_clock = clock.map(|s| s.as_mut_ptr()).unwrap_or(ptr::null_mut());
         let point_volume = volume.map(|s| s.as_mut_ptr()).unwrap_or(ptr::null_mut());
         ffi!(FMOD_Channel_GetFadePoints(
             self.as_raw() as _,
@@ -590,7 +590,7 @@ impl StopAction {
     }
 }
 
-/// General
+/// # General
 impl ChannelControl {
     /// Sets the callback for ChannelControl level notifications.
     pub fn set_callback<C: ChannelControlCallback>(&self) -> Result {

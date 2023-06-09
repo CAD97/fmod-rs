@@ -69,6 +69,10 @@ impl Example {
             .with_env_filter("debug,fmod::handle=trace".parse::<tracing_subscriber::EnvFilter>()?)
             .init();
 
+        std::panic::set_hook(Box::new(|info| {
+            tracing::error!("{}", info);
+        }));
+
         terminal::enable_raw_mode()?;
         execute!(
             stdout(),

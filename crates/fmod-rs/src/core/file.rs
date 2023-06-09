@@ -152,15 +152,13 @@ pub(crate) unsafe extern "system" fn useropen<FS: FileSystem>(
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
     let name = CStr::from_ptr(name);
-    match catch_user_unwind(|| FS::open(name)) {
-        Some(Ok((size, file))) => {
-            *filesize = size;
-            *handle = Box::into_raw(Pin::into_inner_unchecked(file)).cast();
-            FMOD_OK
-        },
-        Some(Err(err)) => err.into_raw(),
-        None => FMOD_ERR_FILE_BAD,
-    }
+    catch_user_unwind(|| {
+        let (size, file) = FS::open(name)?;
+        *filesize = size;
+        *handle = Box::into_raw(Pin::into_inner_unchecked(file)).cast();
+        Ok(())
+    })
+    .into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userclose<FS: FileSystem>(
@@ -169,11 +167,7 @@ pub(crate) unsafe extern "system" fn userclose<FS: FileSystem>(
 ) -> FMOD_RESULT {
     let file = Pin::new_unchecked(Box::from_raw(handle.cast()));
     let file = AssertUnwindSafe(file);
-    match catch_user_unwind(|| FS::close({ file }.0)) {
-        Some(Ok(())) => FMOD_OK,
-        Some(Err(err)) => err.into_raw(),
-        None => FMOD_ERR_FILE_BAD,
-    }
+    catch_user_unwind(|| FS::close({ file }.0)).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userread<FS: SyncFileSystem>(
@@ -189,18 +183,16 @@ pub(crate) unsafe extern "system" fn userread<FS: SyncFileSystem>(
     let file = Pin::new_unchecked(&mut *handle.cast());
     let file = AssertUnwindSafe(file);
 
-    match catch_user_unwind(|| FS::read({ file }.0, { buffer }.0)) {
-        Some(Ok(read)) => {
-            *bytesread = read;
-            if read < sizebytes {
-                FMOD_ERR_FILE_EOF
-            } else {
-                FMOD_OK
-            }
-        },
-        Some(Err(err)) => err.into_raw(),
-        None => FMOD_ERR_FILE_BAD,
-    }
+    catch_user_unwind(|| {
+        let read = FS::read({ file }.0, { buffer }.0)?;
+        *bytesread = read;
+        if read < sizebytes {
+            Err(Error::FileEof)
+        } else {
+            Ok(())
+        }
+    })
+    .into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userseek<FS: SyncFileSystem>(
@@ -211,33 +203,21 @@ pub(crate) unsafe extern "system" fn userseek<FS: SyncFileSystem>(
     let file = Pin::new_unchecked(&mut *handle.cast());
     let file = AssertUnwindSafe(file);
 
-    match catch_user_unwind(|| FS::seek({ file }.0, pos)) {
-        Some(Ok(())) => FMOD_OK,
-        Some(Err(err)) => err.into_raw(),
-        None => FMOD_ERR_FILE_BAD,
-    }
+    catch_user_unwind(|| FS::seek({ file }.0, pos)).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userasyncread<FS: AsyncFileSystem>(
     info: *mut FMOD_ASYNCREADINFO,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
-    match catch_user_unwind(|| FS::read(AsyncReadInfo::from_raw(info))) {
-        Some(Ok(())) => FMOD_OK,
-        Some(Err(err)) => err.into_raw(),
-        None => FMOD_ERR_FILE_BAD,
-    }
+    catch_user_unwind(|| FS::read(AsyncReadInfo::from_raw(info))).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userasynccancel<FS: AsyncFileSystem>(
     info: *mut FMOD_ASYNCREADINFO,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
-    match catch_user_unwind(|| FS::cancel(AsyncReadInfo::from_raw(info))) {
-        Some(Ok(())) => FMOD_OK,
-        Some(Err(err)) => err.into_raw(),
-        None => FMOD_ERR_FILE_BAD,
-    }
+    catch_user_unwind(|| FS::cancel(AsyncReadInfo::from_raw(info))).into_raw()
 }
 
 /// 'Piggyback' on FMOD file reading routines to capture data as it's read.
@@ -298,8 +278,7 @@ pub(crate) unsafe extern "system" fn userread_listen<FS: ListenFileSystem>(
 ) -> FMOD_RESULT {
     let buffer = slice::from_raw_parts_mut(buffer.cast(), *bytesread as usize);
     let eof = buffer.len() < sizebytes as usize;
-    catch_user_unwind(|| FS::read(handle as usize, buffer, eof));
-    FMOD_OK
+    catch_user_unwind(|| Ok(FS::read(handle as usize, buffer, eof))).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userseek_listen<FS: ListenFileSystem>(
@@ -307,22 +286,19 @@ pub(crate) unsafe extern "system" fn userseek_listen<FS: ListenFileSystem>(
     pos: u32,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
-    catch_user_unwind(|| FS::seek(handle as usize, pos));
-    FMOD_OK
+    catch_user_unwind(|| Ok(FS::seek(handle as usize, pos))).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userasyncread_listen<FS: AsyncListenFileSystem>(
     info: *mut FMOD_ASYNCREADINFO,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
-    catch_user_unwind(|| FS::async_read(AsyncReadInfo::from_raw(info)));
-    FMOD_OK
+    catch_user_unwind(|| Ok(FS::async_read(AsyncReadInfo::from_raw(info)))).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userasynccancel_listen<FS: AsyncListenFileSystem>(
     info: *mut FMOD_ASYNCREADINFO,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
-    catch_user_unwind(|| FS::async_cancel(AsyncReadInfo::from_raw(info)));
-    FMOD_OK
+    catch_user_unwind(|| Ok(FS::async_cancel(AsyncReadInfo::from_raw(info)))).into_raw()
 }

@@ -1,6 +1,6 @@
 use {
     parking_lot::{const_rwlock, RwLock},
-    std::{mem::ManuallyDrop, ops::Deref},
+    std::{fmt, mem::ManuallyDrop, ops::Deref},
 };
 
 /// Only one system may be safely created, at a time, as system create and
@@ -15,7 +15,7 @@ pub(crate) static GLOBAL_SYSTEM_STATE: RwLock<usize> = const_rwlock(0);
 
 #[allow(clippy::missing_safety_doc)]
 /// FMOD resources managed by a [Handle].
-pub unsafe trait FmodResource: Sealed {
+pub unsafe trait FmodResource: fmt::Debug + Sealed {
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
     type Raw;
@@ -46,6 +46,12 @@ pub struct Handle<'a, T: ?Sized + FmodResource> {
     raw: &'a T::Raw,
 }
 
+impl<T: ?Sized + FmodResource> fmt::Debug for Handle<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (**self).fmt(f)
+    }
+}
+
 impl<T: ?Sized + FmodResource> Drop for Handle<'_, T> {
     fn drop(&mut self) {
         let raw = self.as_raw();
@@ -53,14 +59,10 @@ impl<T: ?Sized + FmodResource> Drop for Handle<'_, T> {
         match unsafe { T::release(raw) } {
             Ok(()) => {
                 #[cfg(feature = "log")]
-                log::trace!("Released {}({raw:p})", std::any::type_name::<T>());
+                log::trace!("Released fmod::{self:?}");
             },
             Err(error) => {
-                whoops!(
-                    "Error releasing {}({:p}): {error}",
-                    std::any::type_name::<T>(),
-                    raw,
-                );
+                whoops!("Error releasing fmod::{self:?}: {error}");
             },
         }
     }
@@ -81,10 +83,12 @@ impl<'a, T: ?Sized + FmodResource> Handle<'a, T> {
     }
 
     pub(crate) unsafe fn new(raw: *mut T::Raw) -> Self {
-        #[cfg(feature = "log")]
-        log::trace!("Created {}({raw:p})", std::any::type_name::<T>());
+        let this = Self::from_raw(raw);
 
-        Self::from_raw(raw)
+        #[cfg(feature = "log")]
+        log::trace!("Created fmod::{this:?}");
+
+        this
     }
 
     /// Forget to release this FMOD resource.

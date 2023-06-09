@@ -53,8 +53,7 @@ unsafe extern "system" fn debug_callback<D: FmodDebug>(
             .map(str::trim_end);
         D::log(flags, file, line, func, message)
     })
-    .unwrap_or(Err(Error::RustPanicked))
-    .map_or_else(Error::into_raw, |()| FMOD_OK)
+    .into_raw()
 }
 
 static DEBUG_LAYER_INITIALIZED: AtomicBool = AtomicBool::new(false);

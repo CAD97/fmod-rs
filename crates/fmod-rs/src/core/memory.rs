@@ -159,7 +159,7 @@ unsafe extern "system" fn useralloc<A: FmodAlloc>(
         // SAFETY: these strings are produced directly by FMOD, so they
         // should *actually* be guaranteed to be UTF-8 like FMOD claims.
         let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
-        A::alloc(size, MemoryType::from_raw(kind), source).cast()
+        Ok(A::alloc(size, MemoryType::from_raw(kind), source).cast())
     })
     .unwrap_or(ptr::null_mut())
 }
@@ -174,7 +174,7 @@ unsafe extern "system" fn userrealloc<A: FmodRealloc>(
         // SAFETY: these strings are produced directly by FMOD, so they
         // should *actually* be guaranteed to be UTF-8 like FMOD claims.
         let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
-        A::realloc(ptr.cast(), size, MemoryType::from_raw(kind), source).cast()
+        Ok(A::realloc(ptr.cast(), size, MemoryType::from_raw(kind), source).cast())
     })
     .unwrap_or(ptr::null_mut())
 }
@@ -188,7 +188,7 @@ unsafe extern "system" fn userfree<A: FmodAlloc>(
         // SAFETY: these strings are produced directly by FMOD, so they
         // should *actually* be guaranteed to be UTF-8 like FMOD claims.
         let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
-        A::free(ptr.cast(), MemoryType::from_raw(kind), source)
+        Ok(A::free(ptr.cast(), MemoryType::from_raw(kind), source))
     })
     .unwrap_or_default()
 }

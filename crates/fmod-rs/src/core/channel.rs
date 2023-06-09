@@ -1,9 +1,20 @@
 use {
     fmod::{raw::*, utils::catch_user_unwind, *},
-    std::{ffi::c_void, ops::Deref, panic::AssertUnwindSafe, ptr},
+    std::{
+        ffi::c_void,
+        ops::Deref,
+        ops::{Bound, RangeBounds, RangeInclusive},
+        panic::AssertUnwindSafe,
+        ptr,
+    },
 };
 
-opaque!(weak class Channel = FMOD_CHANNEL, FMOD_Channel_*);
+opaque! {
+    /// A source of audio signal that connects to the [ChannelGroup] mixing hierarchy.
+    ///
+    /// Create with [System::play_sound] or [System::play_dsp].
+    weak class Channel = FMOD_CHANNEL, FMOD_Channel_*;
+}
 
 impl Deref for Channel {
     type Target = ChannelControl;
@@ -12,29 +23,156 @@ impl Deref for Channel {
     }
 }
 
-/// General control functionality.
+/// # Playback control
 impl Channel {
-    /// Sets the gain of the dry signal when built in lowpass / distance
-    /// filtering is applied.
-    ///
-    /// Requires the built in lowpass to be created with
-    /// [InitFlags::ChannelLowpass] or [InitFlags::ChannelDistanceFilter].
-    pub fn set_low_pass_gain(&self, gain: f32) -> Result {
-        ffi!(FMOD_Channel_SetLowPassGain(self.as_raw(), gain))?;
+    /// Sets the frequency or playback rate.
+    pub fn set_frequency(&self, frequency: f32) -> Result {
+        ffi!(FMOD_Channel_SetFrequency(self.as_raw(), frequency))?;
         Ok(())
     }
 
-    /// Retrieves the gain of the dry signal when built in lowpass / distance
-    /// filtering is applied.
-    ///
-    /// Requires the built in lowpass to be created with
-    /// [InitFlags::ChannelLowpass] or [InitFlags::ChannelDistanceFilter].
-    pub fn get_low_pass_gain(&self) -> Result<f32> {
-        let mut gain = 0.0;
-        ffi!(FMOD_Channel_GetLowPassGain(self.as_raw(), &mut gain))?;
-        Ok(gain)
+    /// Retrieves the playback frequency or playback rate.
+    pub fn get_frequency(&self) -> Result<f32> {
+        let mut frequency = 0.0;
+        ffi!(FMOD_Channel_GetFrequency(self.as_raw(), &mut frequency))?;
+        Ok(frequency)
     }
 
+    /// Sets the priority used for virtual voice ordering.
+    pub fn set_priority(&self, priority: i32) -> Result {
+        ffi!(FMOD_Channel_SetPriority(self.as_raw(), priority))?;
+        Ok(())
+    }
+
+    /// Retrieves the priority used for virtual voice ordering.
+    pub fn get_priority(&self) -> Result<i32> {
+        let mut priority = 0;
+        ffi!(FMOD_Channel_GetPriority(self.as_raw(), &mut priority))?;
+        Ok(priority)
+    }
+
+    /// Sets the current playback position.
+    pub fn set_position(&self, position: u32, pos_type: TimeUnit) -> Result {
+        let postype = TimeUnit::into_raw(pos_type);
+        ffi!(FMOD_Channel_SetPosition(self.as_raw(), position, postype,))?;
+        Ok(())
+    }
+
+    /// Retrieves the current playback position.
+    pub fn get_position(&self, pos_type: TimeUnit) -> Result<u32> {
+        let mut position = 0;
+        let postype = TimeUnit::into_raw(pos_type);
+        ffi!(FMOD_Channel_GetPosition(
+            self.as_raw(),
+            &mut position,
+            postype,
+        ))?;
+        Ok(position)
+    }
+
+    /// Sets the ChannelGroup this object outputs to.
+    pub fn set_channel_group(&self, channel_group: &ChannelGroup) -> Result {
+        ffi!(FMOD_Channel_SetChannelGroup(
+            self.as_raw(),
+            channel_group.as_raw(),
+        ))?;
+        Ok(())
+    }
+
+    /// Retrieves the ChannelGroup this object outputs to.
+    pub fn get_channel_group(&self) -> Result<&ChannelGroup> {
+        let mut channel_group = ptr::null_mut();
+        ffi!(FMOD_Channel_GetChannelGroup(
+            self.as_raw(),
+            &mut channel_group,
+        ))?;
+        Ok(unsafe { ChannelGroup::from_raw(channel_group) })
+    }
+
+    /// Sets the number of times to loop before stopping.
+    pub fn set_loop_count(&self, loop_count: i32) -> Result {
+        ffi!(FMOD_Channel_SetLoopCount(self.as_raw(), loop_count))?;
+        Ok(())
+    }
+
+    /// Retrieves the number of times to loop before stopping.
+    pub fn get_loop_count(&self) -> Result<i32> {
+        let mut loop_count = 0;
+        ffi!(FMOD_Channel_GetLoopCount(self.as_raw(), &mut loop_count))?;
+        Ok(loop_count)
+    }
+
+    /// Sets the loop start and end points.
+    pub fn set_loop_points(
+        &self,
+        loop_points: impl RangeBounds<u32>,
+        length_type: TimeUnit,
+    ) -> Result {
+        let start = match loop_points.start_bound() {
+            Bound::Included(&start) => start,
+            Bound::Excluded(&start) => start.saturating_add(1),
+            Bound::Unbounded => 0,
+        };
+        let end = match loop_points.end_bound() {
+            Bound::Included(&end) => end,
+            Bound::Excluded(&end) => end.saturating_sub(1),
+            Bound::Unbounded => self
+                .get_current_sound()?
+                .get_length(length_type)?
+                .saturating_sub(1),
+        };
+        ffi!(FMOD_Channel_SetLoopPoints(
+            self.as_raw(),
+            start,
+            length_type.into_raw(),
+            end,
+            length_type.into_raw(),
+        ))?;
+        Ok(())
+    }
+
+    /// Retrieves the loop start and end points.
+    pub fn get_loop_points(&self, length_type: TimeUnit) -> Result<RangeInclusive<u32>> {
+        let mut start = 0;
+        let mut end = 0;
+        ffi!(FMOD_Channel_GetLoopPoints(
+            self.as_raw(),
+            &mut start,
+            length_type.into_raw(),
+            &mut end,
+            length_type.into_raw(),
+        ))?;
+        Ok(start..=end)
+    }
+}
+
+/// # Information
+impl Channel {
+    /// Retrieves whether the Channel is being emulated by the virtual voice system.
+    pub fn is_virtual(&self) -> Result<bool> {
+        let mut is_virtual = 0;
+        ffi!(FMOD_Channel_IsVirtual(self.as_raw(), &mut is_virtual))?;
+        Ok(is_virtual != 0)
+    }
+
+    /// Retrieves the currently playing Sound.
+    pub fn get_current_sound(&self) -> Result<&Sound> {
+        let mut sound = ptr::null_mut();
+        ffi!(FMOD_Channel_GetCurrentSound(self.as_raw(), &mut sound))?;
+        Ok(unsafe { Sound::from_raw(sound) })
+    }
+
+    /// Retrieves the index of this object in the System Channel pool.
+    pub fn get_index(&self) -> Result<i32> {
+        let mut index = 0;
+        ffi!(FMOD_Channel_GetIndex(self.as_raw(), &mut index))?;
+        Ok(index)
+    }
+}
+
+// Inherited from ChannelControl
+#[doc(hidden)]
+impl Channel {
     /// Sets the callback for ChannelControl level notifications.
     pub fn set_callback<C: ChannelCallback>(&self) -> Result {
         ffi!(FMOD_Channel_SetCallback(
@@ -81,168 +219,26 @@ pub(crate) unsafe extern "system" fn channel_callback<C: ChannelCallback>(
         return FMOD_ERR_INVALID_PARAM;
     }
 
-    let channel = AssertUnwindSafe(Channel::from_raw(channelcontrol as *mut FMOD_CHANNEL));
+    let channel = Channel::from_raw(channelcontrol as *mut FMOD_CHANNEL);
     match callbacktype {
-        FMOD_CHANNELCONTROL_CALLBACK_END => {
-            catch_user_unwind(|| C::end(&channel));
-        },
+        FMOD_CHANNELCONTROL_CALLBACK_END => catch_user_unwind(|| Ok(C::end(&channel))).into_raw(),
         FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE => {
             let is_virtual = commanddata1 as i32 != 0;
-            catch_user_unwind(|| C::virtual_voice(&channel, is_virtual));
+            catch_user_unwind(|| Ok(C::virtual_voice(&channel, is_virtual))).into_raw()
         },
         FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT => {
             let point = commanddata1 as i32;
-            catch_user_unwind(|| C::sync_point(&channel, point));
+            catch_user_unwind(|| Ok(C::sync_point(&channel, point))).into_raw()
         },
         FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION => {
             let mut direct = AssertUnwindSafe(&mut *(commanddata1 as *mut f32));
             let mut reverb = AssertUnwindSafe(&mut *(commanddata2 as *mut f32));
-            catch_user_unwind(move || C::occlusion(&channel, &mut direct, &mut reverb));
+            catch_user_unwind(move || Ok(C::occlusion(&channel, &mut direct, &mut reverb)))
+                .into_raw()
         },
         _ => {
             whoops!(no_panic: "unknown channel callback type {:?}", callbacktype);
-            return FMOD_ERR_INVALID_PARAM;
+            FMOD_ERR_INVALID_PARAM
         },
     }
-
-    FMOD_OK
-}
-
-/// Panning and level adjustment. Note all 'set' functions alter a final matrix,
-/// this is why the only get function is `get_mix_matrix`, to avoid other get
-/// functions returning incorrect/obsolete values.
-impl Channel {
-    pub fn set_pan(&self, pan: f32) -> Result {
-        ffi!(FMOD_Channel_SetPan(self.as_raw(), pan))?;
-        Ok(())
-    }
-
-    pub fn set_mix_levels_output(
-        &self,
-        front_left: f32,
-        front_right: f32,
-        center: f32,
-        lfe: f32,
-        surround_left: f32,
-        surround_right: f32,
-        back_left: f32,
-        back_right: f32,
-    ) -> Result {
-        ffi!(FMOD_Channel_SetMixLevelsOutput(
-            self.as_raw(),
-            front_left,
-            front_right,
-            center,
-            lfe,
-            surround_left,
-            surround_right,
-            back_left,
-            back_right,
-        ))?;
-        Ok(())
-    }
-
-    pub fn set_mix_levels_input(&self, levels: &[f32]) -> Result {
-        ffi!(FMOD_Channel_SetMixLevelsInput(
-            self.as_raw(),
-            levels.as_ptr().cast_mut(),
-            levels.len() as i32,
-        ))?;
-        Ok(())
-    }
-
-    pub fn set_mix_matrix(
-        &self,
-        matrix: &mut [f32],
-        out_channels: i32,
-        in_channels: i32,
-        in_channel_hop: i32,
-    ) -> Result {
-        ffi!(FMOD_Channel_SetMixMatrix(
-            self.as_raw(),
-            matrix.as_mut_ptr(),
-            out_channels,
-            in_channels,
-            in_channel_hop,
-        ))?;
-        Ok(())
-    }
-}
-
-/// Clock based functionality.
-impl Channel {
-    pub fn get_dsp_clock(&self) -> Result<(u64, u64)> {
-        let mut dsp_clock = 0;
-        let mut parent_clock = 0;
-        ffi!(FMOD_Channel_GetDSPClock(
-            self.as_raw(),
-            &mut dsp_clock,
-            &mut parent_clock,
-        ))?;
-        Ok((dsp_clock, parent_clock))
-    }
-
-    pub fn set_delay(
-        &self,
-        dsp_clock_start: u64,
-        dsp_clock_end: u64,
-        stop_channels: bool,
-    ) -> Result {
-        let stop_channels = stop_channels as i32;
-        ffi!(FMOD_Channel_SetDelay(
-            self.as_raw(),
-            dsp_clock_start,
-            dsp_clock_end,
-            stop_channels,
-        ))?;
-        Ok(())
-    }
-
-    // snip
-}
-
-/// DSP effects.
-impl Channel {
-    // snip
-}
-
-/// 3D functionality.
-impl Channel {
-    // snip
-}
-
-/// Userdata set/get.
-impl Channel {
-    // snip
-}
-
-/// Specific control functionality.
-impl Channel {
-    // snip
-
-    pub fn get_position(&self, pos_type: TimeUnit) -> Result<u32> {
-        let mut position = 0;
-        let postype = TimeUnit::into_raw(pos_type);
-        ffi!(FMOD_Channel_GetPosition(
-            self.as_raw(),
-            &mut position,
-            postype,
-        ))?;
-        Ok(position)
-    }
-
-    // snip
-}
-
-/// Information only functions
-impl Channel {
-    // snip
-
-    pub fn get_current_sound(&self) -> Result<&Sound> {
-        let mut sound = ptr::null_mut();
-        ffi!(FMOD_Channel_GetCurrentSound(self.as_raw(), &mut sound))?;
-        Ok(unsafe { Sound::from_raw(sound) })
-    }
-
-    // snip
 }

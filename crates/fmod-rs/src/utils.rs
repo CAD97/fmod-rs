@@ -138,22 +138,19 @@ pub const fn decode_sbcd_u8(encoded: u8) -> u8 {
         + (((encoded >> (SHIFT * 1)) & MASK) * 10)
 }
 
-pub fn catch_user_unwind<F, R>(f: F) -> Option<R>
+pub fn catch_user_unwind<F, R>(f: F) -> Result<R>
 where
-    F: UnwindSafe + FnOnce() -> R,
+    F: UnwindSafe + FnOnce() -> Result<R>,
 {
-    match std::panic::catch_unwind(f) {
-        Ok(x) => Some(x),
-        Err(err) => {
-            let callback = std::any::type_name::<F>();
-            if let Some(e) = cool_asserts::get_panic_message(&err) {
-                whoops!(no_panic: "FMOD.rs panicked in {callback}: {e}");
-            } else {
-                whoops!(no_panic: "FMOD.rs panicked in {callback}");
-            }
-            None
-        },
-    }
+    std::panic::catch_unwind(f).unwrap_or_else(|err| {
+        let callback = std::any::type_name::<F>();
+        if let Some(e) = cool_asserts::get_panic_message(&err) {
+            whoops!(no_panic: "FMOD.rs panicked in {callback}: {e}");
+        } else {
+            whoops!(no_panic: "FMOD.rs panicked in {callback}");
+        }
+        Err(Error::RustPanicked)
+    })
 }
 
 pub unsafe fn str_from_nonnull_unchecked<'a>(ptr: ptr::NonNull<c_char>) -> &'a str {

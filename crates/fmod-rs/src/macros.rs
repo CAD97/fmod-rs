@@ -49,11 +49,14 @@ macro_rules! opaque {
 
         unsafe impl Send for $Name {}
         unsafe impl Sync for $Name {}
+        impl ::std::panic::UnwindSafe for $Name {}
+        impl ::std::panic::RefUnwindSafe for $Name {}
         impl fmod::Sealed for $Name {}
         unsafe impl fmod::FmodResource for $Name {
             type Raw = $Raw;
 
             unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self {
+                debug_assert!(!this.is_null());
                 &*(this as *mut Self)
             }
 
@@ -62,6 +65,12 @@ macro_rules! opaque {
                 std::ptr::drop_in_place(Self::from_raw(this) as *const Self as *mut Self);
                 ffi!(($release)(this))?;
                 Ok(())
+            }
+        }
+
+        impl ::std::fmt::Debug for $Name {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                write!(f, concat!(stringify!($Name), "({:p})"), self)
             }
         }
     };
