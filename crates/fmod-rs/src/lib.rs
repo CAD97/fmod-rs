@@ -64,7 +64,7 @@ pub(crate) mod utils;
 
 #[doc(no_inline)]
 pub use {
-    self::core::*,
+    self::core::{System, *},
     cstr8::{cstr8, CStr8},
 };
 

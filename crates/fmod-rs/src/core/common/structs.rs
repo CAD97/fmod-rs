@@ -350,6 +350,40 @@ fmod_struct! {
     }
 }
 
+impl AdvancedSettings {
+    /// ASIO channel names. Only valid after [System::init].
+    pub fn asio_channel_list(&self) -> Option<impl Iterator<Item = Cow<'_, str>>> {
+        if self.asio_channel_list.is_null() {
+            None
+        } else {
+            Some(
+                unsafe {
+                    slice::from_raw_parts(self.asio_channel_list, self.asio_num_channels as usize)
+                }
+                .iter()
+                .copied()
+                .map(|ptr| unsafe { CStr::from_ptr(ptr) })
+                .map(CStr::to_bytes)
+                .map(String::from_utf8_lossy),
+            )
+        }
+    }
+
+    /// List of speakers that represent each ASIO channel used for remapping.
+    pub fn asio_speaker_list(&self) -> Option<&[Speaker]> {
+        if self.asio_speaker_list.is_null() {
+            None
+        } else {
+            Some(unsafe {
+                slice::from_raw_parts(
+                    self.asio_speaker_list.cast(),
+                    self.asio_num_channels as usize,
+                )
+            })
+        }
+    }
+}
+
 /// Tag data / metadata description.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tag<'a> {
