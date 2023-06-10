@@ -252,14 +252,14 @@ pub unsafe fn initialize_realloc<A: FmodRealloc>(mem_type_flags: MemoryType) -> 
 /// over-allocates from what was requested to store the layout information
 /// in the allocation. Unfortunately, since most general purpose allocators
 /// have an ANSI-compatible interface, this is purely a waste in most
-/// situations, requried just to satisfy the Rust middleman.
+/// situations, required just to satisfy the Rust middleman.
 ///
 /// In most cases, you should prefer leaving the defaults (FMOD will use the
 /// system allocator) or one of the other [`memory::initialize`] variants
 /// which don't require this overhead.
-pub enum FmodAllocViaRust {}
+pub enum FmodAllocBridge {}
 
-unsafe impl FmodAlloc for FmodAllocViaRust {
+unsafe impl FmodAlloc for FmodAllocBridge {
     fn alloc(size: u32, _: MemoryType, _: Option<&str>) -> *mut u8 {
         unsafe {
             let layout = Layout::from_size_align_unchecked(size as usize + 16, 16);
@@ -281,7 +281,7 @@ unsafe impl FmodAlloc for FmodAllocViaRust {
     }
 }
 
-unsafe impl FmodRealloc for FmodAllocViaRust {
+unsafe impl FmodRealloc for FmodAllocBridge {
     unsafe fn realloc(ptr: *mut u8, size: u32, _: MemoryType, _: Option<&str>) -> *mut u8 {
         let new_size = size as usize + 16;
         let ptr = ptr.sub(16);

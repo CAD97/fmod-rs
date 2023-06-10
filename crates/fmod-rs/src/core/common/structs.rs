@@ -74,12 +74,17 @@ impl<File> AsyncReadInfo<File> {
 
     /// File handle that was provided by [`FileSystem::open`].
     pub unsafe fn handle<'a>(self) -> Pin<&'a File> {
-        Pin::new_unchecked(&*(*self.raw).handle.cast())
+        Pin::new_unchecked(&*self.handle_ptr())
     }
 
     /// File handle that was provided by [`FileSystem::open`].
     pub unsafe fn handle_mut<'a>(self) -> Pin<&'a mut File> {
-        Pin::new_unchecked(&mut *(*self.raw).handle.cast())
+        Pin::new_unchecked(&mut *self.handle_ptr())
+    }
+
+    /// File handle that was provided by [`FileSystem::open`].
+    pub unsafe fn handle_ptr(self) -> *mut File {
+        (*self.raw).handle.cast()
     }
 
     /// Byte offset within the file where the read operation should occur.

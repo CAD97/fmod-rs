@@ -73,7 +73,7 @@ pub fn lock_disk_busy() -> Result<FileBusyGuard> {
 /// method.
 #[allow(clippy::missing_safety_doc)]
 pub unsafe trait FileSystem {
-    type File;
+    type File: Send + Sync; // TODO: is Sync really necessary?
 
     /// Callback for opening a file.
     ///
@@ -240,11 +240,14 @@ pub trait ListenFileSystem {
     }
 }
 
-#[allow(clippy::missing_safety_doc)]
+/// 'Piggyback' on FMOD file reading routines to capture data as it's read.
 pub trait AsyncListenFileSystem: ListenFileSystem {
+    /// Callback for after an async read operation.
     unsafe fn async_read(info: AsyncReadInfo<()>) {
         let _ = info;
     }
+
+    /// Callback for after an async cancel operation.
     unsafe fn async_cancel(info: AsyncReadInfo<()>) {
         let _ = info;
     }
