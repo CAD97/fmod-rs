@@ -1,6 +1,7 @@
 use {
     crate::utils::{decode_sbcd_u8, string_from_utf16be_lossy, string_from_utf16le_lossy},
     fmod::{raw::*, *},
+    smart_default::SmartDefault,
     std::{
         borrow::Cow,
         ffi::c_char,
@@ -442,6 +443,36 @@ impl Tag<'_> {
     }
 }
 
+impl<'a> TagData<'a> {
+    pub fn as_binary(&self) -> Option<&[u8]> {
+        match self {
+            TagData::Binary(data) => Some(data),
+            _ => None,
+        }
+    }
+
+    pub fn as_int(&self) -> Option<i64> {
+        match self {
+            TagData::Int(data) => Some(*data),
+            _ => None,
+        }
+    }
+
+    pub fn as_float(&self) -> Option<f64> {
+        match self {
+            TagData::Float(data) => Some(*data),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            TagData::Str(data) => Some(data),
+            _ => None,
+        }
+    }
+}
+
 // FMOD_CREATESOUNDEXINFO
 
 fmod_struct! {
@@ -664,4 +695,36 @@ pub struct Occlusion {
     pub direct: f32,
     /// Occlusion factor for the reverb path where 0 represents no occlusion and 1 represents full occlusion.
     pub reverb: f32,
+}
+
+/// Angles and attenuation levels of a 3D cone shape,
+/// for simulated occlusion which is based on direction.
+#[derive(Debug, Clone, Copy, SmartDefault, PartialEq)]
+pub struct Cone3dSettings {
+    /// Inside cone angle. This is the angle spread within which the sound
+    /// is unattenuated.
+    /// <dl>
+    /// <dt>Units</dt><dd>Degrees</dd>
+    /// <dt>Range</dt><dd>[0, <code>outside_angle</code></dd>
+    /// <dt>Default</dt><dd>360</dd>
+    /// </dl>
+    #[default(360.0)]
+    pub inside_angle: f32,
+    /// Outside cone angle. This is the angle spread outside of which the sound
+    /// is attenuated to its `outside_volume`.
+    /// <dl>
+    /// <dt>Units</dt><dd>Degrees</dd>
+    /// <dt>Range</dt><dd>[<code>inside_angle</code>, 360]</dd>
+    /// <dt>Default</dt><dd>360</dd>
+    /// </dl>
+    #[default(360.0)]
+    pub outside_angle: f32,
+    /// Cone outside volume.
+    /// <dl>
+    /// <dt>Units</dt><dd>Linear</dd>
+    /// <dt>Range</dt><dd>[0, 1]</dd>
+    /// <dt>Default</dt><dd>1</dd>
+    /// </dl>
+    #[default(1.0)]
+    pub outside_volume: f32,
 }

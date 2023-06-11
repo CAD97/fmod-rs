@@ -168,33 +168,26 @@ impl ChannelControl {
     }
 
     /// Sets the angles and attenuation levels of a 3D cone shape, for simulated occlusion which is based on direction.
-    pub fn set_3d_cone_settings(
-        &self,
-        inside_cone_angle: f32,
-        outside_cone_angle: f32,
-        outside_volume: f32,
-    ) -> Result {
+    pub fn set_3d_cone_settings(&self, settings: Cone3dSettings) -> Result {
         ffi!(FMOD_Channel_Set3DConeSettings(
             self.as_raw() as _,
-            inside_cone_angle,
-            outside_cone_angle,
-            outside_volume,
+            settings.inside_angle,
+            settings.outside_angle,
+            settings.outside_volume,
         ))?;
         Ok(())
     }
 
     /// Retrieves the angles and attenuation levels of a 3D cone shape, for simulated occlusion which is based on direction.
-    pub fn get_3d_cone_settings(&self) -> Result<(f32, f32, f32)> {
-        let mut inside_cone_angle = 0.0;
-        let mut outside_cone_angle = 0.0;
-        let mut outside_volume = 0.0;
+    pub fn get_3d_cone_settings(&self) -> Result<Cone3dSettings> {
+        let mut cone = Cone3dSettings::default();
         ffi!(FMOD_Channel_Get3DConeSettings(
             self.as_raw() as _,
-            &mut inside_cone_angle,
-            &mut outside_cone_angle,
-            &mut outside_volume,
+            &mut cone.inside_angle,
+            &mut cone.outside_angle,
+            &mut cone.outside_volume,
         ))?;
-        Ok((inside_cone_angle, outside_cone_angle, outside_volume))
+        Ok(cone)
     }
 
     // TODO: needs figuring out lifetimes
@@ -239,7 +232,7 @@ impl ChannelControl {
         Ok(level)
     }
 
-    /// Sets the minimum and maximum distances used ot calculate the 3D roll-off attenuation.
+    /// Sets the minimum and maximum distances used to calculate the 3D roll-off attenuation.
     pub fn set_3d_min_max_distance(&self, distance: Range<f32>) -> Result {
         ffi!(FMOD_Channel_Set3DMinMaxDistance(
             self.as_raw() as _,
@@ -249,7 +242,7 @@ impl ChannelControl {
         Ok(())
     }
 
-    /// Retrieves the minimum and maximum distances used ot calculate the 3D roll-off attenuation.
+    /// Retrieves the minimum and maximum distances used to calculate the 3D roll-off attenuation.
     pub fn get_3d_min_max_distance(&self) -> Result<Range<f32>> {
         let mut distance = 0.0..0.0;
         ffi!(FMOD_Channel_Get3DMinMaxDistance(

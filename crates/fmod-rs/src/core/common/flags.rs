@@ -133,7 +133,7 @@ flags! {
     ///
     /// Specifying [Mode::OpenMemoryPoint] will POINT to your memory rather allocating its own sound buffers and duplicating it internally. This means you cannot free the memory while FMOD is using it, until after the sound is released.
     ///
-    /// With [Mode::OpemMemoryPoint], for PCM formats, only WAV, FSB, and RAW are supported. For compressed formats, only those formats supported by [Mode::CreateCompressedSample] are supported.
+    /// With [Mode::OpenMemoryPoint], for PCM formats, only WAV, FSB, and RAW are supported. For compressed formats, only those formats supported by [Mode::CreateCompressedSample] are supported.
     ///
     /// With [Mode::OpenMemoryPoint] and [Mode::OpenRaw] or PCM, if using them together, note that you must pad the data on each side by 16 bytes. This is so fmod can modify the ends of the data for looping / interpolation / mixing purposes. If a wav file, you will need to insert silence, and then reset loop points to stop the playback from playing that silence.
     pub struct Mode: FMOD_MODE {

@@ -374,6 +374,7 @@ enum_struct! {
 
     /// Recognized audio formats that can be loaded into a Sound.
     pub enum SoundType: FMOD_SOUND_TYPE {
+        #[default]
         /// Unknown or custom codec plugin.
         Unknown         = FMOD_SOUND_TYPE_UNKNOWN,
         /// Audio Interchange File Format (.aif, .aiff). Uncompressed integer formats only.
@@ -428,6 +429,7 @@ enum_struct! {
 
     /// These definitions describe the native format of the hardware or software buffer that will be used.
     pub enum SoundFormat: FMOD_SOUND_FORMAT {
+        #[default]
         /// Uninitalized / unknown.
         None      = FMOD_SOUND_FORMAT_NONE,
         /// 8bit integer PCM data.
