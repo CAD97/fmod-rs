@@ -13,7 +13,6 @@ fn main() -> anyhow::Result<()> {
         let channel = system.play_sound(&sound, None, false)?;
 
         // test whatever functionality here
-        channel.set_loop_points(.., fmod::TimeUnit::Ms)?;
 
         while !example.btn_press(Buttons::Quit) {
             example.update()?;
