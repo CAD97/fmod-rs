@@ -1,10 +1,11 @@
-use std::ptr;
+use std::{mem::ManuallyDrop, ptr};
 
 use {
     fmod::{raw::*, utils::fmod_get_string, *},
     std::{
         mem,
         ops::{Bound, Range, RangeBounds, RangeInclusive},
+        slice,
     },
 };
 
@@ -179,7 +180,7 @@ pub struct SoundFormatInfo {
     bits_per_sample: i32,
 }
 
-/// # Default when played.
+/// # Defaults when played.
 impl Sound {
     /// Sets the angles and attenuation levels of a 3D cone shape,
     /// for simulated occlusion which is based on direction.
@@ -188,17 +189,12 @@ impl Sound {
     /// is set up, attenuation will automatically occur for a sound based on the
     /// relative angle of the direction the cone is facing, vs the angle between
     /// the sound and the listener.
-    pub fn set_3d_cone_settings(
-        &self,
-        inside_angle: f32,
-        outside_angle: f32,
-        outside_volume: f32,
-    ) -> Result<()> {
+    pub fn set_3d_cone_settings(&self, settings: Cone3dSettings) -> Result<()> {
         ffi!(FMOD_Sound_Set3DConeSettings(
             self.as_raw(),
-            inside_angle,
-            outside_angle,
-            outside_volume,
+            settings.inside_angle,
+            settings.outside_angle,
+            settings.outside_volume,
         ))
     }
 
@@ -403,11 +399,114 @@ impl Sound {
     }
 }
 
-/// Standard sound manipulation functions.
+/// # Relationship management.
 impl Sound {
-    // snip
+    /// Moves the sound from its existing SoundGroup to the specified sound group.
+    ///
+    /// By default, a sound is located in the 'master sound group'. This can be
+    /// retrieved with [`System::get_master_sound_group`].
+    pub fn set_sound_group(&self, sound_group: &SoundGroup) -> Result {
+        ffi!(FMOD_Sound_SetSoundGroup(
+            self.as_raw(),
+            sound_group.as_raw(),
+        ))?;
+        Ok(())
+    }
 
-    pub fn get_open_state(&self) -> Result<(OpenState, u32, bool, bool)> {
+    /// Retrieves the sound's current sound group.
+    pub fn get_sound_group(&self) -> Result<&SoundGroup> {
+        let mut sound_group = ptr::null_mut();
+        ffi!(FMOD_Sound_GetSoundGroup(self.as_raw(), &mut sound_group))?;
+        Ok(unsafe { SoundGroup::from_raw(sound_group) })
+    }
+
+    /// Retrieves the number of subsounds stored within a sound.
+    ///
+    /// A format that has subsounds is a container format,
+    /// such as FSB, DLS, MOD, S3M, XM, IT.
+    pub fn get_num_sub_sounds(&self) -> Result<i32> {
+        let mut num_sub_sounds = 0;
+        ffi!(FMOD_Sound_GetNumSubSounds(
+            self.as_raw(),
+            &mut num_sub_sounds
+        ))?;
+        Ok(num_sub_sounds)
+    }
+
+    /// Retrieves a handle to a Sound object that is contained within the parent sound.
+    ///
+    /// If the sound is a stream and [`Mode::NonBlocking`] was not used, then
+    /// this call will perform a blocking seek/flush to the specified subsound.
+    ///
+    /// If [`Mode::NonBlocking`] was used to open this sound and the sound is a
+    /// stream, FMOD will do a non blocking seek/flush and set the state of the
+    /// subsound to [`OpenState::Seeking`].
+    ///
+    /// The sound won't be ready to be used when [`Mode::NonBlocking`] is used,
+    /// until the state of the sound becomes [`OpenState::Ready`] or
+    /// [`OpenState::Error`].
+    pub fn get_sub_sound(&self, index: i32) -> Result<&Sound> {
+        let mut sub_sound = ptr::null_mut();
+        ffi!(FMOD_Sound_GetSubSound(self.as_raw(), index, &mut sub_sound))?;
+        Ok(unsafe { Sound::from_raw(sub_sound) })
+    }
+
+    /// Retrieves the parent Sound object that contains this subsound.
+    pub fn get_sub_sound_parent(&self) -> Result<Option<&Sound>> {
+        let mut parent_sound = ptr::null_mut();
+        ffi!(FMOD_Sound_GetSubSoundParent(
+            self.as_raw(),
+            &mut parent_sound,
+        ))?;
+        Ok(unsafe { Sound::from_raw_opt(parent_sound) })
+    }
+}
+
+/// # Data reading.
+impl Sound {
+    /// Retrieves the state a sound is in after being opened with the non
+    /// blocking flag, or the current state of the streaming buffer.
+    ///
+    /// When a sound is opened with [`Mode::NonBlocking`], it is opened and
+    /// prepared in the background, or asynchronously. This allows the main
+    /// application to execute without stalling on audio loads. This function
+    /// will describe the state of the asynchronous load routine i.e. whether
+    /// it has succeeded, failed or is still in progress.
+    ///
+    /// **Note:** Always check the return value to determine the state of the
+    /// sound. Do not assume that if this function returns `Ok` then the sound
+    /// has finished loading.
+    pub fn get_open_state(&self) -> Result<OpenState> {
+        let mut state = OpenState::zeroed();
+        ffi!(FMOD_Sound_GetOpenState(
+            self.as_raw(),
+            state.as_raw_mut(),
+            ptr::null_mut(),
+            ptr::null_mut(),
+            ptr::null_mut(),
+        ))?;
+        Ok(state)
+    }
+
+    /// Retrieves the state a sound is in after being opened with the non
+    /// blocking flag, or the current state of the streaming buffer.
+    ///
+    /// When a sound is opened with [`Mode::NonBlocking`], it is opened and
+    /// prepared in the background, or asynchronously. This allows the main
+    /// application to execute without stalling on audio loads. This function
+    /// will describe the state of the asynchronous load routine i.e. whether
+    /// it has succeeded, failed or is still in progress.
+    ///
+    /// If `starving` is true, then you will most likely hear a
+    /// stuttering/repeating sound as the decode buffer loops on itself and
+    /// replays old data. With the ability to detect stream starvation, muting
+    /// the sound with [`ChannelControl::set_mute`] will keep the stream quiet
+    /// until it is not starving any more.
+    ///
+    /// **Note:** Always check the return value to determine the state of the
+    /// sound. Do not assume that if this function returns `Ok` then the sound
+    /// has finished loading.
+    pub fn get_open_state_info(&self) -> Result<OpenStateInfo> {
         let mut state = OpenState::zeroed();
         let mut percent_buffered = 0;
         let mut starving = 0;
@@ -419,6 +518,367 @@ impl Sound {
             &mut starving,
             &mut disk_busy
         ))?;
-        Ok((state, percent_buffered, starving != 0, disk_busy != 0))
+        Ok(OpenStateInfo {
+            state,
+            percent_buffered,
+            starving: starving != 0,
+            disk_busy: disk_busy != 0,
+        })
+    }
+
+    /// Reads data from an opened sound to a specified buffer,
+    /// using FMOD's internal codecs.
+    ///
+    /// This can be used for decoding data offline in small pieces (or big
+    /// pieces), rather than playing and capturing it, or loading the whole file
+    /// at once and having to [`Sound::lock`] / [`Sound::unlock`] the data.
+    ///
+    /// <div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+    /// <span class="emoji">🦀</span><span>
+    /// FMOD.rs returns `Ok(0)` on EOF, matching the [`Read`](io::Read) trait,
+    /// whereas raw FMOD returns `Error::FileEof`.
+    /// </span></div></div>
+    ///
+    /// As a non streaming sound reads and decodes the whole file then closes it
+    /// upon calling [`System::create_sound`], [`Sound::read_data`] will then
+    /// not work because the file handle is closed. Use [`Mode::OpenOnly`] to
+    /// stop FMOD reading/decoding the file. If [`Mode::OpenOnly`] flag is used
+    /// when opening a sound, it will leave the file handle open, and FMOD will
+    /// not read/decode any data internally, so the read cursor will stay at
+    /// position 0. This will allow the user to read the data from the start.
+    ///
+    /// For streams, the streaming engine will decode a small chunk of data and
+    /// this will advance the read cursor. You need to either use
+    /// [`Mode::OpenOnly`] to stop the stream pre-buffering or call
+    /// [`Sound::seek_data`] to reset the read cursor back to the start of the
+    /// file, otherwise it will appear as if the start of the stream is missing.
+    /// [`Channel::set_position`] will have the same result. These functions
+    /// will flush the stream buffer and read in a chunk of audio internally.
+    /// This is why if you want to read from an absolute position you should use
+    /// [`Sound::seek_data`] and not the previously mentioned functions.
+    ///
+    /// If you are calling [`Sound::read_data`] and [`Sound::seek_data`] on a
+    /// stream, information functions such as [`Channel::get_position`] may give
+    /// misleading results. Calling [`Channel::set_position`] will cause the
+    /// streaming engine to reset and flush the stream, leading to the time
+    /// values returning to their correct position.
+    pub fn read_data(&self, buffer: &mut [u8]) -> Result<usize> {
+        let mut read = 0;
+        ffi!(FMOD_Sound_ReadData(
+            self.as_raw(),
+            buffer.as_mut_ptr().cast(),
+            buffer.len() as u32,
+            &mut read,
+        ))
+        .or_else(|e| if e == Error::FileEof { Ok(()) } else { Err(e) })?;
+        Ok(read as usize)
+    }
+
+    /// Seeks a sound for use with data reading, using FMOD's internal codecs.
+    ///
+    /// For use in conjunction with [`Sound::read_data`] and [`Mode::OpenOnly`].
+    ///
+    /// For streaming sounds, if this function is called, it will advance the
+    /// internal file pointer but not update the streaming engine. This can lead
+    /// to de-synchronization of position information for the stream and audible
+    /// playback.
+    ///
+    /// A stream can reset its stream buffer and position synchronization by
+    /// calling [`Channel::set_position`]. This causes reset and flush of the
+    /// stream buffer.
+    pub fn seek_data(&self, pcm: u32) -> Result<()> {
+        ffi!(FMOD_Sound_SeekData(self.as_raw(), pcm))?;
+        Ok(())
+    }
+
+    /// Gives access to a portion or all the sample data of a sound for direct manipulation.
+    ///
+    /// <div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+    /// <span class="emoji">🦀</span><span>
+    /// Dropping `SoundReadGuard` will call `Sound::unlock` and unlock the data.
+    /// </span></div></div>
+    ///
+    /// With this function you get access to the raw audio data. If the data is
+    /// 8, 16, 24 or 32bit PCM data, mono or stereo data, you must take this
+    /// into consideration when processing the data. See [Sample Data] for more
+    /// information.
+    ///
+    /// [Sample Data]: https://fmod.com/docs/2.02/api/glossary.html#sample-data
+    ///
+    /// If the sound is created with [`Mode::CreateCompressedSample`] the data
+    /// retrieved will be the compressed bitstream.
+    ///
+    /// It is not possible to lock the following:
+    ///
+    /// - A parent sound containing subsounds. A parent sound has no audio data
+    ///   and [`Error::SubSounds`] will be returned.
+    /// - A stream / sound created with [`Mode::CreateStream`].
+    ///   [`Error::BadCommand`] will be returned in this case.
+    ///
+    /// The names `lock`/`unlock` are a legacy reference to older Operating
+    /// System APIs that used to cause a mutex lock on the data, so that it
+    /// could not be written to while the 'lock' was in place. This is no
+    /// longer the case with FMOD and data can be 'locked' multiple times
+    /// from different places/threads at once.
+    pub fn lock(&self, offset: u32, length: u32) -> Result<SampleDataLock<'_>> {
+        let mut ptr1 = ptr::null_mut();
+        let mut ptr2 = ptr::null_mut();
+        let mut len1 = 0;
+        let mut len2 = 0;
+        ffi!(FMOD_Sound_Lock(
+            self.as_raw(),
+            offset,
+            length,
+            &mut ptr1,
+            &mut ptr2,
+            &mut len1,
+            &mut len2,
+        ))?;
+        unsafe {
+            Ok(SampleDataLock {
+                sound: self,
+                part1: slice::from_raw_parts(ptr1.cast(), len1 as usize),
+                part2: if !ptr2.is_null() {
+                    slice::from_raw_parts(ptr2.cast(), len2 as usize)
+                } else {
+                    slice::from_raw_parts(ptr1.cast::<u8>().add(len1 as usize), 0)
+                },
+            })
+        }
+    }
+
+    /// Finalizes a previous sample data lock and submits it back to the Sound
+    /// object.
+    ///
+    /// If an unlock is not performed on PCM data, then sample loops may produce
+    /// audible clicks.
+    ///
+    /// The names `lock`/`unlock` are a legacy reference to older Operating
+    /// System APIs that used to cause a mutex lock on the data, so that it
+    /// could not be written to while the 'lock' was in place. This is no
+    /// longer the case with FMOD and data can be 'locked' multiple times
+    /// from different places/threads at once.
+    ///
+    /// # Safety
+    ///
+    /// The locked slices must have been obtained from a previous matched call
+    /// to [`Sound::lock`].
+    pub unsafe fn unlock(&self, part1: &[u8], part2: &[u8]) -> Result {
+        ffi!(FMOD_Sound_Unlock(
+            self.as_raw(),
+            part1.as_ptr().cast_mut().cast(),
+            part2.as_ptr().cast_mut().cast(),
+            part1.len() as u32,
+            part2.len() as u32,
+        ))?;
+        Ok(())
+    }
+}
+
+// XXX: io::Read and io::Seek impls?
+
+/// A read lock on a sound's sample data.
+#[derive(Debug, Clone)]
+pub struct SampleDataLock<'a> {
+    sound: &'a Sound,
+    part1: &'a [u8],
+    part2: &'a [u8],
+}
+
+impl SampleDataLock<'_> {
+    /// Returns the locked sample data.
+    ///
+    /// The first slice borrows from the sample buffer directly. If the locked
+    /// data exceeds the length of the sample buffer, the second slice holds
+    /// any excess data.
+    pub fn get(&self) -> (&[u8], &[u8]) {
+        (self.part1, self.part2)
+    }
+
+    /// Finalizes the sample data lock and submits it back to the Sound object.
+    pub fn unlock(self) -> Result {
+        let this = ManuallyDrop::new(self);
+        unsafe { this.sound.unlock(this.part1, this.part2) }
+    }
+}
+
+impl<'a> Drop for SampleDataLock<'a> {
+    fn drop(&mut self) {
+        match unsafe { self.sound.unlock(self.part1, self.part2) } {
+            Ok(()) => (),
+            Err(e) => whoops!(no_panic: "failed to unlock sound: {e}"),
+        }
+    }
+}
+
+/// The state a sound is in after being opened with the non blocking flag,
+/// or the current state of the streaming buffer.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct OpenStateInfo {
+    /// Open state of a sound.
+    pub state: OpenState,
+    /// Filled percentage of a stream's file buffer.
+    pub percent_buffered: u32,
+    /// Starving state. `true` if a stream has decoded
+    /// more than the stream file buffer has ready.
+    pub starving: bool,
+    /// Disk is currently being accessed for this sound.
+    pub disk_busy: bool,
+}
+
+/// # Music.
+impl Sound {
+    /// Gets the number of music channels inside a MOD/S3M/XM/IT/MIDI file.
+    pub fn get_music_num_channels(&self) -> Result<i32> {
+        let mut channels = 0;
+        ffi!(FMOD_Sound_GetMusicNumChannels(self.as_raw(), &mut channels))?;
+        Ok(channels)
+    }
+
+    /// Sets the volume of a MOD/S3M/XM/IT/MIDI music channel volume.
+    pub fn set_music_channel_volume(&self, channel: i32, volume: f32) -> Result {
+        ffi!(FMOD_Sound_SetMusicChannelVolume(
+            self.as_raw(),
+            channel,
+            volume,
+        ))?;
+        Ok(())
+    }
+
+    /// Retrieves the volume of a MOD/S3M/XM/IT/MIDI music channel volume.
+    pub fn get_music_channel_volume(&self, channel: i32) -> Result<f32> {
+        let mut volume = 0.0;
+        ffi!(FMOD_Sound_GetMusicChannelVolume(
+            self.as_raw(),
+            channel,
+            &mut volume,
+        ))?;
+        Ok(volume)
+    }
+
+    /// Sets the relative speed of MOD/S3M/XM/IT/MIDI music.
+    pub fn set_music_speed(&self, speed: f32) -> Result {
+        ffi!(FMOD_Sound_SetMusicSpeed(self.as_raw(), speed))?;
+        Ok(())
+    }
+
+    /// Retrieves the relative speed of MOD/S3M/XM/IT/MIDI music.
+    pub fn get_music_speed(&self) -> Result<f32> {
+        let mut speed = 0.0;
+        ffi!(FMOD_Sound_GetMusicSpeed(self.as_raw(), &mut speed))?;
+        Ok(speed)
+    }
+}
+
+/// # Synchronization / markers.
+impl Sound {
+    /// Retrieve a sync point.
+    ///
+    /// For for more information on sync points see [Sync Points].
+    ///
+    /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
+    pub fn get_sync_point(&self, index: i32) -> Result<&SyncPoint> {
+        let mut point = ptr::null_mut();
+        ffi!(FMOD_Sound_GetSyncPoint(self.as_raw(), index, &mut point))?;
+        Ok(unsafe { SyncPoint::from_raw(point) })
+    }
+
+    /// Retrieves information on an embedded sync point.
+    ///
+    /// For for more information on sync points see [Sync Points].
+    ///
+    /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
+    pub fn get_sync_point_name(&self, sync_point: &SyncPoint, name: &mut String) -> Result {
+        unsafe {
+            fmod_get_string(name, |buf| {
+                ffi!(FMOD_Sound_GetSyncPointInfo(
+                    self.as_raw(),
+                    sync_point.as_raw(),
+                    buf.as_mut_ptr().cast(),
+                    buf.len() as i32,
+                    ptr::null_mut(),
+                    TimeUnit::zeroed().into_raw(),
+                ))
+            })?;
+        }
+        Ok(())
+    }
+
+    /// Retrieves information on an embedded sync point.
+    ///
+    /// For for more information on sync points see [Sync Points].
+    ///
+    /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
+    pub fn get_sync_point_offset(
+        &self,
+        sync_point: &SyncPoint,
+        offset_type: TimeUnit,
+    ) -> Result<u32> {
+        let mut offset = 0;
+        ffi!(FMOD_Sound_GetSyncPointInfo(
+            self.as_raw(),
+            sync_point.as_raw(),
+            ptr::null_mut(),
+            0,
+            &mut offset,
+            offset_type.into_raw(),
+        ))?;
+        Ok(offset)
+    }
+
+    /// Adds a sync point at a specific time within the sound.
+    ///
+    /// For for more information on sync points see [Sync Points].
+    ///
+    /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
+    pub fn add_sync_point(
+        &self,
+        offset: u32,
+        offset_type: TimeUnit,
+        name: Option<&CStr8>,
+    ) -> Result<Handle<'static, SyncPoint>> {
+        let mut point = ptr::null_mut();
+        ffi!(FMOD_Sound_AddSyncPoint(
+            self.as_raw(),
+            offset,
+            offset_type.into_raw(),
+            name.map(|s| s.as_c_str().as_ptr()).unwrap_or(ptr::null()),
+            &mut point,
+        ))?;
+        Ok(unsafe { Handle::from_raw(point) })
+    }
+
+    /// Deletes a sync point within the sound.
+    ///
+    /// For for more information on sync points see [Sync Points].
+    ///
+    /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
+    pub fn delete_sync_point(&self, sync_point: Handle<'_, SyncPoint>) -> Result {
+        ffi!(FMOD_Sound_DeleteSyncPoint(
+            self.as_raw(),
+            Handle::into_raw(sync_point),
+        ))?;
+        Ok(())
+    }
+}
+
+opaque! {
+    /// Named marker for a given point in time.
+    ///
+    /// For for more information on sync points see [Sync Points].
+    ///
+    /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
+    weak class SyncPoint = FMOD_SYNCPOINT, FMOD_SYNCPOINT_*;
+}
+
+/// # General.
+impl Sound {
+    // TODO: set_user_data, get_user_data
+
+    /// Retrieves the parent System object.
+    pub fn get_system_object(&self) -> Result<&System> {
+        let mut system = ptr::null_mut();
+        ffi!(FMOD_Sound_GetSystemObject(self.as_raw(), &mut system))?;
+        Ok(unsafe { System::from_raw(system) })
     }
 }

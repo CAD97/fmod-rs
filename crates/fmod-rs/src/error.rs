@@ -1,6 +1,6 @@
 use {
     fmod::{raw::*, *},
-    std::{error::Error as _, fmt, num::NonZeroI32},
+    std::{error::Error as _, fmt, io, num::NonZeroI32},
 };
 
 static_assertions::assert_type_eq_all!(i32, FMOD_RESULT);
@@ -272,6 +272,33 @@ impl ResultExt for Result {
         match self {
             Ok(()) => FMOD_OK,
             Err(err) => err.into_raw(),
+        }
+    }
+}
+
+impl From<Error> for io::Error {
+    fn from(err: Error) -> Self {
+        match err {
+            | Error::DspNotFound
+            | Error::TagNotFound
+            | Error::FileNotFound
+            | Error::EventNotFound => io::ErrorKind::NotFound.into(),
+            | Error::NetWouldBlock => io::ErrorKind::WouldBlock.into(),
+            | Error::InvalidFloat
+            | Error::InvalidHandle
+            | Error::InvalidParam
+            | Error::InvalidPosition
+            | Error::InvalidSpeaker
+            | Error::InvalidSyncPoint
+            | Error::InvalidThread
+            | Error::InvalidVector => io::ErrorKind::InvalidInput.into(),
+            | Error::BadCommand
+            | Error::DspType
+            | Error::Format
+            | Error::Unimplemented
+            | Error::Unsupported => io::ErrorKind::Unsupported.into(),
+            | Error::HttpTimeout | Error::EventLiveUpdateTimeout => io::ErrorKind::TimedOut.into(),
+            err => io::Error::new(io::ErrorKind::Other, err),
         }
     }
 }

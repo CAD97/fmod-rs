@@ -29,7 +29,74 @@ enum_struct! {
         /// MOD/S3M/XM/IT. Current pattern in a sequenced module format. Cannot use with [Channel::set_position]. [Sound::get_length] will return the number of patterns in the song and {Channel::get_position} will return the currently playing pattern.
         ModPattern      = FMOD_TIMEUNIT_MODPATTERN,
     }
+}
 
+// XXX: maybe?
+// #[repr(u32)]
+// #[rustfmt::skip]
+// #[non_exhaustive]
+// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+// pub enum Time {
+//     Ms(u32)             = FMOD_TIMEUNIT_MS as _,
+//     Pcm(u32)            = FMOD_TIMEUNIT_PCM as _,
+//     PcmBytes(u32)       = FMOD_TIMEUNIT_PCMBYTES as _,
+//     RawBytes(u32)       = FMOD_TIMEUNIT_RAWBYTES as _,
+//     PcmFraction(u32)    = FMOD_TIMEUNIT_PCMFRACTION as _,
+//     ModOrder(u32)       = FMOD_TIMEUNIT_MODORDER as _,
+//     ModRow(u32)         = FMOD_TIMEUNIT_MODROW as _,
+//     ModPattern(u32)     = FMOD_TIMEUNIT_MODPATTERN as _,
+//     #[doc(hidden)]
+//     __Unknown(u32),
+// }
+
+// impl Time {
+//     /// Create a time value by associating a value with a unit.
+//     pub fn new(value: u32, unit: TimeUnit) -> Self {
+//         match unit {
+//             TimeUnit::Ms => Self::Ms(value),
+//             TimeUnit::Pcm => Self::Pcm(value),
+//             TimeUnit::PcmBytes => Self::PcmBytes(value),
+//             TimeUnit::RawBytes => Self::RawBytes(value),
+//             TimeUnit::PcmFraction => Self::PcmFraction(value),
+//             TimeUnit::ModOrder => Self::ModOrder(value),
+//             TimeUnit::ModRow => Self::ModRow(value),
+//             TimeUnit::ModPattern => Self::ModPattern(value),
+//             _ => Self::__Unknown(value),
+//         }
+//     }
+
+//     /// Retrieves the unitless value of time.
+//     pub fn value(self) -> u32 {
+//         match self {
+//             Self::Ms(value) => value,
+//             Self::Pcm(value) => value,
+//             Self::PcmBytes(value) => value,
+//             Self::RawBytes(value) => value,
+//             Self::PcmFraction(value) => value,
+//             Self::ModOrder(value) => value,
+//             Self::ModRow(value) => value,
+//             Self::ModPattern(value) => value,
+//             Self::__Unknown(value) => value,
+//         }
+//     }
+
+//     /// Retrieves the unit of time measure.
+//     pub fn unit(self) -> TimeUnit {
+//         match self {
+//             Self::Ms(_) => TimeUnit::Ms,
+//             Self::Pcm(_) => TimeUnit::Pcm,
+//             Self::PcmBytes(_) => TimeUnit::PcmBytes,
+//             Self::RawBytes(_) => TimeUnit::RawBytes,
+//             Self::PcmFraction(_) => TimeUnit::PcmFraction,
+//             Self::ModOrder(_) => TimeUnit::ModOrder,
+//             Self::ModRow(_) => TimeUnit::ModRow,
+//             Self::ModPattern(_) => TimeUnit::ModPattern,
+//             Self::__Unknown(_) => TimeUnit::Ms,
+//         }
+//     }
+// }
+
+enum_struct! {
     /// Scheduling priority to assign a given thread to.
     ///
     /// The platform agnostic priorities are used to rank FMOD threads against one another for best runtime scheduling.
@@ -450,7 +517,7 @@ enum_struct! {
     ///
     /// With streams, if you are using [Mode::NonBlocking], note that if the user calls [Sound::get_sub_sound], a stream will go into [OpenState::Seeking] state and sound related commands will return [Error::NotReady].
     ///
-    ///With streams, if you are using [Mode::NonBlocking], note that if the user calls [Channel::get_position], a stream will go into [OpenState::SetPosition] state and sound related commands will return [Error::NotReady].
+    /// With streams, if you are using [Mode::NonBlocking], note that if the user calls [Channel::get_position], a stream will go into [OpenState::SetPosition] state and sound related commands will return [Error::NotReady].
     pub enum OpenState: FMOD_OPENSTATE {
         /// Opened and ready to play.
         Ready       = FMOD_OPENSTATE_READY,

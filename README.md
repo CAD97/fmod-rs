@@ -51,7 +51,7 @@ By default, this crate links to `fmodL` for development builds and
 
 [links]: https://doc.rust-lang.org/cargo/reference/build-scripts.html#overriding-build-scripts
 
-The `link-search` optional feature will instruct FMOD-rs to add the host's
+The `link-search` optional feature will instruct FMOD.rs to add the host's
 conventional install location for the FMOD Studio API to the link search path.
 If this is not known for the current host, the buildscript will panic,
 requiring the use of `config.toml` to override the build script link config.

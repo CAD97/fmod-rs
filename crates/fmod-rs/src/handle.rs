@@ -40,6 +40,16 @@ pub unsafe trait FmodResource: fmt::Debug + Sealed {
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
+    unsafe fn from_raw_opt<'a>(this: *mut Self::Raw) -> Option<&'a Self> {
+        if this.is_null() {
+            None
+        } else {
+            Some(Self::from_raw(this))
+        }
+    }
+
+    #[cfg_attr(not(feature = "raw"), doc(hidden))]
+    #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
     unsafe fn release(this: *mut Self::Raw) -> fmod::Result;
 }
 

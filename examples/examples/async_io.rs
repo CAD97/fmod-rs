@@ -242,11 +242,11 @@ fn main() -> anyhow::Result<()> {
             example.update()?;
 
             if let Some(sound) = &sound {
-                let (_, _, starving, _) = sound.get_open_state()?;
-                if starving {
+                let open_state = sound.get_open_state()?;
+                if open_state.starving {
                     add_line("Starving");
                 }
-                channel.set_mute(starving)?;
+                channel.set_mute(open_state.starving)?;
             }
 
             if example.btn_press(Buttons::Action1) {
