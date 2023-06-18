@@ -21,7 +21,7 @@ impl Deref for ChannelGroup {
     }
 }
 
-/// # Channel management
+/// # Channel management.
 impl ChannelGroup {
     /// Retrieves the number of Channels that feed into this group.
     pub fn get_num_channels(&self) -> Result<i32> {
@@ -45,7 +45,7 @@ impl ChannelGroup {
     }
 }
 
-/// # ChannelGroup management
+/// # ChannelGroup management.
 impl ChannelGroup {
     // TODO: allow setting propagated_dsp_clock = false somehow
     /// Adds a ChannelGroup as an input to this group.
@@ -89,7 +89,7 @@ impl ChannelGroup {
     }
 }
 
-/// # General
+/// # General.
 impl ChannelGroup {
     /// Retrieves the name set when the group was created.
     pub fn get_name(&self, name: &mut String) -> Result {
