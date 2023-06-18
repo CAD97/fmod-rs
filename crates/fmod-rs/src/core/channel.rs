@@ -23,9 +23,16 @@ impl Deref for Channel {
     }
 }
 
-/// # Playback control
+/// # Playback control.
 impl Channel {
     /// Sets the frequency or playback rate.
+    ///
+    /// Default frequency is determined by the audio format of the [`Sound`]
+    /// or [`Dsp`].
+    ///
+    /// Sounds opened as [`Mode::CreateSample`] (not [`Mode::CreateStream`] or
+    /// [`Mode::CreateCompressedSample`]) can be played backwards by giving a
+    /// negative frequency.
     pub fn set_frequency(&self, frequency: f32) -> Result {
         ffi!(FMOD_Channel_SetFrequency(self.as_raw(), frequency))?;
         Ok(())
@@ -39,12 +46,36 @@ impl Channel {
     }
 
     /// Sets the priority used for virtual voice ordering.
+    ///
+    /// 0 represents most important and 256 represents least important.
+    /// The default priority is 128.
+    ///
+    /// Priority is used as a coarse grain control for the virtual voice system,
+    /// lower priority [`Channel`]s will always be stolen before higher ones.
+    /// For [`Channel`]s of equal priority, those with the quietest
+    /// [`ChannelControl::get_audibility`] value will be stolen first.
+    ///
+    /// See the [Virtual Voices] guide for more information.
+    ///
+    /// [Virtual Voices]: https://fmod.com/docs/2.02/api/white-papers-virtual-voices.html
     pub fn set_priority(&self, priority: i32) -> Result {
         ffi!(FMOD_Channel_SetPriority(self.as_raw(), priority))?;
         Ok(())
     }
 
     /// Retrieves the priority used for virtual voice ordering.
+    ///
+    /// 0 represents most important and 256 represents least important.
+    /// The default priority is 128.
+    ///
+    /// Priority is used as a coarse grain control for the virtual voice system,
+    /// lower priority [`Channel`]s will always be stolen before higher ones.
+    /// For [`Channel`]s of equal priority, those with the quietest
+    /// [`ChannelControl::get_audibility`] value will be stolen first.
+    ///
+    /// See the [Virtual Voices] guide for more information.
+    ///
+    /// [Virtual Voices]: https://fmod.com/docs/2.02/api/white-papers-virtual-voices.html
     pub fn get_priority(&self) -> Result<i32> {
         let mut priority = 0;
         ffi!(FMOD_Channel_GetPriority(self.as_raw(), &mut priority))?;
@@ -52,25 +83,65 @@ impl Channel {
     }
 
     /// Sets the current playback position.
+    ///
+    /// Certain [`TimeUnit`] types are always available: [`TimeUnit::Pcm`],
+    /// [`TimeUnit::PcmBytes`] and [`TimeUnit::Ms`]. The others are format
+    /// specific such as [`TimeUnit::ModOrder`] / [`TimeUnit::ModRow`] /
+    /// [`TimeUnit::ModPattern`] which is specific to files of type MOD / S3M /
+    /// XM / IT.
+    ///
+    /// If playing a [`Sound`] created with [`System::create_stream`] or
+    /// [`Mode::CreateStream`] changing the position may cause a slow reflush
+    /// operation while the file seek and decode occurs. You can avoid this by
+    /// creating the stream with [`Mode::NonBlocking`]. This will cause the
+    /// stream to go into [`OpenState::SetPosition`] state (see
+    /// [`Sound::get_open_state`]) and [`Sound`] commands will return
+    /// [`Error::NotReady`]. [`Channel::get_position`] will also not update
+    /// until this non-blocking set position operation has completed.
+    ///
+    /// Using a VBR source that does not have an associated seek table or seek
+    /// information (such as MP3 or MOD/S3M/XM/IT) may cause inaccurate seeking
+    /// if you specify [`TimeUnit::Ms`] or [`TimeUnit::Pcm`. If you want FMOD
+    /// to create a PCM vs bytes seek table so that seeking is accurate, you
+    /// will have to specify [`Mode::AccurateTime`] when loading or opening the
+    /// sound. This means there is a slight delay as FMOD scans the whole file
+    /// when loading the sound to create this table.
     pub fn set_position(&self, position: u32, pos_type: TimeUnit) -> Result {
-        let postype = TimeUnit::into_raw(pos_type);
-        ffi!(FMOD_Channel_SetPosition(self.as_raw(), position, postype,))?;
+        ffi!(FMOD_Channel_SetPosition(
+            self.as_raw(),
+            position,
+            pos_type.into_raw(),
+        ))?;
         Ok(())
     }
 
     /// Retrieves the current playback position.
+    ///
+    /// Certain [`TimeUnit`] types are always available: [`TimeUnit::Pcm`],
+    /// [`TimeUnit::PcmBytes`] and [`TimeUnit::Ms`]. The others are format
+    /// specific such as [`TimeUnit::ModOrder`] / [`TimeUnit::ModRow`] /
+    /// [`TimeUnit::ModPattern`] which is specific to files of type MOD / S3M /
+    /// XM / IT.
+    ///
+    /// If [`TimeUnit::Ms`] or [`TimeUnit::PcmBytes`] are used, the value is
+    /// internally converted from [`TimeUnit::Pcm`], so the retrieved value may
+    /// not exactly match the set value.
     pub fn get_position(&self, pos_type: TimeUnit) -> Result<u32> {
         let mut position = 0;
-        let postype = TimeUnit::into_raw(pos_type);
         ffi!(FMOD_Channel_GetPosition(
             self.as_raw(),
             &mut position,
-            postype,
+            pos_type.into_raw(),
         ))?;
         Ok(position)
     }
 
     /// Sets the ChannelGroup this object outputs to.
+    ///
+    /// A [`ChannelGroup`] may contain many Channels.
+    ///
+    /// [`Channel`]s may only output to a single [`ChannelGroup`]. This
+    /// operation will remove it from the previous group first.
     pub fn set_channel_group(&self, channel_group: &ChannelGroup) -> Result {
         ffi!(FMOD_Channel_SetChannelGroup(
             self.as_raw(),
@@ -90,12 +161,24 @@ impl Channel {
     }
 
     /// Sets the number of times to loop before stopping.
+    ///
+    /// 0 represents "oneshot", 1 represents "loop once then stop" and -1
+    /// represents "loop forever".
+    ///
+    /// The 'mode' of the [`Sound`] or [`Channel`] must be [`Mode::LoopNormal`]
+    /// or [`Mode::LoopBidi`] for this function to work.
     pub fn set_loop_count(&self, loop_count: i32) -> Result {
         ffi!(FMOD_Channel_SetLoopCount(self.as_raw(), loop_count))?;
         Ok(())
     }
 
     /// Retrieves the number of times to loop before stopping.
+    ///
+    /// 0 represents "oneshot", 1 represents "loop once then stop" and -1
+    /// represents "loop forever".
+    ///
+    /// This is the _current_ loop countdown value that will decrement as it
+    /// plays until reaching 0. Reset with [`Channel::set_loop_count`].
     pub fn get_loop_count(&self) -> Result<i32> {
         let mut loop_count = 0;
         ffi!(FMOD_Channel_GetLoopCount(self.as_raw(), &mut loop_count))?;
@@ -103,6 +186,17 @@ impl Channel {
     }
 
     /// Sets the loop start and end points.
+    ///
+    /// Loop points may only be set on a [`Channel`] playing a [`Sound`], not a
+    /// [`Channel`] playing a [`Dsp`] (See [`System::play_dsp`]).
+    ///
+    /// Valid [`TimeUnit`] types are [`TimeUnit::Pcm`], [`TimeUnit::Ms`],
+    /// [`TimeUnit::PcmBytes`]. Any other time units return [`Error::Format`].
+    /// If [`TimeUnit::Ms`] or [`TimeUnit::PcmBytes`], the value is internally
+    /// converted to [`TimeUnit::Pcm`].
+    ///
+    /// The [`Channel`]'s mode must be set to [`Mode::LoopNormal`] or
+    /// [`Mode::LoopBidi`] for loop points to affect playback.
     pub fn set_loop_points(
         &self,
         loop_points: impl RangeBounds<u32>,
@@ -134,6 +228,12 @@ impl Channel {
     }
 
     /// Retrieves the loop start and end points.
+    ///
+    /// Valid [`TimeUnit`] types are [`TimeUnit::Pcm`], [`TimeUnit::Ms`],
+    /// [`TimeUnit::PcmBytes`]. Any other time units return [`Error::Format`].
+    /// If [`TimeUnit::Ms`] or [`TimeUnit::PcmBytes`] are used, the value is
+    /// internally converted from [`TimeUnit::Pcm`], so the retrieved value may
+    /// not exactly match the set value.
     pub fn get_loop_points(&self, length_type: TimeUnit) -> Result<RangeInclusive<u32>> {
         let mut start = 0;
         let mut end = 0;
@@ -148,9 +248,13 @@ impl Channel {
     }
 }
 
-/// # Information
+/// # Information.
 impl Channel {
     /// Retrieves whether the Channel is being emulated by the virtual voice system.
+    ///
+    /// See the [Virtual Voices] guide for more information.
+    ///
+    /// [Virtual Voices]: https://fmod.com/docs/2.02/api/white-papers-virtual-voices.html
     pub fn is_virtual(&self) -> Result<bool> {
         let mut is_virtual = 0;
         ffi!(FMOD_Channel_IsVirtual(self.as_raw(), &mut is_virtual))?;
@@ -158,10 +262,10 @@ impl Channel {
     }
 
     /// Retrieves the currently playing Sound.
-    pub fn get_current_sound(&self) -> Result<&Sound> {
+    pub fn get_current_sound(&self) -> Result<Option<&Sound>> {
         let mut sound = ptr::null_mut();
         ffi!(FMOD_Channel_GetCurrentSound(self.as_raw(), &mut sound))?;
-        Ok(unsafe { Sound::from_raw(sound) })
+        Ok(unsafe { Sound::from_raw_opt(sound) })
     }
 
     /// Retrieves the index of this object in the System Channel pool.

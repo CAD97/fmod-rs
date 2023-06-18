@@ -822,7 +822,7 @@ impl ChannelControl {
 
     /// Sets the index in the DSP chain of the specified DSP.
     ///
-    /// This will move a [`DSP`] already in the [DSP chain] to a new offset.
+    /// This will move a [`Dsp`] already in the [DSP chain] to a new offset.
     ///
     /// [DSP chain]: https://fmod.com/docs/2.02/api/glossary.html#dsp-chain
     pub fn set_dsp_index(&self, dsp: &Dsp, index: i32) -> Result {
