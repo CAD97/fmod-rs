@@ -165,7 +165,22 @@ fmod_struct! {
         /// Z coordinate in 3D space.
         pub z: f32,
     }
+}
 
+impl Vector {
+    /// Create a new vector.
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self { x, y, z }
+    }
+}
+
+impl From<[f32; 3]> for Vector {
+    fn from([x, y, z]: [f32; 3]) -> Self {
+        Self { x, y, z }
+    }
+}
+
+fmod_struct! {
     /// Structure describing a position, velocity and orientation.
     ///
     /// Vectors must be provided in the correct handedness.
