@@ -64,12 +64,12 @@ fn main() -> anyhow::Result<()> {
                     Err(error) => return Err(error)?,
                 }
                 match channel.get_current_sound() {
-                    Ok(current_sound) => match current_sound.get_length(fmod::TimeUnit::Ms) {
+                    Ok(Some(current_sound)) => match current_sound.get_length(fmod::TimeUnit::Ms) {
                         Ok(x) => lenms = x,
                         Err(fmod::Error::InvalidHandle | fmod::Error::ChannelStolen) => {},
                         Err(error) => return Err(error)?,
                     },
-                    Err(fmod::Error::InvalidHandle | fmod::Error::ChannelStolen) => {},
+                    Ok(None) | Err(fmod::Error::InvalidHandle | fmod::Error::ChannelStolen) => {},
                     Err(error) => return Err(error)?,
                 }
             }

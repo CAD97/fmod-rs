@@ -89,7 +89,7 @@ fn main() -> anyhow::Result<()> {
             let channel = system.play_sound(s, Some(&channel_group), true)?;
 
             if clock_start == 0 {
-                (_, clock_start) = channel.get_dsp_clock()?;
+                clock_start = channel.get_parent_dsp_clock()?;
                 // Start the sound into the future, by 2 mixer blocks worth.
                 // Should be enough to avoid the mixer catching up and hitting the clock value before we've finished setting up everything.
                 // Alternatively the channelgroup we're basing the clock on could be paused to stop it ticking.
@@ -106,7 +106,7 @@ fn main() -> anyhow::Result<()> {
             }
 
             // Schedule the channel to start in the future at the newly calculated channelgroup clock value.
-            channel.set_delay(clock_start, 0, false)?;
+            channel.set_delay(clock_start.., fmod::StopAction::Pause)?;
             // Unpause the sound. Note that you won't hear the sounds, they are scheduled into the future.
             channel.set_paused(false)?;
         }

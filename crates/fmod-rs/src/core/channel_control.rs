@@ -882,11 +882,21 @@ impl ChannelControl {
 
     /// Sets a sample accurate start (and/or stop) time relative to the parent
     /// ChannelGroup DSP clock.
-    pub fn set_delay(&self, dsp_clock: Range<u64>, stop_channels: StopAction) -> Result {
+    pub fn set_delay(&self, dsp_clock: impl RangeBounds<u64>, stop_channels: StopAction) -> Result {
+        let dsp_clock_start = match dsp_clock.start_bound() {
+            Bound::Included(&start) => start,
+            Bound::Excluded(&start) => start.saturating_add(1),
+            Bound::Unbounded => 0,
+        };
+        let dsp_clock_end = match dsp_clock.end_bound() {
+            Bound::Included(&end) => end,
+            Bound::Excluded(&end) => end.saturating_sub(1),
+            Bound::Unbounded => 0,
+        };
         ffi!(FMOD_Channel_SetDelay(
             self.as_raw() as _,
-            dsp_clock.start,
-            dsp_clock.end,
+            dsp_clock_start,
+            dsp_clock_end,
             stop_channels as _,
         ))?;
         Ok(())

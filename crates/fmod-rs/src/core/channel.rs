@@ -210,12 +210,16 @@ impl Channel {
         let (loop_end, loop_end_type) = match loop_points.end_bound() {
             Bound::Included(&end) => (end, length_type),
             Bound::Excluded(&end) => (end.saturating_sub(1), length_type),
-            Bound::Unbounded => (
-                self.get_current_sound()?
-                    .get_length(TimeUnit::Pcm)?
-                    .saturating_sub(1),
-                TimeUnit::Pcm,
-            ),
+            Bound::Unbounded => {
+                if let Some(sound) = self.get_current_sound()? {
+                    (
+                        sound.get_length(TimeUnit::Pcm)?.saturating_sub(1),
+                        TimeUnit::Pcm,
+                    )
+                } else {
+                    (loop_start, length_type)
+                }
+            },
         };
         ffi!(FMOD_Channel_SetLoopPoints(
             self.as_raw(),
