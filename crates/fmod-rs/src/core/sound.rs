@@ -243,11 +243,21 @@ impl Sound {
     /// For this mode the max distance is ignored:
     ///
     /// - [Mode::CustomRolloff]
-    pub fn set_3d_min_max_distance(&self, distance: Range<f32>) -> Result {
+    pub fn set_3d_min_max_distance(&self, distance: impl RangeBounds<f32>) -> Result {
+        let min_distance = match distance.start_bound() {
+            Bound::Included(&min_distance) => min_distance,
+            Bound::Excluded(&min_distance) => min_distance,
+            Bound::Unbounded => 0.0,
+        };
+        let max_distance = match distance.end_bound() {
+            Bound::Included(&max_distance) => max_distance,
+            Bound::Excluded(&max_distance) => max_distance,
+            Bound::Unbounded => f32::INFINITY,
+        };
         ffi!(FMOD_Sound_Set3DMinMaxDistance(
             self.as_raw(),
-            distance.start,
-            distance.end,
+            min_distance,
+            max_distance,
         ))
     }
 
