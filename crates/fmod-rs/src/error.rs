@@ -257,8 +257,10 @@ impl fmt::Display for Error {
     }
 }
 
-pub trait ResultExt: Sealed {
-    fn into_raw(self) -> FMOD_RESULT;
+raw! {
+    pub trait ResultExt: Sealed {
+        fn into_raw(self) -> FMOD_RESULT;
+    }
 }
 
 use sealed::Sealed;
@@ -267,7 +269,8 @@ mod sealed {
 }
 
 impl Sealed for Result {}
-impl ResultExt for Result {
+// not using the generic defaults here results in a better doc experience
+impl ResultExt for Result<(), Error> {
     fn into_raw(self) -> FMOD_RESULT {
         match self {
             Ok(()) => FMOD_OK,

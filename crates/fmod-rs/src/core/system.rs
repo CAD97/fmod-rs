@@ -1670,7 +1670,7 @@ impl System {
         sound: &Sound,
         channel_group: Option<&ChannelGroup>,
         paused: bool,
-    ) -> Result<Handle<'_, Channel>> {
+    ) -> Result<&Channel> {
         let sound = Sound::as_raw(sound);
         let channelgroup = channel_group
             .map(ChannelGroup::as_raw)
@@ -1683,7 +1683,7 @@ impl System {
             paused as _,
             &mut channel,
         ))?;
-        Ok(unsafe { Handle::new(channel) })
+        Ok(unsafe { Channel::from_raw(channel) })
     }
 
     /// Plays a DSP along with any of its inputs on a Channel.
@@ -1706,7 +1706,7 @@ impl System {
         dsp: &Dsp,
         channel_group: Option<&ChannelGroup>,
         paused: bool,
-    ) -> Result<Handle<'_, Channel>> {
+    ) -> Result<&Channel> {
         let dsp = Dsp::as_raw(dsp);
         let channelgroup = channel_group
             .map(ChannelGroup::as_raw)
@@ -1719,7 +1719,7 @@ impl System {
             paused as _,
             &mut channel,
         ))?;
-        Ok(unsafe { Handle::new(channel) })
+        Ok(unsafe { Channel::from_raw(channel) })
     }
 
     /// Retrieves a handle to a Channel by ID.
@@ -1728,14 +1728,14 @@ impl System {
     /// [Channel]s and setting their attributes. The only way to 'create' an
     /// instance of a [Channel] for playback is to use [System::play_sound] or
     /// [System::play_dsp].
-    pub fn get_channel(&self, channel_id: i32) -> Result<Handle<'_, Channel>> {
+    pub fn get_channel(&self, channel_id: i32) -> Result<&Channel> {
         let mut channel = ptr::null_mut();
         ffi!(FMOD_System_GetChannel(
             self.as_raw(),
             channel_id,
             &mut channel,
         ))?;
-        Ok(unsafe { Handle::new(channel) })
+        Ok(unsafe { Channel::from_raw(channel) })
     }
 
     // TODO: pub fn get_dsp_info_by_type

@@ -1,10 +1,6 @@
 use {
     parking_lot::{const_rwlock, RwLock},
-    std::{
-        fmt,
-        mem::ManuallyDrop,
-        ops::{Deref, DerefMut},
-    },
+    std::{fmt, mem::ManuallyDrop, ops::Deref},
 };
 
 /// Only one system may be safely created, at a time, as system create and
@@ -33,10 +29,6 @@ pub unsafe trait FmodResource: fmt::Debug + Sealed {
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
     unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self;
-
-    #[cfg_attr(not(feature = "raw"), doc(hidden))]
-    #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
-    unsafe fn from_raw_mut<'a>(this: *mut Self::Raw) -> &'a mut Self;
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
@@ -96,7 +88,7 @@ impl<'a, T: ?Sized + FmodResource> Handle<'a, T> {
     raw! {
         #[allow(clippy::missing_safety_doc)]
         pub unsafe fn from_raw(raw: *mut T::Raw) -> Self {
-            Self { raw: &mut *raw }
+            Self { raw: &*raw }
         }
     }
 
@@ -151,11 +143,5 @@ impl<T: ?Sized + FmodResource> Deref for Handle<'_, T> {
 
     fn deref(&self) -> &T {
         unsafe { T::from_raw(self.raw as *const _ as *mut _) }
-    }
-}
-
-impl<T: ?Sized + FmodResource> DerefMut for Handle<'_, T> {
-    fn deref_mut(&mut self) -> &mut T {
-        unsafe { T::from_raw_mut(self.raw as *const _ as *mut _) }
     }
 }

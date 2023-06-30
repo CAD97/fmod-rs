@@ -114,7 +114,7 @@ impl SoundGroup {
     pub fn get_sound(&self, index: i32) -> Result<&Sound> {
         let mut sound = ptr::null_mut();
         ffi!(FMOD_SoundGroup_GetSound(self.as_raw(), index, &mut sound))?;
-        Ok(unsafe { Sound::from_raw_mut(sound) })
+        Ok(unsafe { Sound::from_raw(sound) })
     }
 
     /// Retrieves the number of currently playing Channels for the SoundGroup.

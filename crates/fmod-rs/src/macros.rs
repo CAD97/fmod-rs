@@ -60,11 +60,6 @@ macro_rules! opaque {
                 &*(this as *mut Self)
             }
 
-            unsafe fn from_raw_mut<'a>(this: *mut Self::Raw) -> &'a mut Self {
-                debug_assert!(!this.is_null());
-                &mut *(this as *mut Self)
-            }
-
             #[allow(clippy::redundant_closure_call)]
             unsafe fn release(this: *mut Self::Raw) -> fmod::Result {
                 std::ptr::drop_in_place(Self::from_raw(this) as *const Self as *mut Self);
