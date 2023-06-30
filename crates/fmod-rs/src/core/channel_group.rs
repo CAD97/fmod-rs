@@ -98,7 +98,7 @@ impl ChannelGroup {
                 ffi!(FMOD_ChannelGroup_GetName(
                     self.as_raw(),
                     buf.as_mut_ptr().cast(),
-                    buf.len() as _
+                    buf.len() as _,
                 ))
             })
         }

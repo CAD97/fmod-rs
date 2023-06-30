@@ -542,6 +542,7 @@ enum_struct! {
     /// When using [SoundGroupBehavior::Mute], [SoundGroup::set_mute_fade_speed] can be used to stop a sudden transition.
     /// Instead, the time specified will be used to cross fade between the sounds that go silent and the ones that become audible.
     pub enum SoundGroupBehavior: FMOD_SOUNDGROUP_BEHAVIOR {
+        #[default]
         /// Excess sounds will fail when calling [System::play_sound].
         Fail        = FMOD_SOUNDGROUP_BEHAVIOR_FAIL,
         /// Excess sounds will begin mute and will become audible when sufficient sounds are stopped.
