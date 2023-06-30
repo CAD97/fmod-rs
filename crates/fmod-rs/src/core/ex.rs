@@ -114,9 +114,9 @@ impl CreateSoundEx<'_> {
             name_or_data.cast(),
             mode.into_raw(),
             &self.info as *const _ as *mut _,
-            &mut sound
+            &mut sound,
         ))?;
-        Ok(Handle::from_raw(sound))
+        Ok(Handle::new(sound))
     }
 }
 

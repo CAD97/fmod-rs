@@ -134,6 +134,7 @@ macro_rules! ffi {
 
 macro_rules! flags_ops {
     ($Name:ty: $($Op:ident)::+ $fn_op:ident $op:tt) => {
+        #[allow(deprecated)]
         impl $($Op)::+ for $Name {
             type Output = $Name;
             fn $fn_op(self) -> $Name {
@@ -142,6 +143,7 @@ macro_rules! flags_ops {
             }
         }
 
+        #[allow(deprecated)]
         impl $($Op)::+ for &'_ $Name {
             type Output = $Name;
             fn $fn_op(self) -> $Name {
@@ -150,6 +152,7 @@ macro_rules! flags_ops {
         }
     };
     ($Name:ty: $($Op:ident)::+ $fn_op:ident $op:tt $($OpAssign:ident)::+ $fn_op_assign:ident) => {
+        #[allow(deprecated)]
         impl $($Op)::+ for $Name {
             type Output = $Name;
             fn $fn_op(self, rhs: $Name) -> $Name {
@@ -158,6 +161,7 @@ macro_rules! flags_ops {
             }
         }
 
+        #[allow(deprecated)]
         impl $($Op)::+<&$Name> for $Name {
             type Output = $Name;
             fn $fn_op(self, rhs: &$Name) -> $Name {
@@ -165,6 +169,7 @@ macro_rules! flags_ops {
             }
         }
 
+        #[allow(deprecated)]
         impl $($Op)::+<$Name> for &$Name {
             type Output = $Name;
             fn $fn_op(self, rhs: $Name) -> $Name {
@@ -172,6 +177,7 @@ macro_rules! flags_ops {
             }
         }
 
+        #[allow(deprecated)]
         impl $($Op)::+<&$Name> for &$Name {
             type Output = $Name;
             fn $fn_op(self, rhs: &$Name) -> $Name {
@@ -179,12 +185,14 @@ macro_rules! flags_ops {
             }
         }
 
+        #[allow(deprecated)]
         impl $($OpAssign)::+ for $Name {
             fn $fn_op_assign(&mut self, rhs: $Name) {
                 *self = *self $op rhs;
             }
         }
 
+        #[allow(deprecated)]
         impl $($OpAssign)::+<&$Name> for $Name {
             fn $fn_op_assign(&mut self, rhs: &$Name) {
                 *self = *self $op *rhs;
@@ -209,6 +217,7 @@ macro_rules! flags {
             raw: $Raw,
         }
 
+        #[allow(deprecated)]
         impl $Name {
             $(
                 flags! {@stripdefault
@@ -219,6 +228,7 @@ macro_rules! flags {
             )*
         }
 
+        #[allow(deprecated)]
         impl $Name {
             raw! {
                 pub const fn zeroed() -> $Name {
@@ -266,6 +276,7 @@ macro_rules! flags {
         flags_ops!($Name: std::ops::BitXor bitxor ^ std::ops::BitXorAssign bitxor_assign);
         flags_ops!($Name: std::ops::Not not !);
 
+        #[allow(deprecated)]
         impl std::fmt::Debug for $Name {
             #[allow(unreachable_patterns)]
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
