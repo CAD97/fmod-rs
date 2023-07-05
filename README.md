@@ -1,7 +1,6 @@
 # FMOD.rs
 
 Bindings to the [FMOD adaptive audio solution](https://fmod.com/).
-
 [What is Adaptive Audio? (video)](https://youtu.be/p-FLWabby4Y)
 
 ## Licensing
@@ -12,8 +11,9 @@ you make less than $200k revenue/year on a small (<$500k) development budget,
 FMOD provides a [Free Indie License](https://www.fmod.com/sales#indie-note).
 
 The examples in the [examples](examples) folder are direct ports from the
-distributed FMOD examples, and are thus under the FMOD license. Similarly,
-the [media](media) folder is also under the FMOD license.
+distributed FMOD examples, and are thus under the FMOD license. The media files
+used for the examples are not redistributable, and thus need to be acquired
+by you alongside the binaries to run the FMOD Engine.
 
 The Rust code in this repository is licensed under MIT OR Apache-2.0, but this
 does not remove the requirement to comply with the FMOD license.
@@ -27,23 +27,16 @@ attribution requirement, and earns you prioritized private support for a year.
 [tip]: https://github.com/sponsors/CAD97/sponsorships?sponsor=CAD97&tier_id=NNNNNN
 -->
 
-## Providing the FMOD runtime
+## Providing the FMOD Engine
 
-In order to better comply with the FMOD license, we do _not_ redistribute the
-FMOD Engine. You should [download](https://www.fmod.com/download#fmodengine)
-the engine yourself.
+In order to comply with the FMOD license, we do _not_ redistribute the FMOD
+Engine. You must [download](https://www.fmod.com/download#fmodengine) the engine
+yourself.
 
 The currently vendored headers are for FMOD Engine 2.02.14 (build 133546). To
 pin the headers to a specific build, pin `fmod-core-sys` and `fmod-studio-sys`.
 The sys libraries are versioned based on the FMOD version for convenient version
 pins; for example, FMOD version 2.02.14 is served by sys crates version 2.14.X.
-
-
-
-We add `lib/{arch}` to the search path, and link the logging version of FMOD
-for development builds and production libraries for release builds. The dynamic
-library is implicitly loaded from the run directory, or you can load them
-explicitly.
 
 By default, this crate links to `fmodL` for development builds and
 `fmod` for release builds. This can be overridden using the
@@ -56,18 +49,24 @@ conventional install location for the FMOD Studio API to the link search path.
 If this is not known for the current host, the buildscript will panic,
 requiring the use of `config.toml` to override the build script link config.
 
+### Windows Note
+
+The Windows `.lib` files use a `_vc` decoration. The crate expects this to be
+there and appropriately links to `fmod_vc`/`fmodL_vc` on Windows.
+
+
 ## Functionality
 
 ### Complete
 
-- Raw bindings to the FMOD C API linking and running.
+- Raw bindings to the FMOD C API linking and running on Windows.
 - Some examples ported to the wrapped API.
 - Thread-safe API.
 
 ### Planned (Soon™)
 
-- All examples ported using Rust idiomatic APIs.
-- Test build and lib loading on macOS and Linux.
+- All FMOD Core examples ported using Rust idiomatic APIs.
+- Occasional manual tests that linking/running works on macOS/Linux.
 
 ### Stretch Goals
 
