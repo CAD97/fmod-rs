@@ -1,7 +1,10 @@
 use {
-    crate::file::{
-        userasynccancel_listen, userasyncread_listen, userclose_listen, useropen_listen,
-        userread_listen, userseek_listen, AsyncListenFileSystem,
+    crate::{
+        file::{
+            userasynccancel_listen, userasyncread_listen, userclose_listen, useropen_listen,
+            userread_listen, userseek_listen, AsyncListenFileSystem,
+        },
+        utils::catch_user_unwind,
     },
     fmod::{raw::*, *},
     std::{
@@ -68,7 +71,7 @@ pub struct CreateSoundEx<'a> {
 
 pub trait PcmCallback {
     fn read(sound: &Sound, data: &mut [u8]) -> Result;
-    fn seek(sound: &Sound, subsound: i32, position: u32, pos_type: TimeUnit) -> Result;
+    fn seek(sound: &Sound, subsound: i32, position: Time) -> Result;
 }
 
 pub trait NonblockCallback {
@@ -192,10 +195,7 @@ impl<'a> CreateSoundEx<'a> {
         ) -> FMOD_RESULT {
             let sound = Sound::from_raw(sound);
             let data = slice::from_raw_parts_mut(data as *mut u8, datalen as usize);
-            match F::read(sound, data) {
-                Ok(()) => FMOD_OK,
-                Err(e) => e.into_raw(),
-            }
+            catch_user_unwind(|| F::read(sound, data)).into_raw()
         }
 
         unsafe extern "system" fn pcm_setpos_callback<F: PcmCallback>(
@@ -205,10 +205,8 @@ impl<'a> CreateSoundEx<'a> {
             postype: FMOD_TIMEUNIT,
         ) -> FMOD_RESULT {
             let sound = Sound::from_raw(sound);
-            match F::seek(sound, subsound, position, TimeUnit::from_raw(postype)) {
-                Ok(()) => FMOD_OK,
-                Err(e) => e.into_raw(),
-            }
+            let position = Time::new(position, TimeUnit::from_raw(postype));
+            catch_user_unwind(|| F::seek(sound, subsound, position)).into_raw()
         }
 
         self.info.pcmreadcallback = Some(pcm_read_callback::<F>);
@@ -291,9 +289,9 @@ impl<'a> CreateSoundEx<'a> {
     }
 
     /// Initial position to seek to for [`Mode::CreateStream`].
-    pub fn initial_seek_position(&mut self, position: u32, unit: TimeUnit) -> &mut Self {
-        self.info.initialseekposition = position;
-        self.info.initialseekpostype = unit.into_raw();
+    pub fn initial_seek_position(&mut self, position: Time) -> &mut Self {
+        self.info.initialseekposition = position.value;
+        self.info.initialseekpostype = position.unit.into_raw();
         self
     }
 

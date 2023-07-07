@@ -1,13 +1,15 @@
+//! Functionality relating to FMOD's use of the file system.
+
 use {
     crate::utils::catch_user_unwind,
     fmod::{raw::*, *},
     std::{
         ffi::CStr,
         ffi::{c_char, c_void},
+        marker::PhantomData,
         mem::MaybeUninit,
-        panic::AssertUnwindSafe,
         pin::Pin,
-        slice,
+        ptr, slice,
     },
 };
 
@@ -39,7 +41,7 @@ pub fn set_disk_busy(busy: bool) -> Result {
     // prevent racing System init
     let _lock = GLOBAL_SYSTEM_STATE.read();
 
-    ffi!(FMOD_File_SetDiskBusy(if busy { 1 } else { 0 }))?;
+    ffi!(FMOD_File_SetDiskBusy(busy as FMOD_BOOL))?;
     Ok(())
 }
 
@@ -67,6 +69,120 @@ impl Drop for FileBusyGuard {
 pub fn lock_disk_busy() -> Result<FileBusyGuard> {
     set_disk_busy(true)?;
     Ok(FileBusyGuard { _priv: () })
+}
+
+/// A handle to an FMOD asynchronous file read request, received from
+/// [`file::AsyncFileSystem`].
+///
+/// When servicing the async read operation, read from
+/// [`handle`](Self::handle) at the given [`offset`](Self::offset) for
+/// [`size`](Self::size) bytes into [`buffer`](Self::buffer). Then call
+/// [`done`](Self::done) with the number of bytes read and the [`Result`]
+/// that matches the success of the operation.
+///
+/// # Safety
+///
+/// This structure must not be used after calling [`done`](Self::done) or
+/// the read operation has been [`cancel`led](file::AsyncFileSystem::cancel).
+#[derive(Debug)]
+pub struct AsyncReadInfo<File> {
+    raw: *mut FMOD_ASYNCREADINFO,
+    _phantom: PhantomData<*mut *mut File>,
+}
+
+unsafe impl<File> Send for AsyncReadInfo<File> where for<'a> &'a mut File: Send {}
+unsafe impl<File> Sync for AsyncReadInfo<File> where for<'a> &'a mut File: Sync {}
+
+#[allow(clippy::missing_safety_doc)]
+impl<File> AsyncReadInfo<File> {
+    raw! {
+        pub const fn from_raw(raw: *mut FMOD_ASYNCREADINFO) -> Self {
+            Self { raw, _phantom: PhantomData }
+        }
+    }
+
+    raw! {
+        pub const fn into_raw(self) -> *mut FMOD_ASYNCREADINFO {
+            self.raw
+        }
+    }
+
+    /// File handle that was provided by [`FileSystem::open`].
+    pub unsafe fn handle<'a>(self) -> Pin<&'a File> {
+        Pin::new_unchecked(&*self.handle_ptr())
+    }
+
+    /// File handle that was provided by [`FileSystem::open`].
+    pub unsafe fn handle_mut<'a>(self) -> Pin<&'a mut File> {
+        Pin::new_unchecked(&mut *self.handle_ptr())
+    }
+
+    /// File handle that was provided by [`FileSystem::open`].
+    pub unsafe fn handle_ptr(self) -> *mut File {
+        (*self.raw).handle.cast()
+    }
+
+    /// Byte offset within the file where the read operation should occur.
+    pub unsafe fn offset(self) -> u32 {
+        (*self.raw).offset
+    }
+
+    /// Number of bytes to read.
+    pub unsafe fn size(self) -> u32 {
+        (*self.raw).sizebytes
+    }
+
+    /// Priority hint for how quickly this operation should be serviced
+    /// where 0 represents low importance and 100 represents extreme
+    /// importance. This could be used to prioritize the read order of a
+    /// file job queue for example. FMOD decides the importance of the read
+    /// based on if it could degrade audio or not.
+    pub unsafe fn priority(self) -> i32 {
+        (*self.raw).priority
+    }
+
+    /// Buffer to read data into.
+    pub unsafe fn buffer(self) -> *mut [MaybeUninit<u8>] {
+        let ptr = (*self.raw).buffer;
+        let len = self.size();
+        ptr::slice_from_raw_parts_mut(ptr.cast(), len as usize)
+    }
+
+    /// Completion function to signal the async read is done.
+    ///
+    /// Relevant result codes to use with this function include:
+    ///
+    /// - `Ok`: Read was successful.
+    /// - [`Error::FileDiskEjected`]: Read was cancelled before being serviced.
+    /// - [`Error::FileBad`]: Read operation failed for any other reason.
+    pub unsafe fn done(self, result: Result<u32>) {
+        let done = (*self.raw).done.unwrap_unchecked();
+        match result {
+            Ok(bytes_read) => {
+                (*self.raw).bytesread = bytes_read;
+                if bytes_read < self.size() {
+                    done(self.raw, FMOD_ERR_FILE_EOF);
+                } else {
+                    done(self.raw, FMOD_OK);
+                }
+            },
+            Err(err) => done(self.raw, err.into_raw()),
+        }
+    }
+}
+
+impl<File> Copy for AsyncReadInfo<File> {}
+impl<File> Clone for AsyncReadInfo<File> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<File> Eq for AsyncReadInfo<File> {}
+impl<File> PartialEq for AsyncReadInfo<File> {
+    fn eq(&self, other: &Self) -> bool {
+        self.raw == other.raw
+    }
 }
 
 /// Callbacks to implement all file I/O instead of using the platform native
@@ -166,8 +282,7 @@ pub(crate) unsafe extern "system" fn userclose<FS: FileSystem>(
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
     let file = Pin::new_unchecked(Box::from_raw(handle.cast()));
-    let file = AssertUnwindSafe(file);
-    catch_user_unwind(|| FS::close({ file }.0)).into_raw()
+    catch_user_unwind(|| FS::close(file)).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userread<FS: SyncFileSystem>(
@@ -178,13 +293,10 @@ pub(crate) unsafe extern "system" fn userread<FS: SyncFileSystem>(
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
     let buffer = slice::from_raw_parts_mut(buffer.cast(), sizebytes as usize);
-    let buffer = AssertUnwindSafe(buffer);
-
     let file = Pin::new_unchecked(&mut *handle.cast());
-    let file = AssertUnwindSafe(file);
 
     catch_user_unwind(|| {
-        let read = FS::read({ file }.0, { buffer }.0)?;
+        let read = FS::read(file, buffer)?;
         *bytesread = read;
         if read < sizebytes {
             Err(Error::FileEof)
@@ -201,9 +313,7 @@ pub(crate) unsafe extern "system" fn userseek<FS: SyncFileSystem>(
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
     let file = Pin::new_unchecked(&mut *handle.cast());
-    let file = AssertUnwindSafe(file);
-
-    catch_user_unwind(|| FS::seek({ file }.0, pos)).into_raw()
+    catch_user_unwind(|| FS::seek(file, pos)).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userasyncread<FS: AsyncFileSystem>(
@@ -226,14 +336,17 @@ pub trait ListenFileSystem {
     fn open(name: &CStr, size: u32, handle: usize) {
         let _ = (name, size, handle);
     }
+
     /// Callback for after a file is closed.
     fn close(handle: usize) {
         let _ = handle;
     }
+
     /// Callback for after a read operation.
     fn read(handle: usize, buffer: &[u8], eof: bool) {
         let _ = (handle, buffer, eof);
     }
+
     /// Callback for after a seek operation.
     fn seek(handle: usize, pos: u32) {
         let _ = (handle, pos);

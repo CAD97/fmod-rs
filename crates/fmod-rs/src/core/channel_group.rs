@@ -4,7 +4,7 @@ use {
         utils::{catch_user_unwind, fmod_get_string},
         *,
     },
-    std::{ffi::c_void, ops::Deref, panic::AssertUnwindSafe, ptr},
+    std::{ffi::c_void, ops::Deref, ptr},
 };
 
 opaque! {
@@ -133,29 +133,30 @@ pub(crate) unsafe extern "system" fn channel_group_callback<C: ChannelGroupCallb
     commanddata1: *mut c_void,
     commanddata2: *mut c_void,
 ) -> FMOD_RESULT {
-    if controltype != FMOD_CHANNELCONTROL_CHANNELGROUP {
+    let control_type = ChannelControlType::from_raw(controltype);
+    if control_type != ChannelControlType::ChannelGroup {
         whoops!(no_panic: "channel group callback called with channel");
-        return FMOD_ERR_INVALID_PARAM;
+        return Error::InvalidParam.into_raw();
     }
 
-    let group = AssertUnwindSafe(ChannelGroup::from_raw(
-        channelcontrol as *mut FMOD_CHANNELGROUP,
-    ));
-    match callbacktype {
-        | FMOD_CHANNELCONTROL_CALLBACK_END
-        | FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE
-        | FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT => {
+    let callback_type = ChannelControlCallbackType::from_raw(callbacktype);
+    let group = ChannelGroup::from_raw(channelcontrol as *mut FMOD_CHANNELGROUP);
+    catch_user_unwind(|| match callback_type {
+        | ChannelControlCallbackType::End
+        | ChannelControlCallbackType::VirtualVoice
+        | ChannelControlCallbackType::SyncPoint => {
             whoops!(no_panic: "invalid callback type {:?} for channel group", callbacktype);
-            FMOD_ERR_INVALID_PARAM
+            yeet!(Error::InvalidParam)
         },
-        FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION => {
-            let mut direct = AssertUnwindSafe(&mut *(commanddata1 as *mut f32));
-            let mut reverb = AssertUnwindSafe(&mut *(commanddata2 as *mut f32));
-            catch_user_unwind(move || Ok(C::occlusion(&group, &mut direct, &mut reverb))).into_raw()
+        ChannelControlCallbackType::Occlusion => {
+            let mut direct = &mut *(commanddata1 as *mut f32);
+            let mut reverb = &mut *(commanddata2 as *mut f32);
+            Ok(C::occlusion(&group, &mut direct, &mut reverb))
         },
         _ => {
-            whoops!(no_panic: "unknown channel callback type {:?}", callbacktype);
-            FMOD_ERR_INVALID_PARAM
+            whoops!(no_panic: "unknown channel callback type {:?}", callback_type);
+            yeet!(Error::InvalidParam)
         },
-    }
+    })
+    .into_raw()
 }

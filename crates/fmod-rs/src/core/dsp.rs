@@ -462,7 +462,8 @@ pub unsafe trait DspCallback {
     /// Called when a DSP's data parameter can be released.
     ///
     /// The callback should free the data pointer if it is no longer required.
-    unsafe fn data_parameter_release(data: *mut [u8], index: i32) -> Result {
+    unsafe fn data_parameter_release(dsp: &Dsp, data: *mut [u8], index: i32) -> Result {
+        let _ = (dsp, data, index);
         Ok(())
     }
 }
@@ -472,12 +473,13 @@ pub(crate) unsafe extern "system" fn dsp_callback<C: DspCallback>(
     kind: FMOD_DSP_CALLBACK_TYPE,
     data: *mut c_void,
 ) -> FMOD_RESULT {
+    let dsp = Dsp::from_raw(dsp);
     match kind {
         FMOD_DSP_CALLBACK_DATAPARAMETERRELEASE => {
             let data = data as *mut FMOD_DSP_DATA_PARAMETER_INFO;
             let index = (*data).index;
             let data = ptr::slice_from_raw_parts_mut((*data).data.cast(), (*data).length as usize);
-            catch_user_unwind(|| C::data_parameter_release(data, index)).into_raw()
+            catch_user_unwind(|| C::data_parameter_release(dsp, data, index)).into_raw()
         },
         _ => {
             whoops!(no_panic: "unknown dsp callback type {:?}", kind);

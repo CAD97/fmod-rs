@@ -1,3 +1,5 @@
+//! Functionality relating to FMOD's memory management.
+
 use {
     crate::utils::{catch_user_unwind, str_from_nonnull_unchecked},
     fmod::{raw::*, *},
@@ -8,15 +10,6 @@ use {
         ptr,
     },
 };
-
-/// Information on the memory usage of FMOD.
-pub struct MemoryStats {
-    /// Currently allocated memory at time of call.
-    pub current_alloced: i32,
-    /// Maximum allocated memory since [System::init] or
-    /// [memory::initialize].
-    pub max_alloced: i32,
-}
 
 /// Returns information on the memory usage of FMOD.
 ///
@@ -31,7 +24,7 @@ pub struct MemoryStats {
 /// Note that if using [memory::initialize], the memory usage will be
 /// slightly higher than without it, as FMOD has to have a small amount of
 /// memory overhead to manage the available memory.
-pub fn get_stats(blocking: bool) -> Result<MemoryStats> {
+pub fn get_stats(blocking: bool) -> Result<Stats> {
     // prevent racing System init
     let _lock = GLOBAL_SYSTEM_STATE.read();
 
@@ -40,34 +33,23 @@ pub fn get_stats(blocking: bool) -> Result<MemoryStats> {
     ffi!(FMOD_Memory_GetStats(
         &mut current_alloced,
         &mut max_alloced,
-        if blocking { 1 } else { 0 }
+        blocking as FMOD_BOOL,
     ))?;
 
-    Ok(MemoryStats {
+    Ok(Stats {
         current_alloced,
         max_alloced,
     })
 }
 
-/// Specifies that FMOD should use its default method to allocate and free
-/// memory.
-///
-/// To specify a custom memory management strategy, use a different
-/// `initialize` in [this module][memory].
-///
-/// # Safety
-///
-/// This function must be called before any FMOD [System] object is created.
-pub unsafe fn initialize() -> Result {
-    ffi!(FMOD_Memory_Initialize(
-        ptr::null_mut(),
-        0,
-        None,
-        None,
-        None,
-        0
-    ))?;
-    Ok(())
+/// Information on the memory usage of FMOD.
+#[derive(Debug)]
+pub struct Stats {
+    /// Currently allocated memory at time of call.
+    pub current_alloced: i32,
+    /// Maximum allocated memory since [System::init] or
+    /// [memory::initialize].
+    pub max_alloced: i32,
 }
 
 /// Specifies for FMOD to allocate and free memory in a user supplied
@@ -90,7 +72,7 @@ pub unsafe fn initialize_pool(pool: &'static mut [MaybeUninit<u8>]) -> Result {
     let pool_len = pool.len() % 512;
     ffi!(FMOD_Memory_Initialize(
         pool.as_mut_ptr().cast(),
-        pool_len.try_into().unwrap_or(i32::MAX),
+        pool_len.try_into().unwrap_or(i32::MAX % 512),
         None,
         None,
         None,
@@ -99,11 +81,60 @@ pub unsafe fn initialize_pool(pool: &'static mut [MaybeUninit<u8>]) -> Result {
     Ok(())
 }
 
-/// User callbacks for FMOD to allocate and free memory.
+/// Specifies for FMOD to allocate and free memory through user supplied
+/// callbacks.
 ///
-/// Callback implementations must be thread safe.
+/// Callbacks will be used only for memory types specified by the
+/// `mem_type_flags` parameter.
+///
+/// `realloc` is implemented via an allocation of the new size, copy from
+/// old address to new, then a free of the old address.
+///
+/// # Safety
+///
+/// This function must be called before any FMOD [System] object is created.
+pub unsafe fn initialize_alloc<A: AllocCallback>(mem_type_flags: MemoryType) -> Result {
+    ffi!(FMOD_Memory_Initialize(
+        ptr::null_mut(),
+        0,
+        Some(useralloc::<A>),
+        None,
+        Some(userfree::<A>),
+        mem_type_flags.into_raw(),
+    ))?;
+    Ok(())
+}
+
+/// Specifies for FMOD to allocate and free memory through user supplied
+/// callbacks.
+///
+/// Callbacks will be used only for memory types specified by the
+/// `mem_type_flags` parameter.
+///
+/// # Safety
+///
+/// This function must be called before any FMOD [System] object is created.
+//
+// FEAT(specialization): automatically do this via specialization
+pub unsafe fn initialize_realloc<A: ReallocCallback>(mem_type_flags: MemoryType) -> Result {
+    ffi!(FMOD_Memory_Initialize(
+        ptr::null_mut(),
+        0,
+        Some(useralloc::<A>),
+        Some(userrealloc::<A>),
+        Some(userfree::<A>),
+        mem_type_flags.into_raw(),
+    ))?;
+    Ok(())
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// User callbacks for FMOD to (re)allocate and free memory.
+///
+/// Callback implementations must be thread safe and must not unwind.
 #[allow(clippy::missing_safety_doc)]
-pub unsafe trait FmodAlloc {
+pub unsafe trait AllocCallback {
     /// Memory allocation callback compatible with ANSI malloc.
     ///
     /// Returning an aligned pointer, of 16 byte alignment is recommended
@@ -129,9 +160,46 @@ pub unsafe trait FmodAlloc {
     unsafe fn free(ptr: *mut u8, kind: MemoryType, source: Option<&str>);
 }
 
+unsafe extern "system" fn useralloc<A: AllocCallback>(
+    size: c_uint,
+    kind: FMOD_MEMORY_TYPE,
+    source: *const c_char,
+) -> *mut c_void {
+    catch_user_unwind(|| {
+        // SAFETY: these strings are usually produced directly by FMOD, so they
+        // should *actually* be guaranteed to be UTF-8 like FMOD claims.
+        // However, plugins can also call this function, so we can't be sure.
+        // Because alloc is such a perf-critical path and plugins are developer
+        // controlled, assuming UTF-8 is both necessary and probably fine.
+        let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
+        Ok(A::alloc(size, MemoryType::from_raw(kind), source).cast())
+    })
+    .unwrap_or(ptr::null_mut())
+}
+
+unsafe extern "system" fn userrealloc<A: ReallocCallback>(
+    ptr: *mut c_void,
+    size: c_uint,
+    kind: FMOD_MEMORY_TYPE,
+    source: *const c_char,
+) -> *mut c_void {
+    catch_user_unwind(|| {
+        // SAFETY: these strings are usually produced directly by FMOD, so they
+        // should *actually* be guaranteed to be UTF-8 like FMOD claims.
+        // However, plugins can also call this function, so we can't be sure.
+        // Because alloc is such a perf-critical path and plugins are developer
+        // controlled, assuming UTF-8 is both necessary and probably fine.
+        let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
+        Ok(A::realloc(ptr.cast(), size, MemoryType::from_raw(kind), source).cast())
+    })
+    .unwrap_or(ptr::null_mut())
+}
+
 /// User callbacks for FMOD to allocate and free memory.
+///
+/// Callback implementations must be thread safe and must not unwind.
 #[allow(clippy::missing_safety_doc)]
-pub unsafe trait FmodRealloc: FmodAlloc {
+pub unsafe trait ReallocCallback: AllocCallback {
     /// Memory reallocation callback compatible with ANSI realloc.
     ///
     /// When allocating new memory, the contents of the old memory block
@@ -150,95 +218,49 @@ pub unsafe trait FmodRealloc: FmodAlloc {
     unsafe fn realloc(ptr: *mut u8, size: u32, kind: MemoryType, source: Option<&str>) -> *mut u8;
 }
 
-unsafe extern "system" fn useralloc<A: FmodAlloc>(
-    size: c_uint,
-    kind: FMOD_MEMORY_TYPE,
-    source: *const c_char,
-) -> *mut c_void {
-    catch_user_unwind(|| {
-        // SAFETY: these strings are produced directly by FMOD, so they
-        // should *actually* be guaranteed to be UTF-8 like FMOD claims.
-        let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
-        Ok(A::alloc(size, MemoryType::from_raw(kind), source).cast())
-    })
-    .unwrap_or(ptr::null_mut())
-}
-
-unsafe extern "system" fn userrealloc<A: FmodRealloc>(
-    ptr: *mut c_void,
-    size: c_uint,
-    kind: FMOD_MEMORY_TYPE,
-    source: *const c_char,
-) -> *mut c_void {
-    catch_user_unwind(|| {
-        // SAFETY: these strings are produced directly by FMOD, so they
-        // should *actually* be guaranteed to be UTF-8 like FMOD claims.
-        let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
-        Ok(A::realloc(ptr.cast(), size, MemoryType::from_raw(kind), source).cast())
-    })
-    .unwrap_or(ptr::null_mut())
-}
-
-unsafe extern "system" fn userfree<A: FmodAlloc>(
+unsafe extern "system" fn userfree<A: AllocCallback>(
     ptr: *mut c_void,
     kind: FMOD_MEMORY_TYPE,
     source: *const c_char,
 ) {
     catch_user_unwind(|| {
-        // SAFETY: these strings are produced directly by FMOD, so they
+        // SAFETY: these strings are usually produced directly by FMOD, so they
         // should *actually* be guaranteed to be UTF-8 like FMOD claims.
+        // However, plugins can also call this function, so we can't be sure.
+        // Because alloc is such a perf-critical path and plugins are developer
+        // controlled, assuming UTF-8 is both necessary and probably fine.
         let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
         Ok(A::free(ptr.cast(), MemoryType::from_raw(kind), source))
     })
     .unwrap_or_default()
 }
 
-/// Specifies for FMOD to allocate and free memory through user supplied
-/// callbacks.
-///
-/// Callbacks will be used only for memory types specified by the
-/// `mem_type_flags` parameter.
-///
-/// `realloc` is implemented via an allocation of the new size, copy from
-/// old address to new, then a free of the old address.
-///
-/// # Safety
-///
-/// This function must be called before any FMOD [System] object is created.
-pub unsafe fn initialize_alloc<A: FmodAlloc>(mem_type_flags: MemoryType) -> Result {
-    ffi!(FMOD_Memory_Initialize(
-        ptr::null_mut(),
-        0,
-        Some(useralloc::<A>),
-        None,
-        Some(userfree::<A>),
-        mem_type_flags.into_raw(),
-    ))?;
-    Ok(())
+// -------------------------------------------------------------------------------------------------
+
+flags! {
+    /// Bitfields for memory allocation type being passed into FMOD memory callbacks.
+    pub struct MemoryType: FMOD_MEMORY_TYPE {
+        #[default]
+        /// Standard memory.
+        Normal       = FMOD_MEMORY_NORMAL,
+        /// Stream file buffer, size controllable with [System::set_stream_buffer_size].
+        StreamFile   = FMOD_MEMORY_STREAM_FILE,
+        /// Stream decode buffer, size controllable with [CreateSoundExInfo::decode_buffer_size].
+        StreamDecode = FMOD_MEMORY_STREAM_DECODE,
+        /// Sample data buffer. Raw audio data, usually PCM/MPEG/ADPCM/XMA data.
+        SampleData   = FMOD_MEMORY_SAMPLEDATA,
+        /// Deprecated.
+        DspBuffer    = FMOD_MEMORY_DSP_BUFFER,
+        /// Memory allocated by a third party plugin.
+        Plugin       = FMOD_MEMORY_PLUGIN,
+        /// Persistent memory. Memory will be freed when the system is freed.
+        Persistent   = FMOD_MEMORY_PERSISTENT,
+        /// Mask specifying all memory types.
+        All          = FMOD_MEMORY_ALL,
+    }
 }
 
-/// Specifies for FMOD to allocate and free memory through user supplied
-/// callbacks.
-///
-/// Callbacks will be used only for memory types specified by the
-/// `mem_type_flags` parameter.
-///
-/// # Safety
-///
-/// This function must be called before any FMOD [System] object is created.
-//
-// FEAT(specialization): automatically do this via specialization
-pub unsafe fn initialize_realloc<A: FmodRealloc>(mem_type_flags: MemoryType) -> Result {
-    ffi!(FMOD_Memory_Initialize(
-        ptr::null_mut(),
-        0,
-        Some(useralloc::<A>),
-        Some(userrealloc::<A>),
-        Some(userfree::<A>),
-        mem_type_flags.into_raw(),
-    ))?;
-    Ok(())
-}
+// -------------------------------------------------------------------------------------------------
 
 /// Specifies for FMOD to allocate and free memory via the Rust global
 /// allocator.
@@ -257,17 +279,18 @@ pub unsafe fn initialize_realloc<A: FmodRealloc>(mem_type_flags: MemoryType) -> 
 /// In most cases, you should prefer leaving the defaults (FMOD will use the
 /// system allocator) or one of the other [`memory::initialize`] variants
 /// which don't require this overhead.
-pub enum FmodAllocBridge {}
+pub enum AllocViaRust {}
 
-unsafe impl FmodAlloc for FmodAllocBridge {
+unsafe impl AllocCallback for AllocViaRust {
     fn alloc(size: u32, _: MemoryType, _: Option<&str>) -> *mut u8 {
         unsafe {
-            let layout = Layout::from_size_align_unchecked(size as usize + 16, 16);
+            let layout = Layout::from_size_align_unchecked(size as usize + 16, 16).pad_to_align();
             let ptr = alloc(layout);
             if ptr.is_null() {
                 return ptr;
             }
-            ::static_assertions::const_assert!(mem::size_of::<usize>() <= 16);
+
+            static_assert!(mem::size_of::<usize>() <= 16);
             ptr.cast::<usize>().write(layout.size());
             ptr.add(16)
         }
@@ -281,17 +304,19 @@ unsafe impl FmodAlloc for FmodAllocBridge {
     }
 }
 
-unsafe impl FmodRealloc for FmodAllocBridge {
+unsafe impl ReallocCallback for AllocViaRust {
     unsafe fn realloc(ptr: *mut u8, size: u32, _: MemoryType, _: Option<&str>) -> *mut u8 {
-        let new_size = size as usize + 16;
         let ptr = ptr.sub(16);
         let old_size = ptr.cast::<usize>().read();
         let old_layout = Layout::from_size_align_unchecked(old_size, 16);
-        let ptr = realloc(ptr, old_layout, new_size);
+
+        let new_layout = Layout::from_size_align_unchecked(size as usize + 16, 16).pad_to_align();
+        let ptr = realloc(ptr, old_layout, new_layout.size());
         if ptr.is_null() {
             return ptr;
         }
-        ptr.cast::<usize>().write(new_size);
+
+        ptr.cast::<usize>().write(new_layout.size());
         ptr.add(16)
     }
 }

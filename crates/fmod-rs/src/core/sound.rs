@@ -64,12 +64,12 @@ impl Sound {
     /// This will cause a slight delay and memory increase, as FMOD will scan
     /// the whole during creation to find the correct length. This flag also
     /// creates a seek table to enable sample accurate seeking.
-    pub fn get_length(&self, length_type: TimeUnit) -> Result<u32> {
+    pub fn get_length(&self, unit: TimeUnit) -> Result<u32> {
         let mut length = 0;
         ffi!(FMOD_Sound_GetLength(
             self.as_raw(),
             &mut length,
-            length_type.into_raw(),
+            unit.into_raw(),
         ))?;
         Ok(length)
     }
@@ -189,7 +189,7 @@ impl Sound {
     /// is set up, attenuation will automatically occur for a sound based on the
     /// relative angle of the direction the cone is facing, vs the angle between
     /// the sound and the listener.
-    pub fn set_3d_cone_settings(&self, settings: Cone3dSettings) -> Result<()> {
+    pub fn set_3d_cone_settings(&self, settings: Cone3dSettings) -> Result {
         ffi!(FMOD_Sound_Set3DConeSettings(
             self.as_raw(),
             settings.inside_angle,
@@ -366,44 +366,46 @@ impl Sound {
     ///
     /// The [Sound]'s mode must be set to [Mode::LoopNormal] or [Mode::LoopBidi]
     /// for loop points to affect playback.
-    pub fn set_loop_points(
-        &self,
-        loop_points: impl RangeBounds<u32>,
-        length_type: TimeUnit,
-    ) -> Result {
+    pub fn set_loop_points(&self, loop_points: impl RangeBounds<Time>) -> Result {
         let loop_start = match loop_points.start_bound() {
             Bound::Included(&start) => start,
-            Bound::Excluded(&start) => start.saturating_add(1),
-            Bound::Unbounded => 0,
+            Bound::Excluded(&start) => Time {
+                value: start.value.saturating_add(1),
+                ..start
+            },
+            Bound::Unbounded => Time::new(0, TimeUnit::Pcm),
         };
-        let (loop_end, loop_end_type) = match loop_points.end_bound() {
-            Bound::Included(&end) => (end, length_type),
-            Bound::Excluded(&end) => (end.saturating_sub(1), length_type),
-            Bound::Unbounded => (
+        let loop_end = match loop_points.end_bound() {
+            Bound::Included(&end) => end,
+            Bound::Excluded(&end) => Time {
+                value: end.value.saturating_sub(1),
+                ..end
+            },
+            Bound::Unbounded => Time::new(
                 self.get_length(TimeUnit::Pcm)?.saturating_sub(1),
                 TimeUnit::Pcm,
             ),
         };
         ffi!(FMOD_Sound_SetLoopPoints(
             self.as_raw(),
-            loop_start,
-            length_type.into_raw(),
-            loop_end,
-            loop_end_type.into_raw(),
+            loop_start.value,
+            loop_start.unit.into_raw(),
+            loop_end.value,
+            loop_end.unit.into_raw(),
         ))?;
         Ok(())
     }
 
     /// Retrieves the loop points for a sound.
-    pub fn get_loop_points(&self, length_type: TimeUnit) -> Result<RangeInclusive<u32>> {
+    pub fn get_loop_points(&self, unit: TimeUnit) -> Result<RangeInclusive<u32>> {
         let mut start = 0;
         let mut end = 0;
         ffi!(FMOD_Sound_GetLoopPoints(
             self.as_raw(),
             &mut start,
-            length_type.into_raw(),
+            unit.into_raw(),
             &mut end,
-            length_type.into_raw(),
+            unit.into_raw(),
         ))?;
         Ok(start..=end)
     }
@@ -596,7 +598,7 @@ impl Sound {
     /// A stream can reset its stream buffer and position synchronization by
     /// calling [`Channel::set_position`]. This causes reset and flush of the
     /// stream buffer.
-    pub fn seek_data(&self, pcm: u32) -> Result<()> {
+    pub fn seek_data(&self, pcm: u32) -> Result {
         ffi!(FMOD_Sound_SeekData(self.as_raw(), pcm))?;
         Ok(())
     }
@@ -819,11 +821,7 @@ impl Sound {
     /// For for more information on sync points see [Sync Points].
     ///
     /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
-    pub fn get_sync_point_offset(
-        &self,
-        sync_point: &SyncPoint,
-        offset_type: TimeUnit,
-    ) -> Result<u32> {
+    pub fn get_sync_point_offset(&self, sync_point: &SyncPoint, unit: TimeUnit) -> Result<u32> {
         let mut offset = 0;
         ffi!(FMOD_Sound_GetSyncPointInfo(
             self.as_raw(),
@@ -831,7 +829,7 @@ impl Sound {
             ptr::null_mut(),
             0,
             &mut offset,
-            offset_type.into_raw(),
+            unit.into_raw(),
         ))?;
         Ok(offset)
     }
@@ -843,15 +841,14 @@ impl Sound {
     /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
     pub fn add_sync_point(
         &self,
-        offset: u32,
-        offset_type: TimeUnit,
+        offset: Time,
         name: Option<&CStr8>,
     ) -> Result<Handle<'static, SyncPoint>> {
         let mut point = ptr::null_mut();
         ffi!(FMOD_Sound_AddSyncPoint(
             self.as_raw(),
-            offset,
-            offset_type.into_raw(),
+            offset.value,
+            offset.unit.into_raw(),
             name.map(|s| s.as_c_str().as_ptr()).unwrap_or(ptr::null()),
             &mut point,
         ))?;
@@ -870,15 +867,6 @@ impl Sound {
         ))?;
         Ok(())
     }
-}
-
-opaque! {
-    /// Named marker for a given point in time.
-    ///
-    /// For for more information on sync points see [Sync Points].
-    ///
-    /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
-    weak class SyncPoint = FMOD_SYNCPOINT, FMOD_SYNCPOINT_*;
 }
 
 /// # General.

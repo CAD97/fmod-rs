@@ -1,3 +1,5 @@
+#![doc = include_str!("README.md")]
+
 mod channel;
 mod channel_control;
 mod channel_group;
@@ -6,6 +8,7 @@ mod dsp;
 mod dsp_connection;
 mod effect;
 mod ex;
+mod general;
 mod geometry;
 mod reverb_3d;
 mod sound;
@@ -19,5 +22,5 @@ pub mod thread;
 
 pub use self::{
     channel::*, channel_control::*, channel_group::*, common::*, dsp::*, dsp_connection::*,
-    effect::*, ex::*, geometry::*, reverb_3d::*, sound::*, sound_group::*, system::*,
+    effect::*, ex::*, general::*, geometry::*, reverb_3d::*, sound::*, sound_group::*, system::*,
 };

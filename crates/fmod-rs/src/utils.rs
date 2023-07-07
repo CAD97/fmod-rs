@@ -5,7 +5,7 @@ use {
         ffi::c_char,
         ffi::CStr,
         mem::{self, MaybeUninit},
-        panic::UnwindSafe,
+        panic::AssertUnwindSafe,
         ptr,
     },
 };
@@ -151,9 +151,10 @@ pub const fn decode_sbcd_u16(encoded: u16) -> u16 {
 
 pub fn catch_user_unwind<F, R>(f: F) -> Result<R>
 where
-    F: UnwindSafe + FnOnce() -> Result<R>,
+    F: FnOnce() -> Result<R>,
 {
-    std::panic::catch_unwind(f).unwrap_or_else(|err| {
+    let f = AssertUnwindSafe(f);
+    std::panic::catch_unwind(|| f()).unwrap_or_else(|err| {
         let callback = std::any::type_name::<F>();
         if let Some(e) = cool_asserts::get_panic_message(&err) {
             whoops!(no_panic: "FMOD.rs panicked in {callback}: {e}");
@@ -191,14 +192,14 @@ pub unsafe fn fmod_get_string(
                 return Ok(());
             },
             Err(Error::Truncated) => (), // continue
-            Err(err) => return Err(err),
+            Err(err) => yeet!(err),
         }
 
         // keep trying with larger buffers
         s.reserve(STACK_BUFFER_SIZE * 2);
     }
 
-    let mut buf = mem::take(s.as_mut_vec());
+    let buf = s.as_mut_vec();
     loop {
         // try again
         match retry(buf.spare_capacity_mut()) {
@@ -207,22 +208,19 @@ pub unsafe fn fmod_get_string(
                 // keep trying with larger buffers
                 buf.reserve(buf.capacity() * 2);
             },
-            Err(err) => return Err(err),
+            Err(err) => yeet!(err),
         }
     }
 
     // now we need to set the vector length and verify proper UTF-8
+    let mut buf = mem::take(s).into_bytes();
     buf.set_len(CStr::from_ptr(buf.as_ptr().cast()).to_bytes().len());
-    match String::from_utf8_lossy(&buf) {
-        Cow::Borrowed(_) => {
-            // valid, swap it in
-            mem::swap(s.as_mut_vec(), &mut buf);
-        },
-        Cow::Owned(fix) => {
-            // swap in the fixed UTF-8
-            mem::swap(s.as_mut_vec(), &mut fix.into_bytes());
-        },
-    }
+    *s = match String::from_utf8_lossy(&buf) {
+        // valid, use the existing buffer
+        Cow::Borrowed(_) => String::from_utf8_unchecked(buf),
+        // fixed, use the newly fixed buffer
+        Cow::Owned(fix) => fix,
+    };
 
     Ok(())
 }

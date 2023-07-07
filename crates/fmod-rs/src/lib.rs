@@ -46,16 +46,13 @@ mod macros;
 
 extern crate self as fmod;
 
-#[doc = include_str!("core/README.md")]
 pub mod core;
 #[cfg(feature = "fsbank")]
-#[doc = include_str!("fsbank/README.md")]
 pub mod fsbank;
 #[cfg(doc)]
 #[cfg_attr(feature = "unstable", doc(cfg(doc)))]
 pub mod platform;
 #[cfg(feature = "studio")]
-#[doc = include_str!("studio/README.md")]
 pub mod studio;
 
 mod error;
@@ -71,9 +68,6 @@ pub use {
 #[doc(inline)]
 pub use self::{error::*, handle::*};
 
-#[doc(hidden)]
-pub use self::macros::*;
-
 raw! {
     /// Raw access to the FMOD C API.
     pub mod raw {
@@ -85,12 +79,3 @@ raw! {
         pub use fmod_studio_sys::*;
     }
 }
-
-/// Current FMOD version number. (2.02.14)
-///
-/// ```rust
-/// assert_eq!(fmod::VERSION.product, 2);
-/// assert_eq!(fmod::VERSION.major, 2);
-/// assert_eq!(fmod::VERSION.minor, 14);
-/// ```
-pub const VERSION: Version = Version::from_raw(raw::FMOD_VERSION);

@@ -3,9 +3,6 @@ use {
     std::{error::Error as _, fmt, io, num::NonZeroI32},
 };
 
-static_assertions::assert_type_eq_all!(i32, FMOD_RESULT);
-static_assertions::const_assert_eq!(FMOD_OK, 0i32);
-
 macro_rules! error_enum_struct {
     {$(
         $(#[$meta:meta])*
@@ -22,7 +19,8 @@ macro_rules! error_enum_struct {
 
         impl $Name {
             raw! {
-                pub const fn from_raw(raw: i32) -> Result<(), Self> {
+                pub const fn from_raw(raw: FMOD_RESULT) -> Result {
+                    static_assert!(FMOD_OK == 0);
                     match NonZeroI32::new(raw) {
                         Some(raw) => Err($Name { raw }),
                         None => Ok(()),
@@ -245,7 +243,7 @@ impl std::error::Error for Error {
 
         // SAFETY: FMOD_ErrorString is a C `static` function which thus isn't
         // bindgen'd, but hand implemented in fmod-core-sys. As such, we're
-        // 100% sure that it always returns valid nul-terminated ASCII.
+        // 100% certain that it always returns valid nul-terminated ASCII.
         unsafe { CStr8::from_ptr(FMOD_ErrorString(self.raw.into()) as _) }
     }
 }

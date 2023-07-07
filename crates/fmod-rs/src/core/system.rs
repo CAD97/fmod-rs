@@ -35,7 +35,7 @@ impl System {
             whoops!("Only one FMOD system may be created safely. \
                 Read the docs on `System::new_unchecked` if you actually mean to create more than one system. \
                 Note: constructing a studio system automatically creates a core system for you!");
-            return Err(Error::Initialized);
+            yeet!(Error::Initialized);
         }
 
         // guard against racing other free API calls
@@ -742,15 +742,11 @@ impl System {
     /// Stream may still stutter if the codec uses a large amount of cpu time,
     /// which impacts the smaller, internal 'decode' buffer. The decode buffer
     /// size is changeable via [CreateSoundExInfo].
-    pub fn set_stream_buffer_size(
-        &self,
-        file_buffer_size: u32,
-        file_buffer_size_type: TimeUnit,
-    ) -> Result {
+    pub fn set_stream_buffer_size(&self, file_buffer_size: Time) -> Result {
         ffi!(FMOD_System_SetStreamBufferSize(
             self.as_raw(),
-            file_buffer_size,
-            file_buffer_size_type.into_raw(),
+            file_buffer_size.value,
+            file_buffer_size.unit.into_raw(),
         ))?;
         Ok(())
     }
@@ -1431,7 +1427,7 @@ impl System {
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
         ) {
             whoops!("System::create_sound called with extended mode {mode:?}; use create_sound_ex instead");
-            return Err(Error::InvalidParam);
+            yeet!(Error::InvalidParam);
         }
 
         let mode = Mode::into_raw(mode);
@@ -1498,7 +1494,7 @@ impl System {
             Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
         ) {
             whoops!("System::create_stream called with extended mode {mode:?}; use create_sound_ex instead");
-            return Err(Error::InvalidParam);
+            yeet!(Error::InvalidParam);
         }
 
         let mode = Mode::into_raw(mode);

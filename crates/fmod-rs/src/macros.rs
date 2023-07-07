@@ -1,3 +1,18 @@
+macro_rules! static_assert {
+    ($cond:expr $(,)?) => {
+        const _: () = { ::std::assert!($cond) };
+    };
+    ($cond:expr, $msg:expr) => {
+        const _: () = { ::std::assert!($cond, $msg) };
+    };
+}
+
+macro_rules! yeet {
+    ($err:expr) => {
+        return Err($err)?
+    };
+}
+
 macro_rules! whoops {
     {
         panic: $($args:tt)*
@@ -52,7 +67,7 @@ macro_rules! opaque {
         impl ::std::panic::UnwindSafe for $Name {}
         impl ::std::panic::RefUnwindSafe for $Name {}
         impl fmod::Sealed for $Name {}
-        unsafe impl fmod::FmodResource for $Name {
+        unsafe impl fmod::Resource for $Name {
             type Raw = $Raw;
 
             unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self {
@@ -70,7 +85,8 @@ macro_rules! opaque {
 
         impl ::std::fmt::Debug for $Name {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                write!(f, concat!(stringify!($Name), "({:p})"), self)
+                // TODO: enable using an fmod::studio:: prefix for studio types
+                write!(f, concat!("fmod::", stringify!($Name), "({:p})"), self)
             }
         }
     };
@@ -456,8 +472,8 @@ macro_rules! fmod_struct {
             $($body)*
         }
 
-        ::static_assertions::assert_eq_size!($Name, $Raw);
-        ::static_assertions::assert_eq_align!($Name, $Raw);
+        static_assert!(::std::mem::size_of::<$Name>() == ::std::mem::size_of::<$Raw>());
+        static_assert!(::std::mem::align_of::<$Name>() == ::std::mem::align_of::<$Raw>());
 
         impl $Name {
             raw! {

@@ -4,7 +4,6 @@ use {
         ffi::c_void,
         ops::Deref,
         ops::{Bound, RangeBounds, RangeInclusive},
-        panic::AssertUnwindSafe,
         ptr,
     },
 };
@@ -106,11 +105,11 @@ impl Channel {
     /// will have to specify [`Mode::AccurateTime`] when loading or opening the
     /// sound. This means there is a slight delay as FMOD scans the whole file
     /// when loading the sound to create this table.
-    pub fn set_position(&self, position: u32, pos_type: TimeUnit) -> Result {
+    pub fn set_position(&self, position: Time) -> Result {
         ffi!(FMOD_Channel_SetPosition(
             self.as_raw(),
-            position,
-            pos_type.into_raw(),
+            position.value,
+            position.unit.into_raw(),
         ))?;
         Ok(())
     }
@@ -126,12 +125,12 @@ impl Channel {
     /// If [`TimeUnit::Ms`] or [`TimeUnit::PcmBytes`] are used, the value is
     /// internally converted from [`TimeUnit::Pcm`], so the retrieved value may
     /// not exactly match the set value.
-    pub fn get_position(&self, pos_type: TimeUnit) -> Result<u32> {
+    pub fn get_position(&self, unit: TimeUnit) -> Result<u32> {
         let mut position = 0;
         ffi!(FMOD_Channel_GetPosition(
             self.as_raw(),
             &mut position,
-            pos_type.into_raw(),
+            unit.into_raw(),
         ))?;
         Ok(position)
     }
@@ -197,36 +196,38 @@ impl Channel {
     ///
     /// The [`Channel`]'s mode must be set to [`Mode::LoopNormal`] or
     /// [`Mode::LoopBidi`] for loop points to affect playback.
-    pub fn set_loop_points(
-        &self,
-        loop_points: impl RangeBounds<u32>,
-        length_type: TimeUnit,
-    ) -> Result {
+    pub fn set_loop_points(&self, loop_points: impl RangeBounds<Time>) -> Result {
         let loop_start = match loop_points.start_bound() {
             Bound::Included(&start) => start,
-            Bound::Excluded(&start) => start.saturating_add(1),
-            Bound::Unbounded => 0,
+            Bound::Excluded(&start) => Time {
+                value: start.value.saturating_add(1),
+                ..start
+            },
+            Bound::Unbounded => Time::new(0, TimeUnit::Pcm),
         };
-        let (loop_end, loop_end_type) = match loop_points.end_bound() {
-            Bound::Included(&end) => (end, length_type),
-            Bound::Excluded(&end) => (end.saturating_sub(1), length_type),
+        let loop_end = match loop_points.end_bound() {
+            Bound::Included(&end) => end,
+            Bound::Excluded(&end) => Time {
+                value: end.value.saturating_sub(1),
+                ..end
+            },
             Bound::Unbounded => {
                 if let Some(sound) = self.get_current_sound()? {
-                    (
+                    Time::new(
                         sound.get_length(TimeUnit::Pcm)?.saturating_sub(1),
                         TimeUnit::Pcm,
                     )
                 } else {
-                    (loop_start, length_type)
+                    loop_start
                 }
             },
         };
         ffi!(FMOD_Channel_SetLoopPoints(
             self.as_raw(),
-            loop_start,
-            length_type.into_raw(),
-            loop_end,
-            loop_end_type.into_raw(),
+            loop_start.value,
+            loop_start.unit.into_raw(),
+            loop_end.value,
+            loop_end.unit.into_raw(),
         ))?;
         Ok(())
     }
@@ -238,15 +239,15 @@ impl Channel {
     /// If [`TimeUnit::Ms`] or [`TimeUnit::PcmBytes`] are used, the value is
     /// internally converted from [`TimeUnit::Pcm`], so the retrieved value may
     /// not exactly match the set value.
-    pub fn get_loop_points(&self, length_type: TimeUnit) -> Result<RangeInclusive<u32>> {
+    pub fn get_loop_points(&self, unit: TimeUnit) -> Result<RangeInclusive<u32>> {
         let mut start = 0;
         let mut end = 0;
         ffi!(FMOD_Channel_GetLoopPoints(
             self.as_raw(),
             &mut start,
-            length_type.into_raw(),
+            unit.into_raw(),
             &mut end,
-            length_type.into_raw(),
+            unit.into_raw(),
         ))?;
         Ok(start..=end)
     }
@@ -324,31 +325,33 @@ pub(crate) unsafe extern "system" fn channel_callback<C: ChannelCallback>(
     commanddata1: *mut c_void,
     commanddata2: *mut c_void,
 ) -> FMOD_RESULT {
-    if controltype != FMOD_CHANNELCONTROL_CHANNEL {
+    let control_type = ChannelControlType::from_raw(controltype);
+    if control_type != ChannelControlType::Channel {
         whoops!(no_panic: "channel callback called with channel group");
-        return FMOD_ERR_INVALID_PARAM;
+        return Error::InvalidParam.into_raw();
     }
 
+    let callback_type = ChannelControlCallbackType::from_raw(callbacktype);
     let channel = Channel::from_raw(channelcontrol as *mut FMOD_CHANNEL);
-    match callbacktype {
-        FMOD_CHANNELCONTROL_CALLBACK_END => catch_user_unwind(|| Ok(C::end(&channel))).into_raw(),
-        FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE => {
+    catch_user_unwind(|| match callback_type {
+        ChannelControlCallbackType::End => Ok(C::end(&channel)),
+        ChannelControlCallbackType::VirtualVoice => {
             let is_virtual = commanddata1 as i32 != 0;
-            catch_user_unwind(|| Ok(C::virtual_voice(&channel, is_virtual))).into_raw()
+            Ok(C::virtual_voice(&channel, is_virtual))
         },
-        FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT => {
+        ChannelControlCallbackType::SyncPoint => {
             let point = commanddata1 as i32;
-            catch_user_unwind(|| Ok(C::sync_point(&channel, point))).into_raw()
+            Ok(C::sync_point(&channel, point))
         },
-        FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION => {
-            let mut direct = AssertUnwindSafe(&mut *(commanddata1 as *mut f32));
-            let mut reverb = AssertUnwindSafe(&mut *(commanddata2 as *mut f32));
-            catch_user_unwind(move || Ok(C::occlusion(&channel, &mut direct, &mut reverb)))
-                .into_raw()
+        ChannelControlCallbackType::Occlusion => {
+            let mut direct = &mut *(commanddata1 as *mut f32);
+            let mut reverb = &mut *(commanddata2 as *mut f32);
+            Ok(C::occlusion(&channel, &mut direct, &mut reverb))
         },
         _ => {
-            whoops!(no_panic: "unknown channel callback type {:?}", callbacktype);
-            FMOD_ERR_INVALID_PARAM
+            whoops!(no_panic: "unknown channel callback type {:?}", callback_type);
+            yeet!(Error::InvalidParam)
         },
-    }
+    })
+    .into_raw()
 }

@@ -22,8 +22,14 @@ default = ["log"]
 ## Enable the FMOD Studio API.
 studio = ["dep:fmod-studio-sys"]
 
+## Enable the FMOD FSBank API.
+fsbank = []
+
 ## Enable recording FMOD debug logs using the log crate.
 log = ["dep:log"]
+
+## Enable math interoperability via the mint crate.
+mint = ["dep:mint"]
 
 ## Enable access to the raw FMOD API calls.
 raw = []
@@ -35,7 +41,7 @@ link-search = ["fmod-core-sys/link-search", "fmod-studio-sys?/link-search"]
 
 #! ### Experimental feature flags
 #!
-#! These features can change the public API and can change at any time. Be warned!
+#! These features can change public API and can change at any time. Be warned!
 
 ## Use unstable Rust features for the safe API. Currently, this means to:
 ## - Use `feature(extern_type)` for FMOD resource types.
@@ -52,6 +58,6 @@ document-features = "0.2.7"
 parking_lot = "0.12.1"
 paste = "1.0.12"
 smart-default = "0.7.1"
-static_assertions = "1.1.0"
 
 log = { version = "0.4.18", optional = true }
+mint = { version = "0.5.9", optional = true }

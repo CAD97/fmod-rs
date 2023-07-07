@@ -15,7 +15,7 @@ pub(crate) static GLOBAL_SYSTEM_STATE: RwLock<usize> = const_rwlock(0);
 
 #[allow(clippy::missing_safety_doc)]
 /// FMOD resources managed by a [Handle].
-pub unsafe trait FmodResource: fmt::Debug + Sealed {
+pub unsafe trait Resource: fmt::Debug + Sealed {
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
     type Raw;
@@ -52,33 +52,33 @@ mod sealed {
 
 /// An owning handle to an FMOD resource. When this handle is dropped, the
 /// underlying FMOD resource is released.
-pub struct Handle<'a, T: ?Sized + FmodResource> {
+pub struct Handle<'a, T: ?Sized + Resource> {
     raw: &'a T::Raw,
 }
 
-impl<T: ?Sized + FmodResource> fmt::Debug for Handle<'_, T> {
+impl<T: ?Sized + Resource> fmt::Debug for Handle<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         (**self).fmt(f)
     }
 }
 
-impl<T: ?Sized + FmodResource> Drop for Handle<'_, T> {
+impl<T: ?Sized + Resource> Drop for Handle<'_, T> {
     fn drop(&mut self) {
         let raw = self.as_raw();
 
         match unsafe { T::release(raw) } {
             Ok(()) => {
                 #[cfg(feature = "log")]
-                log::trace!("Released fmod::{self:?}");
+                log::trace!("Released {self:?}");
             },
             Err(error) => {
-                whoops!("Error releasing fmod::{self:?}: {error}");
+                whoops!("Error releasing {self:?}: {error}");
             },
         }
     }
 }
 
-impl<'a, T: ?Sized + FmodResource> Handle<'a, T> {
+impl<'a, T: ?Sized + Resource> Handle<'a, T> {
     raw! {
         pub fn into_raw(this: Self) -> *mut T::Raw {
             let this = ManuallyDrop::new(this);
@@ -96,7 +96,7 @@ impl<'a, T: ?Sized + FmodResource> Handle<'a, T> {
         let this = Self::from_raw(raw);
 
         #[cfg(feature = "log")]
-        log::trace!("Created fmod::{this:?}");
+        log::trace!("Created {this:?}");
 
         this
     }
@@ -138,7 +138,7 @@ impl<'a, T: ?Sized + FmodResource> Handle<'a, T> {
 // We take the ~~coward's~~ simple way out: we deal almost exclusively in &T,
 // and rely on the FFI barrier to keep us safe.
 
-impl<T: ?Sized + FmodResource> Deref for Handle<'_, T> {
+impl<T: ?Sized + Resource> Deref for Handle<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
