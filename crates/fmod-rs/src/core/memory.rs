@@ -1,7 +1,7 @@
 //! Functionality relating to FMOD's memory management.
 
 use {
-    crate::utils::{catch_user_unwind, str_from_nonnull_unchecked},
+    crate::utils::str_from_nonnull_unchecked,
     fmod::{raw::*, *},
     std::{
         alloc::{alloc, dealloc, realloc, Layout},
@@ -130,7 +130,7 @@ pub unsafe fn initialize_realloc<A: ReallocCallback>(mem_type_flags: MemoryType)
 
 // -------------------------------------------------------------------------------------------------
 
-/// User callbacks for FMOD to (re)allocate and free memory.
+/// User callbacks for FMOD to allocate and free memory.
 ///
 /// Callback implementations must be thread safe and must not unwind.
 #[allow(clippy::missing_safety_doc)]
@@ -165,37 +165,30 @@ unsafe extern "system" fn useralloc<A: AllocCallback>(
     kind: FMOD_MEMORY_TYPE,
     source: *const c_char,
 ) -> *mut c_void {
-    catch_user_unwind(|| {
-        // SAFETY: these strings are usually produced directly by FMOD, so they
-        // should *actually* be guaranteed to be UTF-8 like FMOD claims.
-        // However, plugins can also call this function, so we can't be sure.
-        // Because alloc is such a perf-critical path and plugins are developer
-        // controlled, assuming UTF-8 is both necessary and probably fine.
-        let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
-        Ok(A::alloc(size, MemoryType::from_raw(kind), source).cast())
-    })
-    .unwrap_or(ptr::null_mut())
+    // SAFETY: these strings are usually produced directly by FMOD, so they
+    // should *actually* be guaranteed to be UTF-8 like FMOD claims.
+    // However, plugins can also call this function, so we can't be sure.
+    // Because alloc is such a perf-critical path and plugins are developer
+    // controlled, assuming UTF-8 is both necessary and probably fine.
+    let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
+    A::alloc(size, MemoryType::from_raw(kind), source).cast()
 }
 
-unsafe extern "system" fn userrealloc<A: ReallocCallback>(
+unsafe extern "system" fn userfree<A: AllocCallback>(
     ptr: *mut c_void,
-    size: c_uint,
     kind: FMOD_MEMORY_TYPE,
     source: *const c_char,
-) -> *mut c_void {
-    catch_user_unwind(|| {
-        // SAFETY: these strings are usually produced directly by FMOD, so they
-        // should *actually* be guaranteed to be UTF-8 like FMOD claims.
-        // However, plugins can also call this function, so we can't be sure.
-        // Because alloc is such a perf-critical path and plugins are developer
-        // controlled, assuming UTF-8 is both necessary and probably fine.
-        let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
-        Ok(A::realloc(ptr.cast(), size, MemoryType::from_raw(kind), source).cast())
-    })
-    .unwrap_or(ptr::null_mut())
+) {
+    // SAFETY: these strings are usually produced directly by FMOD, so they
+    // should *actually* be guaranteed to be UTF-8 like FMOD claims.
+    // However, plugins can also call this function, so we can't be sure.
+    // Because alloc is such a perf-critical path and plugins are developer
+    // controlled, assuming UTF-8 is both necessary and probably fine.
+    let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
+    A::free(ptr.cast(), MemoryType::from_raw(kind), source)
 }
 
-/// User callbacks for FMOD to allocate and free memory.
+/// User callbacks for FMOD to (re)allocate and free memory.
 ///
 /// Callback implementations must be thread safe and must not unwind.
 #[allow(clippy::missing_safety_doc)]
@@ -218,21 +211,19 @@ pub unsafe trait ReallocCallback: AllocCallback {
     unsafe fn realloc(ptr: *mut u8, size: u32, kind: MemoryType, source: Option<&str>) -> *mut u8;
 }
 
-unsafe extern "system" fn userfree<A: AllocCallback>(
+unsafe extern "system" fn userrealloc<A: ReallocCallback>(
     ptr: *mut c_void,
+    size: c_uint,
     kind: FMOD_MEMORY_TYPE,
     source: *const c_char,
-) {
-    catch_user_unwind(|| {
-        // SAFETY: these strings are usually produced directly by FMOD, so they
-        // should *actually* be guaranteed to be UTF-8 like FMOD claims.
-        // However, plugins can also call this function, so we can't be sure.
-        // Because alloc is such a perf-critical path and plugins are developer
-        // controlled, assuming UTF-8 is both necessary and probably fine.
-        let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
-        Ok(A::free(ptr.cast(), MemoryType::from_raw(kind), source))
-    })
-    .unwrap_or_default()
+) -> *mut c_void {
+    // SAFETY: these strings are usually produced directly by FMOD, so they
+    // should *actually* be guaranteed to be UTF-8 like FMOD claims.
+    // However, plugins can also call this function, so we can't be sure.
+    // Because alloc is such a perf-critical path and plugins are developer
+    // controlled, assuming UTF-8 is both necessary and probably fine.
+    let source = ptr::NonNull::new(source as *mut _).map(|x| str_from_nonnull_unchecked(x));
+    A::realloc(ptr.cast(), size, MemoryType::from_raw(kind), source).cast()
 }
 
 // -------------------------------------------------------------------------------------------------

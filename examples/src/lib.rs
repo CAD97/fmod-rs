@@ -66,7 +66,7 @@ impl Example {
             .pretty()
             .with_ansi(false)
             .with_writer(writer)
-            .with_env_filter("trace,fmod::handle=trace".parse::<tracing_subscriber::EnvFilter>()?)
+            .with_env_filter("info,fmod::handle=trace".parse::<tracing_subscriber::EnvFilter>()?)
             .init();
 
         std::panic::set_hook(Box::new(|info| {

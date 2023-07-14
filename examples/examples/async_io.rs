@@ -83,9 +83,10 @@ impl fmod::file::FileSystem for MyFileSystem {
 }
 
 unsafe impl fmod::file::SyncFileSystem for MyFileSystem {
-    fn read(mut file: Pin<&mut File>, mut buffer: fmod::file::IoBuf<'_>) -> fmod::Result {
-        match io::copy(&mut *file, &mut buffer) {
+    fn read(file: Pin<&mut File>, mut buffer: fmod::file::FileBuffer<'_>) -> fmod::Result {
+        match buffer.fill_from(file.get_mut()) {
             Ok(_) => Ok(()),
+            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => Err(fmod::Error::FileEof),
             Err(_) => Err(fmod::Error::FileBad),
         }
     }
@@ -167,7 +168,8 @@ fn process_queue() {
                     continue 'main;
                 };
 
-                match info.buffer_mut().fill_from(file.get()) {
+                let mut buf = info.buffer_mut();
+                match buf.fill_from(&mut file) {
                     Ok(_) => {
                         add_line(format_args!(
                             "FED     {:5} bytes, offset {:5}",

@@ -315,10 +315,7 @@ impl DebugCallback for DebugViaRust {
         log.file(file).line(Some(line as u32)).module_path(func);
 
         // extract level from flags
-        if flags.is_set(DebugFlags::TypeTrace) {
-            // handle this first to deliberately supersede a set level
-            log.level(log::Level::Trace);
-        } else if flags.is_set(DebugFlags::LevelLog) {
+        if flags.is_set(DebugFlags::LevelLog) {
             log.level(log::Level::Info);
         } else if flags.is_set(DebugFlags::LevelWarning) {
             log.level(log::Level::Warn);
@@ -330,13 +327,13 @@ impl DebugCallback for DebugViaRust {
 
         // extract target from flags
         if flags.is_set(DebugFlags::TypeMemory) {
-            log.target("fmod::memory");
+            log.level(log::Level::Trace).target("fmod::memory");
         } else if flags.is_set(DebugFlags::TypeFile) {
-            log.target("fmod::file");
+            log.level(log::Level::Trace).target("fmod::file");
         } else if flags.is_set(DebugFlags::TypeCodec) {
-            log.target("fmod::codec");
+            log.level(log::Level::Trace).target("fmod::codec");
         } else if flags.is_set(DebugFlags::TypeTrace) {
-            log.target("fmod::trace");
+            log.level(log::Level::Trace).target("fmod::trace");
         } else {
             // no explicit type set, so we use a generic fmod target
             log.target("fmod");

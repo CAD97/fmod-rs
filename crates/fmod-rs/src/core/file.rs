@@ -85,12 +85,17 @@ pub struct FileBuffer<'a> {
 impl<'a> FileBuffer<'a> {
     /// The total capacity of the buffer.
     pub fn capacity(&self) -> usize {
-        return self.buffer.len();
+        self.buffer.len()
+    }
+
+    /// The number of bytes that have been written to the buffer.
+    pub fn written(&self) -> usize {
+        ix!(*self.written)
     }
 
     /// The unfilled part of the buffer.
     pub fn unfilled(&mut self) -> &mut [MaybeUninit<u8>] {
-        return &mut self.buffer[ix!(*self.written)..];
+        &mut self.buffer[ix!(*self.written)..]
     }
 
     /// Advance the cursor by asserting that `n` additional bytes have been filled.
@@ -269,6 +274,7 @@ impl<File> PartialEq for AsyncReadInfo<File> {
 }
 
 /// Data returned from [`FileSystem::open`].
+#[derive(Debug)]
 pub struct FileOpenInfo<File> {
     pub handle: Pin<Box<File>>,
     pub file_size: usize,
