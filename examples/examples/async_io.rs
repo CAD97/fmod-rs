@@ -14,7 +14,7 @@ use {
         collections::VecDeque,
         fmt::{self, Write},
         fs::File,
-        io::{ErrorKind, Read, Seek, SeekFrom},
+        io::{self, Seek, SeekFrom},
         pin::Pin,
         sync::{
             atomic::{AtomicBool, Ordering::SeqCst},
@@ -24,7 +24,8 @@ use {
     },
 };
 
-static ASYNC_LIST: Lazy<Mutex<VecDeque<fmod::AsyncReadInfo<File>>>> = Lazy::new(Default::default);
+static ASYNC_LIST: Lazy<Mutex<VecDeque<fmod::file::AsyncReadInfo<File>>>> =
+    Lazy::new(Default::default);
 static THREAD_QUIT: AtomicBool = AtomicBool::new(false);
 static SLEEP_BREAK: AtomicBool = AtomicBool::new(false);
 
@@ -62,15 +63,18 @@ fn draw_lines(example: &mut Example) {
 // File callbacks
 enum MyFileSystem {}
 
-unsafe impl fmod::file::FileSystem for MyFileSystem {
+impl fmod::file::FileSystem for MyFileSystem {
     type File = File;
 
-    fn open(name: &std::ffi::CStr) -> fmod::Result<(u32, Pin<Box<File>>)> {
+    fn open(name: &std::ffi::CStr) -> fmod::Result<fmod::file::FileOpenInfo<File>> {
         let name = name.to_str().map_err(|_| fmod::Error::FileNotFound)?;
         let file = Box::pin(File::open(name).map_err(|_| fmod::Error::FileNotFound)?);
         let meta = file.metadata().map_err(|_| fmod::Error::FileBad)?;
         let size = meta.len().try_into().map_err(|_| fmod::Error::FileBad)?;
-        Ok((size, file))
+        Ok(fmod::file::FileOpenInfo {
+            handle: file,
+            file_size: size,
+        })
     }
 
     fn close(file: Pin<Box<File>>) -> fmod::Result {
@@ -79,23 +83,11 @@ unsafe impl fmod::file::FileSystem for MyFileSystem {
 }
 
 unsafe impl fmod::file::SyncFileSystem for MyFileSystem {
-    fn read(
-        mut file: Pin<&mut File>,
-        buffer: &mut [std::mem::MaybeUninit<u8>],
-    ) -> fmod::Result<u32> {
-        // SAFETY: 😬
-        let mut buf = unsafe { &mut *(buffer as *mut _ as *mut [u8]) };
-
-        while !buf.is_empty() {
-            match file.read(buf) {
-                Ok(0) => break,
-                Ok(n) => buf = &mut buf[n..],
-                Err(e) if e.kind() == ErrorKind::Interrupted => {},
-                Err(_) => return Err(fmod::Error::FileBad),
-            }
+    fn read(mut file: Pin<&mut File>, mut buffer: fmod::file::IoBuf<'_>) -> fmod::Result {
+        match io::copy(&mut *file, &mut buffer) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(fmod::Error::FileBad),
         }
-
-        Ok((buffer.len() - buf.len()) as u32)
     }
 
     fn seek(mut file: Pin<&mut File>, pos: u32) -> fmod::Result {
@@ -112,7 +104,7 @@ unsafe impl fmod::file::SyncFileSystem for MyFileSystem {
 }
 
 unsafe impl fmod::file::AsyncFileSystem for MyFileSystem {
-    unsafe fn read(info: fmod::AsyncReadInfo<Self::File>) -> fmod::Result {
+    unsafe fn read(info: fmod::file::AsyncReadInfo<Self::File>) -> fmod::Result {
         let mut list = ASYNC_LIST.lock().unwrap();
 
         add_line(format_args!(
@@ -131,7 +123,7 @@ unsafe impl fmod::file::AsyncFileSystem for MyFileSystem {
         Ok(())
     }
 
-    unsafe fn cancel(info: fmod::AsyncReadInfo<Self::File>) -> fmod::Result {
+    unsafe fn cancel(info: fmod::file::AsyncReadInfo<Self::File>) -> fmod::Result {
         let mut list = ASYNC_LIST.lock().unwrap();
 
         // Find the pending IO request and remove it
@@ -168,44 +160,33 @@ fn process_queue() {
                 }
 
                 // Process the seek and read request with EOF handling
-                let mut file = info.handle_mut();
-                match file.seek(SeekFrom::Start(info.offset() as u64)) {
-                    Ok(_) => {},
-                    Err(_) => {
-                        info.done(Err(fmod::Error::FileCouldNotSeek));
-                        continue 'main;
+                let mut file = info.handle().get_ref();
+                let Ok(_) = file.seek(SeekFrom::Start(info.offset() as u64))
+                else {
+                    info.done(Err(fmod::Error::FileCouldNotSeek));
+                    continue 'main;
+                };
+
+                match info.buffer_mut().fill_from(file.get()) {
+                    Ok(_) => {
+                        add_line(format_args!(
+                            "FED     {:5} bytes, offset {:5}",
+                            buf.written(),
+                            info.offset(),
+                        ));
+                        info.done(Ok(()));
                     },
-                }
-
-                // SAFETY: 😬
-                let mut buf = &mut (*(info.buffer() as *mut [u8]));
-                while !buf.is_empty() {
-                    match file.read(buf) {
-                        Ok(0) => break,
-                        Ok(n) => buf = &mut buf[n..],
-                        Err(e) if e.kind() == ErrorKind::Interrupted => {},
-                        Err(_) => {
-                            info.done(Err(fmod::Error::FileBad));
-                            continue 'main;
-                        },
-                    }
-                }
-
-                let did_read = info.size() - buf.len() as u32;
-                if !buf.is_empty() {
-                    add_line(format_args!(
-                        "FED     {:5} bytes, offset {:5} (* EOF)",
-                        did_read,
-                        info.offset(),
-                    ));
-                    info.done(Ok(did_read));
-                } else {
-                    add_line(format_args!(
-                        "FED     {:5} bytes, offset {:5}",
-                        did_read,
-                        info.offset(),
-                    ));
-                    info.done(Ok(did_read));
+                    Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
+                        add_line(format_args!(
+                            "FED     {:5} bytes, offset {:5} (* EOF)",
+                            buf.written(),
+                            info.offset(),
+                        ));
+                        info.done(Err(fmod::Error::FileEof));
+                    },
+                    Err(_) => {
+                        info.done(Err(fmod::Error::FileBad));
+                    },
                 }
             }
         } else {
@@ -225,7 +206,7 @@ fn main() -> anyhow::Result<()> {
         // Create a System object and initialize.
         let system = fmod::System::new()?;
         system.init(1, fmod::InitFlags::Normal)?;
-        system.set_stream_buffer_size(32768, fmod::TimeUnit::RawBytes)?;
+        system.set_stream_buffer_size(fmod::Time::raw_bytes(32768))?;
         system.set_file_system_async::<MyFileSystem>(2048)?;
 
         let sound = system.create_stream(

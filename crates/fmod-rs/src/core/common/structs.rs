@@ -171,7 +171,7 @@ impl AdvancedSettings {
         } else {
             Some(
                 unsafe {
-                    slice::from_raw_parts(self.asio_channel_list, self.asio_num_channels as usize)
+                    slice::from_raw_parts(self.asio_channel_list, ix!(self.asio_num_channels))
                 }
                 .iter()
                 .copied()
@@ -188,10 +188,7 @@ impl AdvancedSettings {
             None
         } else {
             Some(unsafe {
-                slice::from_raw_parts(
-                    self.asio_speaker_list.cast(),
-                    self.asio_num_channels as usize,
-                )
+                slice::from_raw_parts(self.asio_speaker_list.cast(), ix!(self.asio_num_channels))
             })
         }
     }
@@ -223,7 +220,7 @@ impl Tag<'_> {
         pub unsafe fn from_raw(tag: FMOD_TAG) -> Result<Self> {
             let name = CStr::from_ptr(tag.name);
             let name = name.to_string_lossy();
-            let data = slice::from_raw_parts(tag.data as *const u8, tag.datalen as usize);
+            let data = slice::from_raw_parts(tag.data as *const u8, ix!(tag.datalen));
             let data = match TagDataType::from_raw(tag.datatype) {
                 TagDataType::Binary => TagData::Binary(data),
                 TagDataType::Int if data.len() == 1 => TagData::Int((tag.data as *const u8).read() as _),

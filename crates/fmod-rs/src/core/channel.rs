@@ -203,7 +203,7 @@ impl Channel {
                 value: start.value.saturating_add(1),
                 ..start
             },
-            Bound::Unbounded => Time::new(0, TimeUnit::Pcm),
+            Bound::Unbounded => Time::pcm(0),
         };
         let loop_end = match loop_points.end_bound() {
             Bound::Included(&end) => end,
@@ -213,10 +213,7 @@ impl Channel {
             },
             Bound::Unbounded => {
                 if let Some(sound) = self.get_current_sound()? {
-                    Time::new(
-                        sound.get_length(TimeUnit::Pcm)?.saturating_sub(1),
-                        TimeUnit::Pcm,
-                    )
+                    Time::pcm(sound.get_length(TimeUnit::Pcm)?.saturating_sub(1))
                 } else {
                     loop_start
                 }

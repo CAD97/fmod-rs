@@ -342,11 +342,8 @@ impl DebugCallback for DebugViaRust {
             log.target("fmod");
         };
 
-        catch_user_unwind(|| {
-            // brackets are used to move `log` and satisfy the borrow checker
-            log::logger().log(&{ log }.args(format_args!("{message}")).build());
-            Ok(())
-        })
+        log::logger().log(&log.args(format_args!("{message}")).build());
+        Ok(())
     }
 }
 

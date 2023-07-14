@@ -373,7 +373,7 @@ impl Sound {
                 value: start.value.saturating_add(1),
                 ..start
             },
-            Bound::Unbounded => Time::new(0, TimeUnit::Pcm),
+            Bound::Unbounded => Time::pcm(0),
         };
         let loop_end = match loop_points.end_bound() {
             Bound::Included(&end) => end,
@@ -381,10 +381,7 @@ impl Sound {
                 value: end.value.saturating_sub(1),
                 ..end
             },
-            Bound::Unbounded => Time::new(
-                self.get_length(TimeUnit::Pcm)?.saturating_sub(1),
-                TimeUnit::Pcm,
-            ),
+            Bound::Unbounded => Time::pcm(self.get_length(TimeUnit::Pcm)?.saturating_sub(1)),
         };
         ffi!(FMOD_Sound_SetLoopPoints(
             self.as_raw(),
@@ -583,7 +580,7 @@ impl Sound {
             &mut read,
         ))
         .or_else(|e| if e == Error::FileEof { Ok(()) } else { Err(e) })?;
-        Ok(read as usize)
+        Ok(ix!(read))
     }
 
     /// Seeks a sound for use with data reading, using FMOD's internal codecs.
@@ -649,11 +646,11 @@ impl Sound {
         unsafe {
             Ok(SampleDataLock {
                 sound: self,
-                part1: slice::from_raw_parts(ptr1.cast(), len1 as usize),
+                part1: slice::from_raw_parts(ptr1.cast(), ix!(len1)),
                 part2: if !ptr2.is_null() {
-                    slice::from_raw_parts(ptr2.cast(), len2 as usize)
+                    slice::from_raw_parts(ptr2.cast(), ix!(len2))
                 } else {
-                    slice::from_raw_parts(ptr1.cast::<u8>().add(len1 as usize), 0)
+                    slice::from_raw_parts(ptr1.cast::<u8>().add(ix!(len1)), 0)
                 },
             })
         }

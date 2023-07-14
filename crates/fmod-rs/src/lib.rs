@@ -1,4 +1,7 @@
-#![cfg_attr(feature = "unstable", feature(extern_types, doc_auto_cfg, doc_cfg))]
+#![cfg_attr(
+    feature = "unstable",
+    feature(doc_auto_cfg, doc_cfg, read_buf, extern_types)
+)]
 #![allow(rustdoc::broken_intra_doc_links)] // TODO: remove once more items exist
 #![warn(rust_2018_idioms)] // lol, this reads backwards
 

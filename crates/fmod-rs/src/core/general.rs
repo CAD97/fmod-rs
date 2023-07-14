@@ -457,7 +457,48 @@ pub struct Time {
 }
 
 impl Time {
+    /// Create a new time measure.
     pub fn new(value: u32, unit: TimeUnit) -> Self {
         Self { value, unit }
+    }
+
+    /// Create a new time measure in [milliseconds](TimeUnit::Ms).
+    pub fn ms(value: u32) -> Self {
+        Self::new(value, TimeUnit::Ms)
+    }
+
+    /// Create a new time measure in [PCM samples](TimeUnit::Pcm).
+    pub fn pcm(value: u32) -> Self {
+        Self::new(value, TimeUnit::Pcm)
+    }
+
+    /// Create a new time measure in [PCM bytes](TimeUnit::PcmBytes).
+    pub fn pcm_bytes(value: u32) -> Self {
+        Self::new(value, TimeUnit::PcmBytes)
+    }
+
+    /// Create a new time measure in [raw bytes](TimeUnit::RawBytes).
+    pub fn raw_bytes(value: u32) -> Self {
+        Self::new(value, TimeUnit::RawBytes)
+    }
+
+    /// Create a new time measure in [PCM fractions](TimeUnit::PcmFraction).
+    pub fn pcm_fraction(value: u32) -> Self {
+        Self::new(value, TimeUnit::PcmFraction)
+    }
+
+    /// Create a new time measure in [MOD/S3M/XM/IT order](TimeUnit::ModOrder).
+    pub fn mod_order(value: u32) -> Self {
+        Self::new(value, TimeUnit::ModOrder)
+    }
+
+    /// Create a new time measure in [MOD/S3M/XM/IT row](TimeUnit::ModRow).
+    pub fn mod_row(value: u32) -> Self {
+        Self::new(value, TimeUnit::ModRow)
+    }
+
+    /// Create a new time measure in [MOD/S3M/XM/IT pattern](TimeUnit::ModPattern).
+    pub fn mod_pattern(value: u32) -> Self {
+        Self::new(value, TimeUnit::ModPattern)
     }
 }

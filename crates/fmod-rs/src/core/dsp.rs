@@ -478,7 +478,7 @@ pub(crate) unsafe extern "system" fn dsp_callback<C: DspCallback>(
         FMOD_DSP_CALLBACK_DATAPARAMETERRELEASE => {
             let data = data as *mut FMOD_DSP_DATA_PARAMETER_INFO;
             let index = (*data).index;
-            let data = ptr::slice_from_raw_parts_mut((*data).data.cast(), (*data).length as usize);
+            let data = ptr::slice_from_raw_parts_mut((*data).data.cast(), ix!((*data).length));
             catch_user_unwind(|| C::data_parameter_release(dsp, data, index)).into_raw()
         },
         _ => {

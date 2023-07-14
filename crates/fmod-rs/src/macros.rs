@@ -13,6 +13,17 @@ macro_rules! yeet {
     };
 }
 
+macro_rules! ix {
+    ($ix:expr) => {
+        match $ix {
+            ix => match usize::try_from(ix) {
+                Ok(ix) => ix,
+                Err(_) => panic!("index out of bounds: {ix} is not a valid index"),
+            },
+        }
+    };
+}
+
 macro_rules! whoops {
     {
         panic: $($args:tt)*

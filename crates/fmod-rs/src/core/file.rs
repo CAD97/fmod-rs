@@ -6,10 +6,11 @@ use {
     std::{
         ffi::CStr,
         ffi::{c_char, c_void},
+        io::{self, Read, Write},
         marker::PhantomData,
         mem::MaybeUninit,
         pin::Pin,
-        ptr, slice,
+        slice,
     },
 };
 
@@ -71,14 +72,82 @@ pub fn lock_disk_busy() -> Result<FileBusyGuard> {
     Ok(FileBusyGuard { _priv: () })
 }
 
-/// A handle to an FMOD asynchronous file read request, received from
-/// [`file::AsyncFileSystem`].
+// -------------------------------------------------------------------------------------------------
+
+/// A writable handle into an uninitialized memory buffer.
+///
+/// [`std::io::BorrowedCursor`] but specialized to FMOD's FFI.
+pub struct FileBuffer<'a> {
+    buffer: &'a mut [MaybeUninit<u8>],
+    written: &'a mut u32,
+}
+
+impl<'a> FileBuffer<'a> {
+    /// The total capacity of the buffer.
+    pub fn capacity(&self) -> usize {
+        return self.buffer.len();
+    }
+
+    /// The unfilled part of the buffer.
+    pub fn unfilled(&mut self) -> &mut [MaybeUninit<u8>] {
+        return &mut self.buffer[ix!(*self.written)..];
+    }
+
+    /// Advance the cursor by asserting that `n` additional bytes have been filled.
+    pub unsafe fn advance(&mut self, n: usize) {
+        *self.written += n as u32;
+    }
+
+    /// Fill the buffer from a reader.
+    pub fn fill_from(&mut self, reader: &mut (impl Read + ?Sized)) -> io::Result<()> {
+        let result;
+
+        #[cfg(feature = "unstable")]
+        {
+            let mut buf = io::BorrowedBuf::from(self.unfilled());
+            result = reader.read_buf_exact(buf.unfilled());
+            let written = buf.filled().len();
+            unsafe { self.advance(written) };
+        };
+
+        #[cfg(not(feature = "unstable"))]
+        {
+            result = io::copy(reader, self);
+        }
+
+        match result {
+            Ok(_) if self.unfilled().is_empty() => Ok(()),
+            Ok(_) => yeet!(io::ErrorKind::UnexpectedEof),
+            Err(e) if e.kind() == io::ErrorKind::WriteZero => Ok(()),
+            Err(e) => yeet!(e),
+        }
+    }
+}
+
+impl<'a> Write for FileBuffer<'a> {
+    fn write(&mut self, data: &[u8]) -> io::Result<usize> {
+        unsafe {
+            let data = &*(data as *const [u8] as *const [MaybeUninit<u8>]);
+            let buf = self.unfilled();
+            let len = usize::min(buf.len(), data.len());
+            buf[..len].copy_from_slice(&data[..len]);
+            self.advance(len);
+            Ok(len)
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// A handle to an FMOD asynchronous file read operation, received from
+/// [`AsyncFileSystem`].
 ///
 /// When servicing the async read operation, read from
 /// [`handle`](Self::handle) at the given [`offset`](Self::offset) for
 /// [`size`](Self::size) bytes into [`buffer`](Self::buffer). Then call
-/// [`done`](Self::done) with the number of bytes read and the [`Result`]
-/// that matches the success of the operation.
+/// [`done`](Self::done) with the [`Result`] of the operation.
 ///
 /// # Safety
 ///
@@ -108,11 +177,19 @@ impl<File> AsyncReadInfo<File> {
     }
 
     /// File handle that was provided by [`FileSystem::open`].
+    ///
+    /// # Safety
+    ///
+    /// Returns an unbound lifetime; borrow access patterns are unchecked.
     pub unsafe fn handle<'a>(self) -> Pin<&'a File> {
         Pin::new_unchecked(&*self.handle_ptr())
     }
 
     /// File handle that was provided by [`FileSystem::open`].
+    ///
+    /// # Safety
+    ///
+    /// Returns an unbound lifetime; borrow access patterns are unchecked.
     pub unsafe fn handle_mut<'a>(self) -> Pin<&'a mut File> {
         Pin::new_unchecked(&mut *self.handle_ptr())
     }
@@ -142,10 +219,16 @@ impl<File> AsyncReadInfo<File> {
     }
 
     /// Buffer to read data into.
-    pub unsafe fn buffer(self) -> *mut [MaybeUninit<u8>] {
+    ///
+    /// # Safety
+    ///
+    /// Returns an unbound lifetime; borrow access patterns are unchecked.
+    pub unsafe fn buffer_mut<'a>(self) -> FileBuffer<'a> {
         let ptr = (*self.raw).buffer;
         let len = self.size();
-        ptr::slice_from_raw_parts_mut(ptr.cast(), len as usize)
+        let buffer = slice::from_raw_parts_mut(ptr.cast(), len as usize);
+        let written = &mut (*self.raw).bytesread;
+        FileBuffer { buffer, written }
     }
 
     /// Completion function to signal the async read is done.
@@ -155,19 +238,19 @@ impl<File> AsyncReadInfo<File> {
     /// - `Ok`: Read was successful.
     /// - [`Error::FileDiskEjected`]: Read was cancelled before being serviced.
     /// - [`Error::FileBad`]: Read operation failed for any other reason.
-    pub unsafe fn done(self, result: Result<u32>) {
-        let done = (*self.raw).done.unwrap_unchecked();
-        match result {
-            Ok(bytes_read) => {
-                (*self.raw).bytesread = bytes_read;
-                if bytes_read < self.size() {
-                    done(self.raw, FMOD_ERR_FILE_EOF);
-                } else {
-                    done(self.raw, FMOD_OK);
-                }
-            },
-            Err(err) => done(self.raw, err.into_raw()),
+    ///
+    /// A result of `Ok` will be automatically translated to [`Error::FileEof`]
+    /// if the number of bytes read is less than the requested number of bytes.
+    ///
+    /// # Safety
+    ///
+    /// When calling this the implementation must ensure that all copies of
+    /// this [`AsyncReadInfo`] are relinquished.
+    pub unsafe fn done(self, mut result: Result) {
+        if result.is_ok() && !self.buffer_mut().unfilled().is_empty() {
+            result = Err(Error::FileEof);
         }
+        (*self.raw).done.unwrap_unchecked()(self.raw, result.into_raw());
     }
 }
 
@@ -185,23 +268,56 @@ impl<File> PartialEq for AsyncReadInfo<File> {
     }
 }
 
+/// Data returned from [`FileSystem::open`].
+pub struct FileOpenInfo<File> {
+    pub handle: Pin<Box<File>>,
+    pub file_size: usize,
+}
+
 /// Callbacks to implement all file I/O instead of using the platform native
 /// method.
 #[allow(clippy::missing_safety_doc)]
-pub unsafe trait FileSystem {
-    type File: Send + Sync; // TODO: is Sync really necessary?
+pub trait FileSystem {
+    type File: Send + Sync;
 
     /// Callback for opening a file.
     ///
     /// Return the appropriate error such as [Error::FileNotFound] if the
     /// file fails to open.
-    fn open(name: &CStr) -> Result<(u32, Pin<Box<Self::File>>)>;
+    fn open(name: &CStr) -> Result<FileOpenInfo<Self::File>>;
 
     /// Callback for closing a file.
     ///
     /// Close any user created file handle and perform any cleanup necessary
-    /// for the file here.
-    fn close(file: Pin<Box<Self::File>>) -> Result;
+    /// for the file here. Default implemented to just drop the file handle.
+    fn close(file: Pin<Box<Self::File>>) -> Result {
+        drop(file);
+        Ok(())
+    }
+}
+
+pub(crate) unsafe extern "system" fn useropen<FS: FileSystem>(
+    name: *const c_char,
+    filesize: *mut u32,
+    handle: *mut *mut c_void,
+    _userdata: *mut c_void,
+) -> FMOD_RESULT {
+    let name = CStr::from_ptr(name);
+    catch_user_unwind(|| {
+        let file = FS::open(name)?;
+        *filesize = file.file_size.try_into().map_err(|_| Error::FileBad)?;
+        *handle = Box::into_raw(Pin::into_inner_unchecked(file.handle)).cast();
+        Ok(())
+    })
+    .into_raw()
+}
+
+pub(crate) unsafe extern "system" fn userclose<FS: FileSystem>(
+    handle: *mut c_void,
+    _userdata: *mut c_void,
+) -> FMOD_RESULT {
+    let file = Pin::new_unchecked(Box::from_raw(handle.cast()));
+    catch_user_unwind(|| FS::close(file)).into_raw()
 }
 
 /// Callbacks to implement all file I/O instead of using the platform native
@@ -211,13 +327,49 @@ pub unsafe trait SyncFileSystem: FileSystem {
     /// Callback for reading from a file.
     ///
     /// The entire buffer should be filled with contents from the file. If
-    /// there is not enough data to read the requested number of bytes,
-    /// return the number of bytes that were read; this is interpreted as an
-    /// EOF condition.
-    fn read(file: Pin<&mut Self::File>, buffer: &mut [MaybeUninit<u8>]) -> Result<u32>;
+    /// there is not enough data to provide the requested number of bytes,
+    /// a return value of `Ok` will be automatically translated to
+    /// <code>Err([Error::FileEof])</code>.
+    fn read(file: Pin<&mut Self::File>, buffer: FileBuffer<'_>) -> Result;
 
     /// Callback for seeking within a file.
     fn seek(file: Pin<&mut Self::File>, pos: u32) -> Result;
+}
+
+pub(crate) unsafe extern "system" fn userread<FS: SyncFileSystem>(
+    handle: *mut c_void,
+    buffer: *mut c_void,
+    sizebytes: u32,
+    bytesread: *mut u32,
+    _userdata: *mut c_void,
+) -> FMOD_RESULT {
+    let buffer = slice::from_raw_parts_mut(buffer.cast(), ix!(sizebytes));
+    let file = Pin::new_unchecked(&mut *handle.cast());
+
+    *bytesread = 0; // ensure this starts at 0 in case FMOD doesn't
+    let buf = FileBuffer {
+        buffer,
+        written: &mut *bytesread,
+    };
+
+    catch_user_unwind(|| {
+        FS::read(file, buf)?;
+        if *bytesread < sizebytes {
+            Err(Error::FileEof)
+        } else {
+            Ok(())
+        }
+    })
+    .into_raw()
+}
+
+pub(crate) unsafe extern "system" fn userseek<FS: SyncFileSystem>(
+    handle: *mut c_void,
+    pos: u32,
+    _userdata: *mut c_void,
+) -> FMOD_RESULT {
+    let file = Pin::new_unchecked(&mut *handle.cast());
+    catch_user_unwind(|| FS::seek(file, pos)).into_raw()
 }
 
 /// Callbacks to implement all file I/O instead of using the platform native
@@ -256,70 +408,18 @@ pub unsafe trait AsyncFileSystem: FileSystem {
     /// This callback is called to stop/release or shut down the resource
     /// that is holding the file, for example: releasing a [Sound] stream.
     ///
+    /// # Safety
+    ///
     /// Before returning from this callback the implementation must ensure
-    /// that all copies of [`info`] are relinquished.
+    /// that all copies of `info` are relinquished.
     unsafe fn cancel(info: AsyncReadInfo<Self::File>) -> Result;
-}
-
-pub(crate) unsafe extern "system" fn useropen<FS: FileSystem>(
-    name: *const c_char,
-    filesize: *mut u32,
-    handle: *mut *mut c_void,
-    _userdata: *mut c_void,
-) -> FMOD_RESULT {
-    let name = CStr::from_ptr(name);
-    catch_user_unwind(|| {
-        let (size, file) = FS::open(name)?;
-        *filesize = size;
-        *handle = Box::into_raw(Pin::into_inner_unchecked(file)).cast();
-        Ok(())
-    })
-    .into_raw()
-}
-
-pub(crate) unsafe extern "system" fn userclose<FS: FileSystem>(
-    handle: *mut c_void,
-    _userdata: *mut c_void,
-) -> FMOD_RESULT {
-    let file = Pin::new_unchecked(Box::from_raw(handle.cast()));
-    catch_user_unwind(|| FS::close(file)).into_raw()
-}
-
-pub(crate) unsafe extern "system" fn userread<FS: SyncFileSystem>(
-    handle: *mut c_void,
-    buffer: *mut c_void,
-    sizebytes: u32,
-    bytesread: *mut u32,
-    _userdata: *mut c_void,
-) -> FMOD_RESULT {
-    let buffer = slice::from_raw_parts_mut(buffer.cast(), sizebytes as usize);
-    let file = Pin::new_unchecked(&mut *handle.cast());
-
-    catch_user_unwind(|| {
-        let read = FS::read(file, buffer)?;
-        *bytesread = read;
-        if read < sizebytes {
-            Err(Error::FileEof)
-        } else {
-            Ok(())
-        }
-    })
-    .into_raw()
-}
-
-pub(crate) unsafe extern "system" fn userseek<FS: SyncFileSystem>(
-    handle: *mut c_void,
-    pos: u32,
-    _userdata: *mut c_void,
-) -> FMOD_RESULT {
-    let file = Pin::new_unchecked(&mut *handle.cast());
-    catch_user_unwind(|| FS::seek(file, pos)).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userasyncread<FS: AsyncFileSystem>(
     info: *mut FMOD_ASYNCREADINFO,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
+    (*info).bytesread = 0; // ensure this starts at 0 in case FMOD doesn't
     catch_user_unwind(|| FS::read(AsyncReadInfo::from_raw(info))).into_raw()
 }
 
@@ -392,8 +492,8 @@ pub(crate) unsafe extern "system" fn userread_listen<FS: ListenFileSystem>(
     bytesread: *mut u32,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
-    let buffer = slice::from_raw_parts_mut(buffer.cast(), *bytesread as usize);
-    let eof = buffer.len() < sizebytes as usize;
+    let buffer = slice::from_raw_parts_mut(buffer.cast(), ix!(*bytesread));
+    let eof = buffer.len() < ix!(sizebytes);
     catch_user_unwind(|| Ok(FS::read(handle as usize, buffer, eof))).into_raw()
 }
 

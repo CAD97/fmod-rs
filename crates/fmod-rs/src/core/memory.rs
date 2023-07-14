@@ -284,7 +284,7 @@ pub enum AllocViaRust {}
 unsafe impl AllocCallback for AllocViaRust {
     fn alloc(size: u32, _: MemoryType, _: Option<&str>) -> *mut u8 {
         unsafe {
-            let layout = Layout::from_size_align_unchecked(size as usize + 16, 16).pad_to_align();
+            let layout = Layout::from_size_align_unchecked(ix!(size) + 16, 16).pad_to_align();
             let ptr = alloc(layout);
             if ptr.is_null() {
                 return ptr;
@@ -310,7 +310,7 @@ unsafe impl ReallocCallback for AllocViaRust {
         let old_size = ptr.cast::<usize>().read();
         let old_layout = Layout::from_size_align_unchecked(old_size, 16);
 
-        let new_layout = Layout::from_size_align_unchecked(size as usize + 16, 16).pad_to_align();
+        let new_layout = Layout::from_size_align_unchecked(ix!(size) + 16, 16).pad_to_align();
         let ptr = realloc(ptr, old_layout, new_layout.size());
         if ptr.is_null() {
             return ptr;
