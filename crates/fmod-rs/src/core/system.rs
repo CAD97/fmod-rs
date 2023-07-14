@@ -2786,7 +2786,7 @@ impl System {
     /// background while the sub-network is still under construction.
     ///
     /// Once the user no longer needs the DSP engine locked, it must be unlocked
-    /// with [`System::unlock_dsp`].
+    /// by dropping the returned [`DspLock`] or calling [`System::unlock_dsp`].
     ///
     /// Note that the DSP engine should not be locked for a significant amount
     /// of time, otherwise inconsistency in the audio output may result.
@@ -2795,9 +2795,9 @@ impl System {
     /// # Safety
     ///
     /// The DSP engine must not already be locked when this function is called.
-    pub unsafe fn lock_dsp(&self) -> Result {
+    pub unsafe fn lock_dsp(&self) -> Result<DspLock<'_>> {
         ffi!(FMOD_System_LockDSP(self.as_raw()))?;
-        Ok(())
+        Ok(DspLock { system: self })
     }
 
     /// Mutual exclusion function to unlock the FMOD DSP engine (which runs
@@ -2806,8 +2806,8 @@ impl System {
     /// # Safety
     ///
     /// The DSP engine must be locked with [`System::lock_dsp`] before this
-    /// function is called.
-    unsafe fn unlock_dsp(&self) -> Result {
+    /// function is called and the [`DspLock`] guard forgotten.
+    pub unsafe fn unlock_dsp(&self) -> Result {
         ffi!(FMOD_System_UnlockDSP(self.as_raw()))?;
         Ok(())
     }
