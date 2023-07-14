@@ -74,7 +74,7 @@ pub trait PcmCallback {
     fn seek(sound: &Sound, subsound: i32, position: Time) -> Result;
 }
 
-pub trait NonblockCallback {
+pub trait NonBlockCallback {
     fn notify(sound: &Sound, result: Result) -> Result;
 }
 
@@ -216,8 +216,8 @@ impl<'a> CreateSoundEx<'a> {
 
     /// Callback to notify completion for [`Mode::Nonblocking`], occurs during
     /// creation and seeking / restarting streams.
-    pub fn nonblock_callback<F: NonblockCallback>(&mut self) -> &mut Self {
-        unsafe extern "system" fn nonblock_callback<F: NonblockCallback>(
+    pub fn nonblock_callback<F: NonBlockCallback>(&mut self) -> &mut Self {
+        unsafe extern "system" fn nonblock_callback<F: NonBlockCallback>(
             sound: *mut FMOD_SOUND,
             result: FMOD_RESULT,
         ) -> FMOD_RESULT {
@@ -328,39 +328,34 @@ impl<'a> CreateSoundEx<'a> {
     }
 }
 
-macro_rules! debug_impl {
-    ($($raw:ident, $rust:ident;)*) => {
-        impl fmt::Debug for CreateSoundEx<'_> {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                let mut d = f.debug_struct("CreateSoundEx");
-                $(
-                    if self.info.$raw != unsafe { std::mem::zeroed() } {
-                        d.field(stringify!($rust), &self.info.$raw);
-                    }
-                )*
-                d.finish_non_exhaustive()
-            }
+impl fmt::Debug for CreateSoundEx<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut d = f.debug_struct("CreateSoundEx");
+        macro_rules! d {
+            ($raw:ident, $rust:ident) => {
+                if self.info.$raw != unsafe { std::mem::zeroed() } {
+                    d.field(stringify!($rust), &self.info.$raw);
+                }
+            };
         }
-    };
-}
-
-debug_impl! {
-    length,                 length;
-    fileoffset,             file_offset;
-    numchannels,            num_channels;
-    defaultfrequency,       default_frequency;
-    format,                 format;
-    decodebuffersize,       decode_buffer_size;
-    initialsubsound,        initial_sub_sound;
-    numsubsounds,           num_sub_sounds;
-    maxpolyphony,           max_polyphony;
-    suggestedsoundtype,     suggested_sound_type;
-    filebuffersize,         file_buffer_size;
-    channelorder,           channel_order;
-    initialseekposition,    initial_seek_position;
-    initialseekpostype,     initial_seek_position_type;
-    ignoresetfilesystem,    ignore_set_filesystem;
-    audioqueuepolicy,       audio_queue_policy;
-    minmidigranularity,     min_midi_granularity;
-    nonblockthreadid,       non_block_tread_id;
+        d!(length, length);
+        d!(fileoffset, file_offset);
+        d!(numchannels, num_channels);
+        d!(defaultfrequency, default_frequency);
+        d!(format, format);
+        d!(decodebuffersize, decode_buffer_size);
+        d!(initialsubsound, initial_sub_sound);
+        d!(numsubsounds, num_sub_sounds);
+        d!(maxpolyphony, max_polyphony);
+        d!(suggestedsoundtype, suggested_sound_type);
+        d!(filebuffersize, file_buffer_size);
+        d!(channelorder, channel_order);
+        d!(initialseekposition, initial_seek_position);
+        d!(initialseekpostype, initial_seek_position_type);
+        d!(ignoresetfilesystem, ignore_set_filesystem);
+        d!(audioqueuepolicy, audio_queue_policy);
+        d!(minmidigranularity, min_midi_granularity);
+        d!(nonblockthreadid, non_block_tread_id);
+        d.finish_non_exhaustive()
+    }
 }

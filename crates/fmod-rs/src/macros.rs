@@ -472,34 +472,50 @@ macro_rules! enum_struct {
 macro_rules! fmod_struct {
     {$(
         $(#[$meta:meta])*
-        $vis:vis struct $Name:ident = $Raw:ident {
+        $vis:vis struct $Name:ident$(<$lt:lifetime>)? = $Raw:ident {
             $($body:tt)*
         }
     )*} => {$(
+        fmod_struct! {
+            #![fmod_no_default]
+            $(#[$meta])*
+            #[derive(::smart_default::SmartDefault)]
+            $vis struct $Name$(<$lt>)? = $Raw {
+                $($body)*
+            }
+        }
+    )*};
+    {
+        #![fmod_no_default]
+        $(#[$meta:meta])*
+        $vis:vis struct $Name:ident$(<$lt:lifetime>)? = $Raw:ident {
+            $($body:tt)*
+        }
+    } => {
         #[repr(C)]
         $(#[$meta])*
-        #[derive(Debug, Clone, Copy, ::smart_default::SmartDefault, PartialEq)]
-        pub struct $Name {
+        #[derive(Debug, Clone, Copy, PartialEq)]
+        pub struct $Name$(<$lt>)? {
             $($body)*
         }
 
         static_assert!(::std::mem::size_of::<$Name>() == ::std::mem::size_of::<$Raw>());
         static_assert!(::std::mem::align_of::<$Name>() == ::std::mem::align_of::<$Raw>());
 
-        impl $Name {
+        impl$(<$lt>)? $Name$(<$lt>)? {
             raw! {
-                pub const fn from_raw(raw: $Raw) -> $Name {
+                pub const fn from_raw(raw: $Raw) -> $Name$(<$lt>)? {
                     unsafe { ::std::mem::transmute(raw) }
                 }
             }
             raw! {
-                pub const fn from_raw_ref(raw: &$Raw) -> &$Name {
-                    unsafe { &*(raw as *const $Raw as *const $Name ) }
+                pub const fn from_raw_ref(raw: &$Raw) -> &$Name$(<$lt>)? {
+                    unsafe { &*(raw as *const $Raw as *const $Name$(<$lt>)? ) }
                 }
             }
             raw! {
-                pub fn from_raw_mut(raw: &mut $Raw) -> &mut $Name {
-                    unsafe { &mut *(raw as *mut $Raw as *mut $Name ) }
+                pub fn from_raw_mut(raw: &mut $Raw) -> &mut $Name$(<$lt>)? {
+                    unsafe { &mut *(raw as *mut $Raw as *mut $Name$(<$lt>)? ) }
                 }
             }
             raw! {
@@ -509,14 +525,14 @@ macro_rules! fmod_struct {
             }
             raw! {
                 pub const fn as_raw(&self) -> &$Raw {
-                    unsafe { &*(self as *const $Name as *const $Raw ) }
+                    unsafe { &*(self as *const $Name$(<$lt>)? as *const $Raw ) }
                 }
             }
             raw! {
                 pub fn as_raw_mut(&mut self) -> &mut $Raw {
-                    unsafe { &mut *(self as *mut $Name as *mut $Raw ) }
+                    unsafe { &mut *(self as *mut $Name$(<$lt>)? as *mut $Raw ) }
                 }
             }
         }
-    )*};
+    };
 }

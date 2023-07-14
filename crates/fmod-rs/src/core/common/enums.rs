@@ -1,16 +1,5 @@
 use fmod::{raw::*, *};
 
-enum_struct! {
-    /// Flags that provide additional information about a particular driver.
-    pub enum DriverState: FMOD_DRIVER_STATE {
-        /// Device is currently plugged in.
-        Connected = FMOD_DRIVER_STATE_CONNECTED,
-        #[default]
-        /// Device is the users preferred choice.
-        Default   = FMOD_DRIVER_STATE_DEFAULT,
-    }
-}
-
 raw! {
     enum_struct! {
         /// Identifier used to distinguish between Channel and ChannelGroup in the ChannelControl callback.
@@ -24,75 +13,6 @@ raw! {
 }
 
 enum_struct! {
-    /// Built-in output types that can be used to run the mixer.
-    ///
-    /// To pass information to the driver when initializing use the `extra_driver_data` parameter in [System::init_ex] for the following reasons:
-    ///
-    /// - [OutputType::WavWriter] - `*const c_char` file name that the wav writer will output to.
-    /// - [OutputType::WavWriterNrt] - `*const c_char` file name that the wav writer will output to.
-    /// - [OutputType::PulseAudio] - `*const c_char` application name to display in OS audio mixer.
-    /// - [OutputType::Asio] - `*mut c_void` application window handle.
-    ///
-    /// Currently these are the only FMOD drivers that take extra information. Other unknown plugins may have different requirements.
-    ///
-    /// If [OutputType::WavWriterNrt] or [OutputType::NoSoundNrt] are used, and if the [System::update] function is being called very quickly (ie for a non realtime decode) it may be being called too quickly for the FMOD streamer thread to respond to. The result will be a skipping/stuttering output in the captured audio. To remedy this, disable the FMOD streamer thread, and use [InitFlags::StreamFromUpdate] to avoid skipping in the output stream, as it will lock the mixer and the streamer together in the same thread.
-    pub enum OutputType: FMOD_OUTPUTTYPE {
-        /// Picks the best output mode for the platform. This is the default.
-        AutoDetect   = FMOD_OUTPUTTYPE_AUTODETECT,
-        /// All - 3rd party plugin, unknown. This is for use with [System::get_output] only.
-        Unknown      = FMOD_OUTPUTTYPE_UNKNOWN,
-        /// All - Perform all mixing but discard the final output.
-        NoSound      = FMOD_OUTPUTTYPE_NOSOUND,
-        /// All - Writes output to a .wav file.
-        WavWriter    = FMOD_OUTPUTTYPE_WAVWRITER,
-        /// All - Non-realtime version of [OutputType::NoSound], one mix per [System::update].
-        NoSoundNrt   = FMOD_OUTPUTTYPE_NOSOUND_NRT,
-        /// All - Non-realtime version of [OutputType::WavWriter], one mix per [System::update].
-        WavWriterNrt = FMOD_OUTPUTTYPE_WAVWRITER_NRT,
-        /// Win / UWP / Xbox One / Game Core - Windows Audio Session API. (Default on Windows, Xbox One, Game Core and UWP)
-        Wasapi       = FMOD_OUTPUTTYPE_WASAPI,
-        /// Win - Low latency ASIO 2.0.
-        Asio         = FMOD_OUTPUTTYPE_ASIO,
-        /// Linux - Pulse Audio. (Default on Linux if available)
-        PulseAudio   = FMOD_OUTPUTTYPE_PULSEAUDIO,
-        /// Linux - Advanced Linux Sound Architecture. (Default on Linux if PulseAudio isn't available)
-        Alsa         = FMOD_OUTPUTTYPE_ALSA,
-        /// Mac / iOS - Core Audio. (Default on Mac and iOS)
-        CoreAudio    = FMOD_OUTPUTTYPE_COREAUDIO,
-        /// Android - Java Audio Track. (Default on Android 2.2 and below)
-        AudioTrack   = FMOD_OUTPUTTYPE_AUDIOTRACK,
-        /// Android - OpenSL ES. (Default on Android 2.3 up to 7.1)
-        OpenSl       = FMOD_OUTPUTTYPE_OPENSL,
-        /// PS4 / PS5 - Audio Out. (Default on PS4, PS5)
-        AudioOut     = FMOD_OUTPUTTYPE_AUDIOOUT,
-        /// PS4 - Audio3D.
-        Audio3d      = FMOD_OUTPUTTYPE_AUDIO3D,
-        /// HTML5 - Web Audio ScriptProcessorNode output. (Default on HTML5 if AudioWorkletNode isn't available)
-        WebAudio     = FMOD_OUTPUTTYPE_WEBAUDIO,
-        /// Switch - nn::audio. (Default on Switch)
-        NnAudio      = FMOD_OUTPUTTYPE_NNAUDIO,
-        /// Win10 / Xbox One / Game Core - Windows Sonic.
-        Winsonic     = FMOD_OUTPUTTYPE_WINSONIC,
-        /// Android - AAudio. (Default on Android 8.1 and above)
-        AAudio       = FMOD_OUTPUTTYPE_AAUDIO,
-        /// HTML5 - Web Audio AudioWorkletNode output. (Default on HTML5 if available)
-        AudioWorklet = FMOD_OUTPUTTYPE_AUDIOWORKLET,
-        /// Mac / iOS - PHASE framework. (Disabled)
-        Phase        = FMOD_OUTPUTTYPE_PHASE,
-    }
-}
-
-enum_struct! {
-    /// Types of plugin used to extend functionality.
-    pub enum PluginType: FMOD_PLUGINTYPE {
-        /// Audio output interface plugin represented with [OutputDescription].
-        Output = FMOD_PLUGINTYPE_OUTPUT,
-        /// File format codec plugin represented with [CodecDescription].
-        Codec  = FMOD_PLUGINTYPE_CODEC,
-        /// DSP unit plugin represented with [DspDescription].
-        Dsp    = FMOD_PLUGINTYPE_DSP,
-    }
-
     /// Recognized audio formats that can be loaded into a Sound.
     pub enum SoundType: FMOD_SOUND_TYPE {
         #[default]
@@ -245,71 +165,6 @@ raw! {
 
 raw! {
     enum_struct! {
-        /// Identifier used to represent the different types of instance in the error callback.
-        pub enum ErrorCallbackInstaceType: FMOD_ERRORCALLBACK_INSTANCETYPE {
-            /// Type representing no known instance type.
-            None                    = FMOD_ERRORCALLBACK_INSTANCETYPE_NONE,
-            /// Type representing [System].
-            System                  = FMOD_ERRORCALLBACK_INSTANCETYPE_SYSTEM,
-            /// Type representing [Channel].
-            Channel                 = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNEL,
-            /// Type representing [ChannelGroup].
-            ChannelGroup            = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNELGROUP,
-            /// Type representing [ChannelControl].
-            ChannelControl          = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNELCONTROL,
-            /// Type representing [Sound].
-            Sound                   = FMOD_ERRORCALLBACK_INSTANCETYPE_SOUND,
-            /// Type representing [SoundGroup].
-            SoundGroup              = FMOD_ERRORCALLBACK_INSTANCETYPE_SOUNDGROUP,
-            /// Type representing [Dsp].
-            Dsp                     = FMOD_ERRORCALLBACK_INSTANCETYPE_DSP,
-            /// Type representing [DspConnection].
-            DspConnection           = FMOD_ERRORCALLBACK_INSTANCETYPE_DSPCONNECTION,
-            /// Type representing [Geometry].
-            Geometry                = FMOD_ERRORCALLBACK_INSTANCETYPE_GEOMETRY,
-            /// Type representing [Reverb3d].
-            Reverb3d                = FMOD_ERRORCALLBACK_INSTANCETYPE_REVERB3D,
-            /// Type representing [studio::System].
-            StudioSystem            = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_SYSTEM,
-            /// Type representing [studio::EventDescription].
-            StudioEventDescription  = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTDESCRIPTION,
-            /// Type representing [studio::EventInstance].
-            StudioEventInstance     = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTINSTANCE,
-            /// Deprecated.
-            StudioParameterInstance = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_PARAMETERINSTANCE,
-            /// Type representing [studio::Bus].
-            StudioBus               = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BUS,
-            /// Type representing [studio::Vca].
-            StudioVca               = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_VCA,
-            /// Type representing [studio::Bank].
-            StudioBank              = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BANK,
-            /// Type representing [studio::CommandReplay].
-            StudioCommandReplay     = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_COMMANDREPLAY,
-        }
-    }
-}
-
-enum_struct! {
-    /// List of interpolation types used for resampling.
-    ///
-    /// Use [System::set_advanced_settings] and [AdvancedSettings::resampler_method] to configure the resampling quality you require for sample rate conversion during sound playback.
-    pub enum DspResampler: FMOD_DSP_RESAMPLER {
-        #[default]
-        /// Default interpolation method, same as [DspResampler::Linear].
-        Default  = FMOD_DSP_RESAMPLER_DEFAULT,
-        /// No interpolation. High frequency aliasing hiss will be audible depending on the sample rate of the sound.
-        NoInterp = FMOD_DSP_RESAMPLER_NOINTERP,
-        /// Linear interpolation (default method). Fast and good quality, causes very slight lowpass effect on low frequency sounds.
-        Linear   = FMOD_DSP_RESAMPLER_LINEAR,
-        /// Cubic interpolation. Slower than linear interpolation but better quality.
-        Cubic    = FMOD_DSP_RESAMPLER_CUBIC,
-        /// 5 point spline interpolation. Slowest resampling method but best quality.
-        Spline   = FMOD_DSP_RESAMPLER_SPLINE,
-    }
-}
-
-raw! {
-    enum_struct! {
         /// Types of callbacks called by DSPs.
         ///
         /// Callbacks are called from the game thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
@@ -410,17 +265,6 @@ raw! {
 }
 
 enum_struct! {
-    /// Port types available for routing audio.
-    pub enum PortType: FMOD_PORT_TYPE {
-        Music          = FMOD_PORT_TYPE_MUSIC,
-        CopyrightMusic = FMOD_PORT_TYPE_COPYRIGHT_MUSIC,
-        Voice          = FMOD_PORT_TYPE_VOICE,
-        Controller     = FMOD_PORT_TYPE_CONTROLLER,
-        Personal       = FMOD_PORT_TYPE_PERSONAL,
-        Vibration      = FMOD_PORT_TYPE_VIBRATION,
-        Aux            = FMOD_PORT_TYPE_AUX,
-    }
-
     #[cfg_attr(feature = "unstable", doc(cfg(target_os = "ios")))]
     /// Control whether the sound will use a the dedicated hardware decoder or a
     /// software codec.

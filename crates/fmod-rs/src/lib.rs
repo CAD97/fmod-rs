@@ -3,7 +3,8 @@
     feature(doc_auto_cfg, doc_cfg, read_buf, extern_types)
 )]
 #![allow(rustdoc::broken_intra_doc_links)] // TODO: remove once more items exist
-#![warn(rust_2018_idioms)] // lol, this reads backwards
+#![allow(clippy::unit_arg)]
+#![allow(clippy::missing_safety_doc)] // TODO: allow on individual items
 
 //! # FMOD.rs
 //!

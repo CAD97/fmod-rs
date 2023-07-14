@@ -1,15 +1,27 @@
+use crate::utils::catch_user_unwind;
+
 use {
     crate::utils::fmod_get_string,
     fmod::{raw::*, *},
     parking_lot::RwLockUpgradableReadGuard,
     smart_default::SmartDefault,
-    std::{mem, ptr, time::Duration},
+    std::{
+        borrow::Cow,
+        ffi::{c_char, c_void, CStr},
+        marker::PhantomData,
+        mem,
+        mem::ManuallyDrop,
+        ptr, slice,
+        time::Duration,
+    },
 };
 
 opaque! {
     /// Management object from which all resources are created and played.
     class System = FMOD_SYSTEM, FMOD_System_* (System::raw_release);
 }
+
+// -------------------------------------------------------------------------------------------------
 
 /// # Lifetime management
 impl System {
@@ -284,19 +296,44 @@ impl System {
     }
 }
 
-/// Identification information about a sound device specified by its index,
-/// specific to the selected output mode.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct DriverInfo {
-    /// GUID that uniquely identifies the device.
-    pub guid: Guid,
-    /// Sample rate this device operates at.
-    pub system_rate: i32,
-    /// Speaker setup this device is currently using.
-    pub speaker_mode: SpeakerMode,
-    /// Number of channels in the current speaker setup.
-    pub speaker_mode_channels: i32,
+// -------------------------------------------------------------------------------------------------
+
+flags! {
+    /// Configuration flags used when initializing the System object.
+    pub struct InitFlags: FMOD_INITFLAGS {
+        #[default]
+        /// Initialize normally
+        Normal                 = FMOD_INIT_NORMAL,
+        /// No stream thread is created internally. Streams are driven from [System::update]. Mainly used with non-realtime outputs.
+        StreamFromUpdate       = FMOD_INIT_STREAM_FROM_UPDATE,
+        /// No mixer thread is created internally. Mixing is driven from [System::update]. Only applies to polling based output modes such as [OutputType::NoSound], [OutputType::WavWriter].
+        MixFromUpdate          = FMOD_INIT_MIX_FROM_UPDATE,
+        /// 3D calculations will be performed in right-handed coordinates.
+        RightHanded3d          = FMOD_INIT_3D_RIGHTHANDED,
+        /// Enables hard clipping of output values greater than 1.0 or less than -1.0.
+        ClipOutput             = FMOD_INIT_CLIP_OUTPUT,
+        /// Enables usage of [Channel::set_low_pass_gain], [Channel::set_3d_occlusion], or automatic usage by the [Geometry] API. All voices will add a software lowpass filter effect into the DSP chain which is idle unless one of the previous functions/features are used.
+        ChannelLowpass         = FMOD_INIT_CHANNEL_LOWPASS,
+        /// All [Mode::D3] based voices will add a software lowpass and highpass filter effect into the DSP chain which will act as a distance-automated bandpass filter. Use [System::set_advanced_settings] to adjust the center frequency.
+        ChannelDistanceFilter  = FMOD_INIT_CHANNEL_DISTANCEFILTER,
+        /// Enable TCP/IP based host which allows FMOD Studio or FMOD Profiler to connect to it, and view memory, CPU and the DSP network graph in real-time.
+        ProfileEnable          = FMOD_INIT_PROFILE_ENABLE,
+        /// Any sounds that are 0 volume will go virtual and not be processed except for having their positions updated virtually. Use [System::set_advanced_settings] to adjust what volume besides zero to switch to virtual at.
+        Vol0BecomesVirtual     = FMOD_INIT_VOL0_BECOMES_VIRTUAL,
+        /// With the geometry engine, only process the closest polygon rather than accumulating all polygons the sound to listener line intersects.
+        GeometryUseClosest     = FMOD_INIT_GEOMETRY_USECLOSEST,
+        /// When using [SpeakerMode::Surround51] with a stereo output device, use the Dolby Pro Logic II downmix algorithm instead of the default stereo downmix algorithm.
+        PreferDolbyDownmix     = FMOD_INIT_PREFER_DOLBY_DOWNMIX,
+        /// Disables thread safety for API calls. Only use this if FMOD is being called from a single thread, and if Studio API is not being used!
+        ThreadUnsafe           = FMOD_INIT_THREAD_UNSAFE,
+        /// Slower, but adds level metering for every single DSP unit in the graph. Use [DSP::set_metering_enabled] to turn meters off individually. Setting this flag implies [InitFlags::ProfileEnable].
+        ProfileMeterAll        = FMOD_INIT_PROFILE_METER_ALL,
+        /// Enables memory allocation tracking. Currently this is only useful when using the Studio API. Increases memory footprint and reduces performance. This flag is implied by [studio::InitFlags::MemoryTracking].
+        MemoryTracking         = FMOD_INIT_MEMORY_TRACKING,
+    }
 }
+
+// -------------------------------------------------------------------------------------------------
 
 /// # Device selection.
 impl System {
@@ -373,6 +410,7 @@ impl System {
             system_rate,
             speaker_mode,
             speaker_mode_channels,
+            state: DriverState::default(),
         })
     }
 
@@ -425,101 +463,86 @@ impl System {
     }
 }
 
-/// Output format for the software mixer.
+// -------------------------------------------------------------------------------------------------
+
+enum_struct! {
+    /// Built-in output types that can be used to run the mixer.
+    ///
+    /// To pass information to the driver when initializing use the `extra_driver_data` parameter in [System::init_ex] for the following reasons:
+    ///
+    /// - [OutputType::WavWriter] - `*const c_char` file name that the wav writer will output to.
+    /// - [OutputType::WavWriterNrt] - `*const c_char` file name that the wav writer will output to.
+    /// - [OutputType::PulseAudio] - `*const c_char` application name to display in OS audio mixer.
+    /// - [OutputType::Asio] - `*mut c_void` application window handle.
+    ///
+    /// Currently these are the only FMOD drivers that take extra information. Other unknown plugins may have different requirements.
+    ///
+    /// If [OutputType::WavWriterNrt] or [OutputType::NoSoundNrt] are used, and if the [System::update] function is being called very quickly (ie for a non realtime decode) it may be being called too quickly for the FMOD streamer thread to respond to. The result will be a skipping/stuttering output in the captured audio. To remedy this, disable the FMOD streamer thread, and use [InitFlags::StreamFromUpdate] to avoid skipping in the output stream, as it will lock the mixer and the streamer together in the same thread.
+    pub enum OutputType: FMOD_OUTPUTTYPE {
+        /// Picks the best output mode for the platform. This is the default.
+        AutoDetect   = FMOD_OUTPUTTYPE_AUTODETECT,
+        /// All - 3rd party plugin, unknown. This is for use with [System::get_output] only.
+        Unknown      = FMOD_OUTPUTTYPE_UNKNOWN,
+        /// All - Perform all mixing but discard the final output.
+        NoSound      = FMOD_OUTPUTTYPE_NOSOUND,
+        /// All - Writes output to a .wav file.
+        WavWriter    = FMOD_OUTPUTTYPE_WAVWRITER,
+        /// All - Non-realtime version of [OutputType::NoSound], one mix per [System::update].
+        NoSoundNrt   = FMOD_OUTPUTTYPE_NOSOUND_NRT,
+        /// All - Non-realtime version of [OutputType::WavWriter], one mix per [System::update].
+        WavWriterNrt = FMOD_OUTPUTTYPE_WAVWRITER_NRT,
+        /// Win / UWP / Xbox One / Game Core - Windows Audio Session API. (Default on Windows, Xbox One, Game Core and UWP)
+        Wasapi       = FMOD_OUTPUTTYPE_WASAPI,
+        /// Win - Low latency ASIO 2.0.
+        Asio         = FMOD_OUTPUTTYPE_ASIO,
+        /// Linux - Pulse Audio. (Default on Linux if available)
+        PulseAudio   = FMOD_OUTPUTTYPE_PULSEAUDIO,
+        /// Linux - Advanced Linux Sound Architecture. (Default on Linux if PulseAudio isn't available)
+        Alsa         = FMOD_OUTPUTTYPE_ALSA,
+        /// Mac / iOS - Core Audio. (Default on Mac and iOS)
+        CoreAudio    = FMOD_OUTPUTTYPE_COREAUDIO,
+        /// Android - Java Audio Track. (Default on Android 2.2 and below)
+        AudioTrack   = FMOD_OUTPUTTYPE_AUDIOTRACK,
+        /// Android - OpenSL ES. (Default on Android 2.3 up to 7.1)
+        OpenSl       = FMOD_OUTPUTTYPE_OPENSL,
+        /// PS4 / PS5 - Audio Out. (Default on PS4, PS5)
+        AudioOut     = FMOD_OUTPUTTYPE_AUDIOOUT,
+        /// PS4 - Audio3D.
+        Audio3d      = FMOD_OUTPUTTYPE_AUDIO3D,
+        /// HTML5 - Web Audio ScriptProcessorNode output. (Default on HTML5 if AudioWorkletNode isn't available)
+        WebAudio     = FMOD_OUTPUTTYPE_WEBAUDIO,
+        /// Switch - nn::audio. (Default on Switch)
+        NnAudio      = FMOD_OUTPUTTYPE_NNAUDIO,
+        /// Win10 / Xbox One / Game Core - Windows Sonic.
+        Winsonic     = FMOD_OUTPUTTYPE_WINSONIC,
+        /// Android - AAudio. (Default on Android 8.1 and above)
+        AAudio       = FMOD_OUTPUTTYPE_AAUDIO,
+        /// HTML5 - Web Audio AudioWorkletNode output. (Default on HTML5 if available)
+        AudioWorklet = FMOD_OUTPUTTYPE_AUDIOWORKLET,
+        /// Mac / iOS - PHASE framework. (Disabled)
+        Phase        = FMOD_OUTPUTTYPE_PHASE,
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// Identification information about a sound device.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct SoftwareFormat {
-    /// Sample rate of the mixer.
-    ///
-    /// <dl>
-    /// <dt>Range</dt><dd>[8000, 192000]</dd>
-    /// <dt>Units</dt><dd>Hertz</dd>
-    /// <dt>Default</dt><dd>48000</dd>
-    /// </dl>
-    pub sample_rate: i32,
-    /// Speaker setup of the mixer.
+pub struct DriverInfo {
+    /// GUID that uniquely identifies the device.
+    pub guid: Guid,
+    /// Sample rate this device operates at.
+    pub system_rate: i32,
+    /// Speaker setup this device is currently using.
     pub speaker_mode: SpeakerMode,
-    /// Number of speakers for [SpeakerMode::Raw].
-    ///
-    /// <dl>
-    /// <dt>Range</dt><dd>[0, MAX_CHANNEL_WIDTH]</dd>
-    /// </dl>
-    pub num_raw_speakers: i32,
+    /// Number of channels in the current speaker setup.
+    pub speaker_mode_channels: i32,
+    /// Flags that provide additional information about the driver.
+    /// Only set for record drivers.
+    pub state: DriverState,
 }
 
-/// The buffer size for the FMOD software mixing engine.
-#[derive(Debug, SmartDefault, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct DspBufferSize {
-    /// The mixer engine block size. Use this to adjust mixer update
-    /// granularity. See below for more information on buffer length vs latency.
-    ///
-    /// <dl>
-    /// <dt>Units</dt><dd>Samples</dd>
-    /// <dt>Default</dt><dd>1024</dd>
-    /// </dl>
-    #[default(1024)]
-    pub buffer_length: u32,
-    /// The mixer engine number of buffers used. Use this to adjust mixer
-    /// latency. See [System::set_dsp_buffer_size] for more information on
-    /// number of buffers vs latency.
-    pub num_buffers: i32,
-}
-
-/// The position of a speaker for the current speaker mode.
-#[derive(Debug, Default, Copy, Clone, PartialEq)]
-pub struct SpeakerPosition {
-    /// 2D X position relative to the listener. -1 = left, 0 = middle,
-    /// +1 = right.
-    /// <dl>
-    /// <dt>Range</dt><dd>[-1, 1]</dd>
-    /// </dl>
-    pub x: f32,
-    /// 2D Y position relative to the listener. -1 = back, 0 = middle,
-    /// +1 = front.
-    /// <dl>
-    /// <dt>Range</dt><dd>[-1, 1]</dd>
-    /// </dl>
-    pub y: f32,
-    /// Active state of a speaker. true = included in 3D calculations,
-    /// false = ignored.
-    pub active: bool,
-}
-
-/// The global doppler scale, distance factor and log rolloff scale for all 3D
-/// sound in FMOD.
-#[derive(Debug, SmartDefault, Copy, Clone, PartialEq)]
-pub struct Settings3d {
-    /// A general scaling factor for how much the pitch varies due to doppler
-    /// shifting in 3D sound. Doppler is the pitch bending effect when a sound
-    /// comes towards the listener or moves away from it, much like the effect
-    /// you hear when a train goes past you with its horn sounding. With
-    /// `doppler_scale` you can exaggerate or diminish the effect. FMOD's
-    /// effective speed of sound at a doppler factor of 1.0 is 340 m/s.
-    #[default(1.0)]
-    pub doppler_scale: f32,
-    /// The FMOD 3D engine relative distance factor, compared to 1.0 meters.
-    /// Another way to put it is that it equates to "how many units per meter
-    /// does your engine have". For example, if you are using feet then "scale"
-    /// would equal 3.28.  
-    /// This only affects doppler. If you keep your min/max distance, custom
-    /// rolloff curves and positions in scale relative to each other the volume
-    /// rolloff will not change. If you set this, the min_distance of a sound
-    /// will automatically set itself to this value when it is created in case
-    /// the user forgets to set the min_distance to match the new
-    /// distance_factor.
-    #[default(1.0)]
-    pub distance_factor: f32,
-    /// The global attenuation rolloff factor. Volume for a sound will scale at
-    /// min_distance / distance. Setting this value makes the sound drop off
-    /// faster or slower. The higher the value, the faster volume will
-    /// attenuate, and conversely the lower the value, the slower it will
-    /// attenuate. For example, a rolloff factor of 1 will simulate the real
-    /// world, where as a value of 2 will make sounds attenuate 2 times quicker.
-    #[default(1.0)]
-    pub rolloff_scale: f32,
-}
-
-/// Callback to allow custom calculation of distance attenuation.
-pub type Rolloff3dCallback = extern "system" fn(channel: &Channel, distance: f32) -> f32;
+// -------------------------------------------------------------------------------------------------
 
 /// # Setup.
 impl System {
@@ -894,6 +917,315 @@ impl System {
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+
+fmod_struct! {
+    /// Advanced configuration settings.
+    ///
+    /// Structure to allow configuration of lesser used system level settings.
+    /// These tweaks generally allow the user to set resource limits and
+    /// customize settings to better fit their application.
+    ///
+    /// 0 means to not change the setting (and this is provided by `default()`),
+    /// so setting only a few members is a common use pattern.
+    ///
+    /// Specifying one of the codec maximums will help determine the maximum CPU
+    /// usage of playing [Mode::CreateCompressedSample] Sounds of that type as well
+    /// as the memory requirements. Memory will be allocated for 'up front' (during
+    /// [System::init]) if these values are specified as non zero. If any are zero,
+    /// it allocates memory for the codec whenever a file of the type in question is
+    /// loaded. So if `max_mpeg_codecs` is 0 for example, it will allocate memory
+    /// for the MPEG codecs the first time an MP3 is loaded or an MP3 based .FSB
+    /// file is loaded.
+    ///
+    /// Setting `dsp_buffer_pool_size` will pre-allocate memory for the FMOD DSP
+    /// network. See [DSP architecture guide]. By default 8 buffers are created up
+    /// front. A large network might require more if the aim is to avoid real-time
+    /// allocations from the FMOD mixer thread.
+    ///
+    /// [DSP architecture guide]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-dsp-architecture.html
+    pub struct AdvancedSettings = FMOD_ADVANCEDSETTINGS {
+        /// Size of this structure. Must be set to `size_of::<Self>()`.
+        #[default(mem::size_of::<Self>() as i32)]
+        size: i32,
+        /// Maximum MPEG Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_mpeg_codecs: i32,
+        /// Maximum IMA-ADPCM Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_adpcm_codecs: i32,
+        /// Maximum XMA Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_xma_codecs: i32,
+        /// Maximum Vorbis Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_vorbix_codecs: i32,
+        /// Maximum AT9 Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_at9_codecs: i32,
+        /// Maximum FADPCM Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_fadpcm_codecs: i32,
+        /// Deprecated.
+        max_pcm_codecs: i32,
+        /// Number of elements in `asio_speaker_list` on input, number of elements
+        /// in `asio_channel_list` on output.
+        /// <dl>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        asio_num_channels: i32,
+        /// Read only list of strings representing ASIO channel names, count is
+        /// defined by `asio_num_channels`. Only valid after [System::init].
+        #[default(ptr::null_mut())]
+        asio_channel_list: *mut *mut c_char,
+        /// List of speakers that represent each ASIO channel used for remapping,
+        /// count is defined by `asio_num_channels`. Use [Speaker::None] to indicate
+        /// no output for a given speaker.
+        #[default(ptr::null_mut())]
+        asio_speaker_list: *mut FMOD_SPEAKER,
+        /// For use with [InitFlags::Vol0BecomesVirtual], [Channel]s with audibility
+        /// below this will become virtual. See the [Virtual Voices] guide for more
+        /// information.
+        ///
+        /// [Virtual Voices]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-virtual-voices.html
+        /// <dl>
+        /// <dt>Units</dt><dd>Linear</dd>
+        /// <dt>Default</dt><dd>0</dd>
+        /// </dl>
+        pub vol_0_virtual_vol: f32,
+        /// For use with Streams, the default size of the double buffer.
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Default</dt><dd>400</dd>
+        /// <dt>Range</dt><dd>[0, 30000]</dd>
+        /// </dl>
+        pub default_decode_buffer_size: u32,
+        /// For use with [InitFlags::ProfileEnable], specify the port to listen on
+        /// for connections by FMOD Studio or FMOD Profiler.
+        /// <dl>
+        /// <dt>Default</dt><dd>9264</dd>
+        /// </dl>
+        pub profile_port: u16,
+        /// For use with [Geometry], the maximum time it takes for a [Channel] to
+        /// fade to the new volume level when its occlusion changes.
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Default</dt><dd>500</dd>
+        /// </dl>
+        pub geometry_max_fade_time: u32,
+        /// For use with [InitFlags::ChannelDistanceFilter], the default center
+        /// frequency for the distance filtering effect.
+        /// <dl>
+        /// <dt>Units</dt><dd>Hertz</dd>
+        /// <dt>Default</dt><dd>1500</dd>
+        /// <dt>Range</dt><dd>[10, 22050]</dd>
+        /// </dl>
+        pub distance_filter_center_freq: f32,
+        /// For use with [Reverb3D], selects which global reverb instance to use.
+        /// <dl>
+        /// <dt>Range</dt><dd>[0, MAX_INSTANCES]</dd>
+        /// </dl>
+        pub reverb_3d_instance: i32,
+        /// Number of intermediate mixing buffers in the 'DSP buffer pool'. Each
+        /// buffer in bytes will be `buffer_length` (See [System::get_dsp_buffer_size])
+        /// × `size_of::<f32>()` × output mode speaker count (See [SpeakerMode]).
+        /// ie 7.1 @ 1024 DSP block size = 1024 × 4 × 8 = 32KB.
+        /// <dl>
+        /// <dt>Default</dt><dd>8</dd>
+        /// </dl>
+        pub dsp_buffer_pool_size: i32,
+        /// Resampling method used by [Channel]s.
+        pub resampler_method: DspResampler,
+        /// Seed value to initialize the internal random number generator.
+        pub random_seed: u32,
+        /// Maximum number of CPU threads to use for [DspType::Convolutionreverb]
+        /// effect. 1 = effect is entirely processed inside the [ThreadType::Mixer]
+        /// thread. 2 and 3 offloads different parts of the convolution processing
+        /// into different threads ([ThreadType::Convolution1] and
+        /// [ThreadType::Convolution2] to increase throughput.
+        /// <dl>
+        /// <dt>Default</dt><dd>3</dd>
+        /// <dt>Range</dt><dd>[0, 3]</dd>
+        /// </dl>
+        pub max_convolution_threads: i32,
+        /// Maximum Opus Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_opus_codecs: i32,
+    }
+}
+
+impl AdvancedSettings {
+    /// ASIO channel names. Only valid after [System::init].
+    pub fn asio_channel_list(&self) -> Option<impl Iterator<Item = Cow<'_, str>>> {
+        if self.asio_channel_list.is_null() {
+            None
+        } else {
+            Some(
+                unsafe {
+                    slice::from_raw_parts(self.asio_channel_list, ix!(self.asio_num_channels))
+                }
+                .iter()
+                .copied()
+                .map(|ptr| unsafe { CStr::from_ptr(ptr) })
+                .map(CStr::to_bytes)
+                .map(String::from_utf8_lossy),
+            )
+        }
+    }
+
+    /// List of speakers that represent each ASIO channel used for remapping.
+    pub fn asio_speaker_list(&self) -> Option<&[Speaker]> {
+        if self.asio_speaker_list.is_null() {
+            None
+        } else {
+            Some(unsafe {
+                slice::from_raw_parts(self.asio_speaker_list.cast(), ix!(self.asio_num_channels))
+            })
+        }
+    }
+}
+
+/// Callback to allow custom calculation of distance attenuation.
+pub type Rolloff3dCallback = extern "system" fn(channel: &Channel, distance: f32) -> f32;
+
+// -------------------------------------------------------------------------------------------------
+
+enum_struct! {
+    /// List of interpolation types used for resampling.
+    ///
+    /// Use [System::set_advanced_settings] and [AdvancedSettings::resampler_method] to configure the resampling quality you require for sample rate conversion during sound playback.
+    pub enum DspResampler: FMOD_DSP_RESAMPLER {
+        #[default]
+        /// Default interpolation method, same as [DspResampler::Linear].
+        Default  = FMOD_DSP_RESAMPLER_DEFAULT,
+        /// No interpolation. High frequency aliasing hiss will be audible depending on the sample rate of the sound.
+        NoInterp = FMOD_DSP_RESAMPLER_NOINTERP,
+        /// Linear interpolation (default method). Fast and good quality, causes very slight lowpass effect on low frequency sounds.
+        Linear   = FMOD_DSP_RESAMPLER_LINEAR,
+        /// Cubic interpolation. Slower than linear interpolation but better quality.
+        Cubic    = FMOD_DSP_RESAMPLER_CUBIC,
+        /// 5 point spline interpolation. Slowest resampling method but best quality.
+        Spline   = FMOD_DSP_RESAMPLER_SPLINE,
+    }
+}
+// -------------------------------------------------------------------------------------------------
+
+/// Output format for the software mixer.
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct SoftwareFormat {
+    /// Sample rate of the mixer.
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[8000, 192000]</dd>
+    /// <dt>Units</dt><dd>Hertz</dd>
+    /// <dt>Default</dt><dd>48000</dd>
+    /// </dl>
+    pub sample_rate: i32,
+    /// Speaker setup of the mixer.
+    pub speaker_mode: SpeakerMode,
+    /// Number of speakers for [SpeakerMode::Raw].
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[0, MAX_CHANNEL_WIDTH]</dd>
+    /// </dl>
+    pub num_raw_speakers: i32,
+}
+
+/// The buffer size for the FMOD software mixing engine.
+#[derive(Debug, SmartDefault, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct DspBufferSize {
+    /// The mixer engine block size. Use this to adjust mixer update
+    /// granularity. See below for more information on buffer length vs latency.
+    ///
+    /// <dl>
+    /// <dt>Units</dt><dd>Samples</dd>
+    /// <dt>Default</dt><dd>1024</dd>
+    /// </dl>
+    #[default(1024)]
+    pub buffer_length: u32,
+    /// The mixer engine number of buffers used. Use this to adjust mixer
+    /// latency. See [System::set_dsp_buffer_size] for more information on
+    /// number of buffers vs latency.
+    pub num_buffers: i32,
+}
+
+/// The position of a speaker for the current speaker mode.
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
+pub struct SpeakerPosition {
+    /// 2D X position relative to the listener. -1 = left, 0 = middle,
+    /// +1 = right.
+    /// <dl>
+    /// <dt>Range</dt><dd>[-1, 1]</dd>
+    /// </dl>
+    pub x: f32,
+    /// 2D Y position relative to the listener. -1 = back, 0 = middle,
+    /// +1 = front.
+    /// <dl>
+    /// <dt>Range</dt><dd>[-1, 1]</dd>
+    /// </dl>
+    pub y: f32,
+    /// Active state of a speaker. true = included in 3D calculations,
+    /// false = ignored.
+    pub active: bool,
+}
+
+/// The global doppler scale, distance factor and log rolloff scale for all 3D
+/// sound in FMOD.
+#[derive(Debug, SmartDefault, Copy, Clone, PartialEq)]
+pub struct Settings3d {
+    /// A general scaling factor for how much the pitch varies due to doppler
+    /// shifting in 3D sound. Doppler is the pitch bending effect when a sound
+    /// comes towards the listener or moves away from it, much like the effect
+    /// you hear when a train goes past you with its horn sounding. With
+    /// `doppler_scale` you can exaggerate or diminish the effect. FMOD's
+    /// effective speed of sound at a doppler factor of 1.0 is 340 m/s.
+    #[default(1.0)]
+    pub doppler_scale: f32,
+    /// The FMOD 3D engine relative distance factor, compared to 1.0 meters.
+    /// Another way to put it is that it equates to "how many units per meter
+    /// does your engine have". For example, if you are using feet then "scale"
+    /// would equal 3.28.  
+    /// This only affects doppler. If you keep your min/max distance, custom
+    /// rolloff curves and positions in scale relative to each other the volume
+    /// rolloff will not change. If you set this, the min_distance of a sound
+    /// will automatically set itself to this value when it is created in case
+    /// the user forgets to set the min_distance to match the new
+    /// distance_factor.
+    #[default(1.0)]
+    pub distance_factor: f32,
+    /// The global attenuation rolloff factor. Volume for a sound will scale at
+    /// min_distance / distance. Setting this value makes the sound drop off
+    /// faster or slower. The higher the value, the faster volume will
+    /// attenuate, and conversely the lower the value, the slower it will
+    /// attenuate. For example, a rolloff factor of 1 will simulate the real
+    /// world, where as a value of 2 will make sounds attenuate 2 times quicker.
+    #[default(1.0)]
+    pub rolloff_scale: f32,
+}
+
+// -------------------------------------------------------------------------------------------------
+
 /// # File system setup.
 impl System {
     /// Set file I/O to use the platform native method.
@@ -1021,14 +1353,7 @@ impl System {
     }
 }
 
-/// Information about a selected plugin.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PluginInfo {
-    /// Plugin type.
-    pub kind: PluginType,
-    /// Version number of the plugin.
-    pub version: u32,
-}
+// -------------------------------------------------------------------------------------------------
 
 /// # Plugin support.
 impl System {
@@ -1222,6 +1547,33 @@ impl System {
     */
 }
 
+// -------------------------------------------------------------------------------------------------
+
+enum_struct! {
+    /// Types of plugin used to extend functionality.
+    pub enum PluginType: FMOD_PLUGINTYPE {
+        /// Audio output interface plugin represented with [OutputDescription].
+        Output = FMOD_PLUGINTYPE_OUTPUT,
+        /// File format codec plugin represented with [CodecDescription].
+        Codec  = FMOD_PLUGINTYPE_CODEC,
+        /// DSP unit plugin represented with [DspDescription].
+        Dsp    = FMOD_PLUGINTYPE_DSP,
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// Information about a selected plugin.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginInfo {
+    /// Plugin type.
+    pub kind: PluginType,
+    /// Version number of the plugin.
+    pub version: u32,
+}
+
+// -------------------------------------------------------------------------------------------------
+
 /// # Network configuration.
 impl System {
     /// Set a proxy server to use for all subsequent internet connections.
@@ -1267,25 +1619,7 @@ impl System {
     }
 }
 
-/// A number of playing channels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ChannelUsage {
-    /// Number of playing [Channel]s (both real and virtual).
-    pub all: i32,
-    /// Number of playing real (non-virtual) [Channel]s.
-    pub real: i32,
-}
-
-/// Running total information about file reads.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct FileUsage {
-    /// Total bytes read from file for loading sample data.
-    pub sample_bytes_read: i64,
-    /// Total bytes read from file for streaming sounds.
-    pub stream_bytes_read: i64,
-    /// Total bytes read for non-audio data such as FMOD Studio banks.
-    pub other_bytes_read: i64,
-}
+// -------------------------------------------------------------------------------------------------
 
 /// # Information.
 impl System {
@@ -1376,6 +1710,30 @@ impl System {
         Ok(channels as _)
     }
 }
+
+// -------------------------------------------------------------------------------------------------
+
+/// A number of playing channels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ChannelUsage {
+    /// Number of playing [Channel]s (both real and virtual).
+    pub all: i32,
+    /// Number of playing real (non-virtual) [Channel]s.
+    pub real: i32,
+}
+
+/// Running total information about file reads.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FileUsage {
+    /// Total bytes read from file for loading sample data.
+    pub sample_bytes_read: i64,
+    /// Total bytes read from file for streaming sounds.
+    pub stream_bytes_read: i64,
+    /// Total bytes read for non-audio data such as FMOD Studio banks.
+    pub other_bytes_read: i64,
+}
+
+// -------------------------------------------------------------------------------------------------
 
 /// # Creation and retrieval.
 impl System {
@@ -1767,18 +2125,7 @@ impl System {
     }
 }
 
-/// Position, velocity, and orientation of a 3D sound listener.
-#[derive(Debug, Copy, Clone, Default, PartialEq)]
-pub struct ListenerAttributes3d {
-    /// Position in 3D space used for panning and attenuation.
-    pub pos: Vector,
-    /// Velocity in 3D space used for doppler.
-    pub vel: Vector,
-    /// Forwards orientation.
-    pub forward: Vector,
-    /// Upwards orientation.
-    pub up: Vector,
-}
+// -------------------------------------------------------------------------------------------------
 
 /// # Runtime control.
 impl System {
@@ -1918,11 +2265,963 @@ impl System {
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+
+fmod_struct! {
+    /// Structure defining a reverb environment.
+    ///
+    /// The generic reverb properties are those used by [ReverbProperties::GENERIC].
+    pub struct ReverbProperties = FMOD_REVERB_PROPERTIES {
+        /// Reverberation decay time.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Default</dt><dd>1500</dd>
+        /// <dt>Range</dt><dd>[0, 20000]</dd>
+        /// </dl>
+        #[default(1500.0)]
+        pub decay_time: f32,
+        /// Initial reflection delay time.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Default</dt><dd>7</dd>
+        /// <dt>Range</dt><dd>[0, 300]</dd>
+        /// </dl>
+        #[default(7.0)]
+        pub early_delay: f32,
+        /// Late reverberation delay time relative to initial reflection.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Milliseconds</dd>
+        /// <dt>Default</dt><dd>11</dd>
+        /// <dt>Range</dt><dd>[0, 100]</dd>
+        /// </dl>
+        #[default(11.0)]
+        pub late_delay: f32,
+        /// Reference high frequency.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Hertz</dd>
+        /// <dt>Default</dt><dd>5000</dd>
+        /// <dt>Range</dt><dd>[20, 20000]</dd>
+        /// </dl>
+        #[default(5000.0)]
+        pub hf_reference: f32,
+        /// High-frequency to mid-frequency decay time ratio.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Percent</dd>
+        /// <dt>Default</dt><dd>50</dd>
+        /// <dt>Range</dt><dd>[10, 100]</dd>
+        /// </dl>
+        #[default(50.0)]
+        pub hf_decay_ratio: f32,
+        /// Value that controls the echo density in the late reverberation decay.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Percent</dd>
+        /// <dt>Default</dt><dd>50</dd>
+        /// <dt>Range</dt><dd>[10, 100]</dd>
+        /// </dl>
+        #[default(50.0)]
+        pub diffusion: f32,
+        /// Value that controls the modal density in the late reverberation decay.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Percent</dd>
+        /// <dt>Default</dt><dd>100</dd>
+        /// <dt>Range</dt><dd>[0, 100]</dd>
+        /// </dl>
+        #[default(100.0)]
+        pub density: f32,
+        /// Reference low frequency
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Hertz</dd>
+        /// <dt>Default</dt><dd>250</dd>
+        /// <dt>Range</dt><dd>[20, 1000]</dd>
+        /// </dl>
+        #[default(250.0)]
+        pub low_shelf_frequency: f32,
+        /// Relative room effect level at low frequencies.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Decibels</dd>
+        /// <dt>Default</dt><dd>0</dd>
+        /// <dt>Range</dt><dd>[-36, 12]</dd>
+        /// </dl>
+        #[default(0.0)]
+        pub low_shelf_gain: f32,
+        /// Relative room effect level at high frequencies.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Hertz</dd>
+        /// <dt>Default</dt><dd>200000</dd>
+        /// <dt>Range</dt><dd>[0, 20000]</dd>
+        /// </dl>
+        #[default(200000.0)]
+        pub high_cut: f32,
+        /// Early reflections level relative to room effect.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Percent</dd>
+        /// <dt>Default</dt><dd>50</dd>
+        /// <dt>Range</dt><dd>[0, 100]</dd>
+        /// </dl>
+        #[default(50.0)]
+        pub early_late_mix: f32,
+        /// Room effect level at mid frequencies.
+        ///
+        /// <dl>
+        /// <dt>Units</dt><dd>Decibels</dd>
+        /// <dt>Default</dt><dd>-6</dd>
+        /// <dt>Range</dt><dd>[-80, 20]</dd>
+        /// </dl>
+        #[default(-6.0)]
+        pub wet_level: f32,
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+flags! {
+    /// Output type specific index for when there are multiple instances of a port type.
+    pub struct PortIndex: FMOD_PORT_INDEX {
+        /// Use when a port index is not required
+        None = FMOD_PORT_INDEX_NONE as _,
+        /// Use as a flag to indicate the intended controller is associated with a VR headset
+        VrController = FMOD_PORT_INDEX_FLAG_VR_CONTROLLER as _,
+    }
+}
+
+enum_struct! {
+    /// Port types available for routing audio.
+    pub enum PortType: FMOD_PORT_TYPE {
+        Music          = FMOD_PORT_TYPE_MUSIC,
+        CopyrightMusic = FMOD_PORT_TYPE_COPYRIGHT_MUSIC,
+        Voice          = FMOD_PORT_TYPE_VOICE,
+        Controller     = FMOD_PORT_TYPE_CONTROLLER,
+        Personal       = FMOD_PORT_TYPE_PERSONAL,
+        Vibration      = FMOD_PORT_TYPE_VIBRATION,
+        Aux            = FMOD_PORT_TYPE_AUX,
+    }
+}
+
+/// The maximum number of global/physical reverb instances.
+///
+/// Each instance of a physical reverb is an instance of a [DspSfxReverb] dsp in
+/// the mix graph. This is unrelated to the number of possible Reverb3D objects,
+/// which is unlimited.
+pub const REVERB_MAX_INSTANCES: usize = FMOD_REVERB_MAXINSTANCES as usize;
+
+macro_rules! reverb {
+    {
+        $decay_time:expr,
+        $early_delay:expr,
+        $late_delay:expr,
+        $hf_reference:expr,
+        $hf_decay_ratio:expr,
+        $diffusion:expr,
+        $density:expr,
+        $low_shelf_frequency:expr,
+        $low_shelf_gain:expr,
+        $high_cut:expr,
+        $early_late_mix:expr,
+        $wet_level:expr $(,)?
+    } => {
+        ReverbProperties {
+            decay_time: $decay_time,
+            early_delay: $early_delay,
+            late_delay: $late_delay,
+            hf_reference: $hf_reference,
+            hf_decay_ratio: $hf_decay_ratio,
+            diffusion: $diffusion,
+            density: $density,
+            low_shelf_frequency: $low_shelf_frequency,
+            low_shelf_gain: $low_shelf_gain,
+            high_cut: $high_cut,
+            early_late_mix: $early_late_mix,
+            wet_level: $wet_level,
+        }
+    };
+}
+
+#[rustfmt::skip]
+impl ReverbProperties {
+    pub const OFF: Self =               reverb! {  1000.0,    7.0,  11.0, 5000.0, 100.0, 100.0, 100.0, 250.0, 0.0,    20.0,  96.0, -80.0 };
+    pub const GENERIC: Self =           reverb! {  1500.0,    7.0,  11.0, 5000.0,  83.0, 100.0, 100.0, 250.0, 0.0, 14500.0,  96.0,  -8.0 };
+    pub const PADDEDCELL: Self =        reverb! {   170.0,    1.0,   2.0, 5000.0,  10.0, 100.0, 100.0, 250.0, 0.0,   160.0,  84.0,  -7.8 };
+    pub const ROOM: Self =              reverb! {   400.0,    2.0,   3.0, 5000.0,  83.0, 100.0, 100.0, 250.0, 0.0,  6050.0,  88.0,  -9.4 };
+    pub const BATHROOM: Self =          reverb! {  1500.0,    7.0,  11.0, 5000.0,  54.0, 100.0,  60.0, 250.0, 0.0,  2900.0,  83.0,   0.5 };
+    pub const LIVINGROOM: Self =        reverb! {   500.0,    3.0,   4.0, 5000.0,  10.0, 100.0, 100.0, 250.0, 0.0,   160.0,  58.0, -19.0 };
+    pub const STONEROOM: Self =         reverb! {  2300.0,   12.0,  17.0, 5000.0,  64.0, 100.0, 100.0, 250.0, 0.0,  7800.0,  71.0,  -8.5 };
+    pub const AUDITORIUM: Self =        reverb! {  4300.0,   20.0,  30.0, 5000.0,  59.0, 100.0, 100.0, 250.0, 0.0,  5850.0,  64.0, -11.7 };
+    pub const CONCERTHALL: Self =       reverb! {  3900.0,   20.0,  29.0, 5000.0,  70.0, 100.0, 100.0, 250.0, 0.0,  5650.0,  80.0,  -9.8 };
+    pub const CAVE: Self =              reverb! {  2900.0,   15.0,  22.0, 5000.0, 100.0, 100.0, 100.0, 250.0, 0.0, 20000.0,  59.0, -11.3 };
+    pub const ARENA: Self =             reverb! {  7200.0,   20.0,  30.0, 5000.0,  33.0, 100.0, 100.0, 250.0, 0.0,  4500.0,  80.0,  -9.6 };
+    pub const HANGAR: Self =            reverb! { 10000.0,   20.0,  30.0, 5000.0,  23.0, 100.0, 100.0, 250.0, 0.0,  3400.0,  72.0,  -7.4 };
+    pub const CARPETTEDHALLWAY: Self =  reverb! {   300.0,    2.0,  30.0, 5000.0,  10.0, 100.0, 100.0, 250.0, 0.0,   500.0,  56.0, -24.0 };
+    pub const HALLWAY: Self =           reverb! {  1500.0,    7.0,  11.0, 5000.0,  59.0, 100.0, 100.0, 250.0, 0.0,  7800.0,  87.0,  -5.5 };
+    pub const STONECORRIDOR: Self =     reverb! {   270.0,   13.0,  20.0, 5000.0,  79.0, 100.0, 100.0, 250.0, 0.0,  9000.0,  86.0,  -6.0 };
+    pub const ALLEY: Self =             reverb! {  1500.0,    7.0,  11.0, 5000.0,  86.0, 100.0, 100.0, 250.0, 0.0,  8300.0,  80.0,  -9.8 };
+    pub const FOREST: Self =            reverb! {  1500.0,  162.0,  88.0, 5000.0,  54.0,  79.0, 100.0, 250.0, 0.0,   760.0,  94.0, -12.3 };
+    pub const CITY: Self =              reverb! {  1500.0,    7.0,  11.0, 5000.0,  67.0,  50.0, 100.0, 250.0, 0.0,  4050.0,  66.0, -26.0 };
+    pub const MOUNTAINS: Self =         reverb! {  1500.0,  300.0, 100.0, 5000.0,  21.0,  27.0, 100.0, 250.0, 0.0,  1220.0,  82.0, -24.0 };
+    pub const QUARRY: Self =            reverb! {  1500.0,   61.0,  25.0, 5000.0,  83.0, 100.0, 100.0, 250.0, 0.0,  3400.0, 100.0,  -5.0 };
+    pub const PLAIN: Self =             reverb! {  1500.0,  179.0, 100.0, 5000.0,  50.0,  21.0, 100.0, 250.0, 0.0,  1670.0,  65.0, -28.0 };
+    pub const PARKINGLOT: Self =        reverb! {  1700.0,    8.0,  12.0, 5000.0, 100.0, 100.0, 100.0, 250.0, 0.0, 20000.0,  56.0, -19.5 };
+    pub const SEWERPIPE: Self =         reverb! {  2800.0,   14.0,  21.0, 5000.0,  14.0,  80.0,  60.0, 250.0, 0.0,  3400.0,  66.0,   1.2 };
+    pub const UNDERWATER: Self =        reverb! {  1500.0,    7.0,  11.0, 5000.0,  10.0, 100.0, 100.0, 250.0, 0.0,   500.0,  92.0,   7.0 };
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// Position, velocity, and orientation of a 3D sound listener.
+#[derive(Debug, Copy, Clone, Default, PartialEq)]
+pub struct ListenerAttributes3d {
+    /// Position in 3D space used for panning and attenuation.
+    pub pos: Vector,
+    /// Velocity in 3D space used for doppler.
+    pub vel: Vector,
+    /// Forwards orientation.
+    pub forward: Vector,
+    /// Upwards orientation.
+    pub up: Vector,
+}
+
+// -------------------------------------------------------------------------------------------------
+
 /// # Recording.
-impl System {}
+impl System {
+    /// Retrieves the number of recording devices available for this output
+    /// mode. Use this to enumerate all recording devices possible so that the
+    /// user can select one.
+    pub fn get_record_num_drivers(&self) -> Result<NumDrivers> {
+        let mut available = 0;
+        let mut connected = 0;
+        ffi!(FMOD_System_GetRecordNumDrivers(
+            self.as_raw(),
+            &mut available,
+            &mut connected,
+        ))?;
+        Ok(NumDrivers {
+            available,
+            connected,
+        })
+    }
+
+    /// Retrieves identification information about an audio device specified by
+    /// its index, and specific to the output mode.
+    pub fn get_record_driver_info(&self, id: i32) -> Result<DriverInfo> {
+        let mut guid = Guid::default();
+        let mut system_rate = 0;
+        let mut speaker_mode = SpeakerMode::default();
+        let mut speaker_mode_channels = 0;
+        let mut state = DriverState::default();
+
+        ffi!(FMOD_System_GetRecordDriverInfo(
+            self.as_raw(),
+            id,
+            ptr::null_mut(),
+            0,
+            guid.as_raw_mut(),
+            &mut system_rate,
+            speaker_mode.as_raw_mut(),
+            &mut speaker_mode_channels,
+            state.as_raw_mut(),
+        ))?;
+
+        Ok(DriverInfo {
+            guid,
+            system_rate,
+            speaker_mode,
+            speaker_mode_channels,
+            state,
+        })
+    }
+
+    /// Retrieves the name of an audio device specified by its index, and
+    /// specific to the output mode.
+    pub fn get_record_driver_name(&self, id: i32, name: &mut String) -> Result {
+        unsafe {
+            fmod_get_string(name, |buf| {
+                ffi!(FMOD_System_GetDriverInfo(
+                    self.as_raw(),
+                    id,
+                    buf.as_mut_ptr().cast(),
+                    buf.len() as _,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                ))
+            })
+        }
+    }
+
+    /// Retrieves the current recording position of the record buffer in PCM
+    /// samples.
+    ///
+    /// Will return [`Error::RecordDisconnected`] if the driver is unplugged.
+    ///
+    /// The position will return to 0 when [`System::record_stop`] is called or
+    /// when a non-looping recording reaches the end.
+    pub fn get_record_position(&self, id: i32) -> Result<Time> {
+        let mut position = 0;
+        ffi!(FMOD_System_GetRecordPosition(
+            self.as_raw(),
+            id,
+            &mut position,
+        ))?;
+        Ok(Time::pcm(position))
+    }
+
+    /// Starts the recording engine recording to a pre-created Sound object.
+    ///
+    /// Will return [`Error::RecordDisconnected`] if the driver is unplugged.
+    ///
+    /// Sound must be created as [`Mode::CreateSample`]. Raw PCM data can be
+    /// accessed with [`Sound::lock`], [`Sound::unlock`] and
+    /// [`System::get_record_position`].
+    ///
+    /// Recording from the same driver a second time will stop the first
+    /// recording.
+    ///
+    /// For lowest latency set the Sound sample rate to the rate returned by
+    /// [`System::get_record_driver_info`], otherwise a resampler will be
+    /// allocated to handle the difference in frequencies, which adds latency.
+    pub fn record_start(&self, id: i32, sound: &Sound) -> Result {
+        ffi!(FMOD_System_RecordStart(
+            self.as_raw(),
+            id,
+            sound.as_raw(),
+            false as _, // loop
+        ))?;
+        Ok(())
+    }
+
+    /// Starts the recording engine recording to a pre-created Sound object.
+    ///
+    /// Like [`System::record_start`], but the recording engine will continue
+    /// recording to the provided sound from the start again, after it has
+    /// reached the end. The data will be continually be overwritten once every
+    /// loop.
+    pub fn record_start_loop(&self, id: i32, sound: &Sound) -> Result {
+        ffi!(FMOD_System_RecordStart(
+            self.as_raw(),
+            id,
+            sound.as_raw(),
+            true as _, // loop
+        ))?;
+        Ok(())
+    }
+
+    /// Stops the recording engine from recording to a pre-created Sound object.
+    ///
+    /// Returns no error if unplugged or already stopped.
+    pub fn record_stop(&self, id: i32) -> Result {
+        ffi!(FMOD_System_RecordStop(self.as_raw(), id))?;
+        Ok(())
+    }
+
+    /// Retrieves the state of the FMOD recording API, i.e. if it is currently
+    /// recording or not.
+    ///
+    /// Recording can be started with [`System::record_start`] and stopped with
+    /// [`System::record_stop`].
+    ///
+    /// Will return [`Error::RecordDisconnected`] if the driver is unplugged.
+    pub fn is_recording(&self, id: i32) -> Result<bool> {
+        let mut recording = 0;
+        ffi!(FMOD_System_IsRecording(self.as_raw(), id, &mut recording))?;
+        Ok(recording != 0)
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+enum_struct! {
+    /// Flags that provide additional information about a particular driver.
+    pub enum DriverState: FMOD_DRIVER_STATE {
+        /// Device is currently plugged in.
+        Connected = FMOD_DRIVER_STATE_CONNECTED,
+        #[default]
+        /// Device is the users preferred choice.
+        Default   = FMOD_DRIVER_STATE_DEFAULT,
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// Number of recording devices available.
+#[derive(Debug)]
+pub struct NumDrivers {
+    /// Number of recording drivers available for this output mode.
+    pub available: i32,
+    /// Number of recording driver currently plugged in.
+    pub connected: i32,
+}
+
+// -------------------------------------------------------------------------------------------------
 
 /// # Geometry management.
-impl System {}
+impl System {
+    /// Geometry creation function. This function will create a base geometry
+    /// object which can then have polygons added to it.
+    ///
+    /// Polygons can be added to a geometry object using
+    /// [`Geometry::add_polygon`]. For best efficiency, avoid overlapping of
+    /// polygons and long thin polygons.
+    ///
+    /// A geometry object stores its polygons in a group to allow optimization
+    /// for line testing, insertion and updating of geometry in real-time.
+    /// Geometry objects also allow for efficient rotation, scaling and
+    /// translation of groups of polygons.
+    ///
+    /// It is important to set the value of max_world_size to an appropriate
+    /// value using [`System::set_geometry_settings`].
+    pub fn create_geometry(
+        &self,
+        max_polygons: i32,
+        max_vertices: i32,
+    ) -> Result<Handle<'_, Geometry>> {
+        let mut geometry = ptr::null_mut();
+        ffi!(FMOD_System_CreateGeometry(
+            self.as_raw(),
+            max_polygons,
+            max_vertices,
+            &mut geometry,
+        ))?;
+        Ok(unsafe { Handle::new(geometry) })
+    }
+
+    /// Sets the maximum world size for the geometry engine for performance /
+    /// precision reasons.
+    ///
+    /// FMOD uses an efficient spatial partitioning system to store polygons for
+    /// ray casting purposes. The maximum size of the world should be set to
+    /// allow processing within a known range. Outside of this range, objects
+    /// and polygons will not be processed as efficiently. Excessive world size
+    /// settings can also cause loss of precision and efficiency.
+    ///
+    /// Setting `max_world_size` should be done first before creating any
+    /// geometry. It can be done any time afterwards but may be slow in this
+    /// case.
+    pub fn set_geometry_settings(&self, max_world_size: f32) -> Result {
+        ffi!(FMOD_System_SetGeometrySettings(
+            self.as_raw(),
+            max_world_size,
+        ))?;
+        Ok(())
+    }
+
+    /// Retrieves the maximum world size for the geometry engine.
+    ///
+    /// FMOD uses an efficient spatial partitioning system to store polygons for
+    /// ray casting purposes. The maximum size of the world should be set to
+    /// allow processing within a known range. Outside of this range, objects
+    /// and polygons will not be processed as efficiently. Excessive world size
+    /// settings can also cause loss of precision and efficiency.
+    pub fn get_geometry_settings(&self) -> Result<f32> {
+        let mut max_world_size = 0.0;
+        ffi!(FMOD_System_GetGeometrySettings(
+            self.as_raw(),
+            &mut max_world_size,
+        ))?;
+        Ok(max_world_size)
+    }
+
+    /// Creates a geometry object from a block of memory which contains
+    /// pre-saved geometry data from [`Geometry::save`].
+    ///
+    /// This function avoids the need to manually create and add geometry for
+    /// faster start time.
+    pub fn load_geometry(&self, data: &[u8]) -> Result<Handle<'_, Geometry>> {
+        let mut geometry = ptr::null_mut();
+        ffi!(FMOD_System_LoadGeometry(
+            self.as_raw(),
+            data.as_ptr().cast(),
+            data.len() as _,
+            &mut geometry,
+        ))?;
+        Ok(unsafe { Handle::new(geometry) })
+    }
+
+    /// Calculates geometry occlusion between a listener and a sound source.
+    ///
+    /// If single sided polygons have been created, it is important to get the
+    /// source and listener positions around the right way, as the occlusion
+    /// from point A to point B may not be the same as the occlusion from point
+    /// B to point A.
+    pub fn get_geometry_occlusion(&self, listener: &Vector, source: &Vector) -> Result<Occlusion> {
+        let mut direct = 0.0;
+        let mut reverb = 0.0;
+        ffi!(FMOD_System_GetGeometryOcclusion(
+            self.as_raw(),
+            listener.as_raw(),
+            source.as_raw(),
+            &mut direct,
+            &mut reverb,
+        ))?;
+        Ok(Occlusion { direct, reverb })
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
 
 /// # General.
-impl System {}
+impl System {
+    /// Mutual exclusion function to lock the FMOD DSP engine (which runs
+    /// asynchronously in another thread), so that it will not execute.
+    ///
+    /// If the FMOD DSP engine is already executing, this function will block
+    /// until it has completed.
+    ///
+    /// The function may be used to synchronize DSP network operations carried
+    /// out by the user.
+    ///
+    /// An example of using this function may be for when the user wants to
+    /// construct a DSP sub-network, without the DSP engine executing in the
+    /// background while the sub-network is still under construction.
+    ///
+    /// Once the user no longer needs the DSP engine locked, it must be unlocked
+    /// with [`System::unlock_dsp`].
+    ///
+    /// Note that the DSP engine should not be locked for a significant amount
+    /// of time, otherwise inconsistency in the audio output may result.
+    /// (audio skipping / stuttering).
+    ///
+    /// # Safety
+    ///
+    /// The DSP engine must not already be locked when this function is called.
+    pub unsafe fn lock_dsp(&self) -> Result {
+        ffi!(FMOD_System_LockDSP(self.as_raw()))?;
+        Ok(())
+    }
+
+    /// Mutual exclusion function to unlock the FMOD DSP engine (which runs
+    /// asynchronously in another thread) and let it continue executing.
+    ///
+    /// # Safety
+    ///
+    /// The DSP engine must be locked with [`System::lock_dsp`] before this
+    /// function is called.
+    unsafe fn unlock_dsp(&self) -> Result {
+        ffi!(FMOD_System_UnlockDSP(self.as_raw()))?;
+        Ok(())
+    }
+
+    /// Sets the callback for System level notifications.
+    ///
+    /// Using [`SystemCallbackType::ALL`] or
+    /// [`SystemCallbackType:DeviceListChanged`] will disable any automated
+    /// device ejection/insertion handling. Use this callback to control the
+    /// behavior yourself.
+    ///
+    /// Using [`SystemCallbackType:DeviceListChanged`] (Mac only) requires the
+    /// application to be running an event loop which will allow external
+    /// changes to device list to be detected.
+    pub fn set_callback<C: SystemCallback>(&self, mask: SystemCallbackType) -> Result {
+        ffi!(FMOD_System_SetCallback(
+            self.as_raw(),
+            Some(system_callback::<C>),
+            mask.into_raw(),
+        ))?;
+        Ok(())
+    }
+
+    // set_user_data, get_user_data
+}
+
+// -------------------------------------------------------------------------------------------------
+
+fmod_struct! {
+    #![fmod_no_default]
+    /// Information describing an error that has occurred.
+    pub struct ErrorInfo<'a> = FMOD_ERRORCALLBACK_INFO {
+        result: Result,
+        instance_type: InstanceType,
+        instance: *mut c_void,
+        function_name: *const c_char,
+        function_params: *const c_char,
+        marker: PhantomData<&'a ()>,
+    }
+}
+
+impl ErrorInfo<'_> {
+    pub fn error(&self) -> Error {
+        self.result.expect_err("error should have errored")
+    }
+
+    /// The fmod object instance that the error occurred on.
+    pub fn instance(&self) -> Instance<'_> {
+        macro_rules! map {
+            (studio::$ty:ident) => {
+                paste::paste! {
+                    if let InstanceType::[<Studio $ty>] = self.instance_type {
+                        return Instance::[<Studio $ty>](unsafe { studio::$ty::from_raw(self.instance.cast()) });
+                    }
+                }
+            };
+            ($ty:ident) => {
+                if let InstanceType::$ty = self.instance_type {
+                    return Instance::$ty(unsafe { $ty::from_raw(self.instance.cast()) });
+                }
+            };
+        }
+
+        map!(System);
+        map!(Channel);
+        map!(ChannelGroup);
+        map!(ChannelControl);
+        map!(Sound);
+        map!(SoundGroup);
+        map!(Dsp);
+        map!(DspConnection);
+        map!(Geometry);
+        map!(Reverb3d);
+        // #[cfg(feature = "studio")]
+        // {
+        //     map!(studio::System);
+        //     map!(studio::EventDescription);
+        //     map!(studio::EventInstance);
+        //     map!(studio::Bus);
+        //     map!(studio::Vca);
+        //     map!(studio::Bank);
+        //     map!(studio::CommandReplay);
+        // }
+
+        whoops!("unknown/unmapped instance type: {:?}", self.instance_type);
+        Instance::Unknown
+    }
+
+    /// Function that the error occurred on.
+    pub fn function_name(&self) -> Cow<'_, str> {
+        debug_assert!(!self.function_name.is_null());
+        unsafe { CStr::from_ptr(self.function_name) }.to_string_lossy()
+    }
+
+    /// Function parameters that the error ocurred on.
+    pub fn function_params(&self) -> Cow<'_, str> {
+        debug_assert!(!self.function_params.is_null());
+        unsafe { CStr::from_ptr(self.function_params) }.to_string_lossy()
+    }
+}
+
+#[cfg(windows)]
+pub type SysThreadHandle = std::os::windows::io::RawHandle;
+#[cfg(unix)]
+pub type SysThreadHandle = std::os::unix::thread::RawPthread;
+
+pub trait SystemCallback {
+    /// Called from [`System::update`] when the enumerated list of devices has
+    /// changed. Called from the main (calling) thread when set from the Core
+    /// API or Studio API in synchronous mode, and from the Studio Update Thread
+    /// when in default / async mode.
+    fn device_list_changed(system: &System) -> Result {
+        let _ = system;
+        Ok(())
+    }
+
+    /// Called directly when a memory allocation fails.
+    fn memory_allocation_failed(system: &System, location: &str, size: i32) -> Result {
+        let _ = (system, location, size);
+        Ok(())
+    }
+
+    /// Called from the game thread when a thread is created.
+    fn thread_created(system: &System, thread: SysThreadHandle, name: &str) -> Result {
+        let _ = (system, thread, name);
+        Ok(())
+    }
+
+    /// Called from the mixer thread before it starts the next block.
+    fn pre_mix(system: &System) -> Result {
+        let _ = system;
+        Ok(())
+    }
+
+    /// Called from the mixer thread after it finishes a block.
+    fn post_mix(system: &System) -> Result {
+        let _ = system;
+        Ok(())
+    }
+
+    /// Called directly when an API function returns an error,
+    /// including delayed async functions.
+    fn error(system: &System, info: &ErrorInfo<'_>) -> Result {
+        let _ = (system, info);
+        Ok(())
+    }
+
+    /// Called from the mixer thread after clocks have been updated before the main mix occurs.
+    fn mid_mix(system: &System) -> Result {
+        let _ = system;
+        Ok(())
+    }
+
+    /// Called from the game thread when a thread is destroyed.
+    fn thread_destroyed(system: &System, thread: SysThreadHandle, name: &str) -> Result {
+        let _ = (system, thread, name);
+        Ok(())
+    }
+
+    /// Called at start of [`System::update`] from the main (calling) thread
+    /// when set from the Core API or Studio API in synchronous mode, and from
+    /// the Studio Update Thread when in default / async mode.
+    fn pre_update(system: &System) -> Result {
+        let _ = system;
+        Ok(())
+    }
+
+    /// Called at end of [`System::update`] from the main (calling) thread when
+    /// set from the Core API or Studio API in synchronous mode, and from the
+    /// Studio Update Thread when in default / async mode.
+    fn post_update(system: &System) -> Result {
+        let _ = system;
+        Ok(())
+    }
+
+    /// Called from [`System::update`] when the enumerated list of recording
+    /// devices has changed. Called from the main (calling) thread when set
+    /// from the Core API or Studio API in synchronous mode, and from the
+    /// Studio Update Thread when in default / async mode.
+    fn record_list_changed(system: &System) -> Result {
+        let _ = system;
+        Ok(())
+    }
+
+    /// Called from the feeder thread after audio was consumed from the ring
+    /// buffer, but not enough to allow another mix to run.
+    fn buffered_no_mix(system: &System) -> Result {
+        let _ = system;
+        Ok(())
+    }
+
+    /// Called from System::update when an output device is re-initialized.
+    /// Called from the main (calling) thread when set from the Core API or
+    /// Studio API in synchronous mode, and from the Studio Update Thread when
+    /// in default / async mode.
+    fn device_reinitialize(system: &System, kind: OutputType, id: i32) -> Result {
+        let _ = (system, kind, id);
+        Ok(())
+    }
+
+    /// Called from the mixer thread when the device output attempts to read
+    /// more samples than are available in the output buffer.
+    fn output_underrun(system: &System) -> Result {
+        let _ = system;
+        Ok(())
+    }
+
+    /// Called from the mixer thread when the System record position changed.
+    fn record_position_changed(system: &System, sound: &Sound, position: Time) -> Result {
+        let _ = (system, sound, position);
+        Ok(())
+    }
+}
+
+pub(crate) unsafe extern "system" fn system_callback<C: SystemCallback>(
+    system: *mut FMOD_SYSTEM,
+    kind: FMOD_SYSTEM_CALLBACK_TYPE,
+    commanddata1: *mut c_void,
+    commanddata2: *mut c_void,
+    _userdata: *mut c_void,
+) -> FMOD_RESULT {
+    let kind = SystemCallbackType::from_raw(kind);
+    let system = System::from_raw(system);
+    catch_user_unwind(|| match kind {
+        SystemCallbackType::DeviceListChanged => C::device_list_changed(system),
+        SystemCallbackType::MemoryAllocationFailed => {
+            let location = CStr::from_ptr(commanddata1.cast()).to_string_lossy();
+            let size = commanddata2.cast::<i32>().read();
+            C::memory_allocation_failed(system, &location, size)
+        },
+        SystemCallbackType::ThreadCreated => {
+            let thread = commanddata1 as SysThreadHandle;
+            let name = CStr::from_ptr(commanddata2.cast()).to_string_lossy();
+            C::thread_created(system, thread, &name)
+        },
+        SystemCallbackType::PreMix => C::pre_mix(system),
+        SystemCallbackType::PostMix => C::post_mix(system),
+        SystemCallbackType::Error => {
+            C::error(system, ErrorInfo::from_raw_ref(&*(commanddata1.cast())))
+        },
+        SystemCallbackType::MidMix => C::mid_mix(system),
+        SystemCallbackType::ThreadDestroyed => {
+            let thread = commanddata1 as SysThreadHandle;
+            let name = CStr::from_ptr(commanddata2.cast()).to_string_lossy();
+            C::thread_destroyed(system, thread, &name)
+        },
+        SystemCallbackType::PreUpdate => C::pre_update(system),
+        SystemCallbackType::PostUpdate => C::post_update(system),
+        SystemCallbackType::RecordListChanged => C::record_list_changed(system),
+        SystemCallbackType::BufferedNoMix => C::buffered_no_mix(system),
+        SystemCallbackType::DeviceReinitialize => {
+            let kind = OutputType::from_raw(commanddata1 as _);
+            let id = commanddata2.cast::<i32>().read();
+            C::device_reinitialize(system, kind, id)
+        },
+        SystemCallbackType::OutputUnderrun => C::output_underrun(system),
+        SystemCallbackType::RecordPositionChanged => {
+            let sound = Sound::from_raw(commanddata1.cast());
+            let position = Time::pcm(commanddata2 as _);
+            C::record_position_changed(system, sound, position)
+        },
+        _ => {
+            whoops!(no_panic: "unknown system callback type: {kind:?}");
+            yeet!(Error::InvalidParam);
+        },
+    })
+    .into_raw()
+}
+
+// -------------------------------------------------------------------------------------------------
+
+raw! {
+    enum_struct! {
+        /// Identifier used to represent the different types of instance in the error callback.
+        pub enum InstanceType: FMOD_ERRORCALLBACK_INSTANCETYPE {
+            /// Type representing no known instance type.
+            None                    = FMOD_ERRORCALLBACK_INSTANCETYPE_NONE,
+            /// Type representing [System].
+            System                  = FMOD_ERRORCALLBACK_INSTANCETYPE_SYSTEM,
+            /// Type representing [Channel].
+            Channel                 = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNEL,
+            /// Type representing [ChannelGroup].
+            ChannelGroup            = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNELGROUP,
+            /// Type representing [ChannelControl].
+            ChannelControl          = FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNELCONTROL,
+            /// Type representing [Sound].
+            Sound                   = FMOD_ERRORCALLBACK_INSTANCETYPE_SOUND,
+            /// Type representing [SoundGroup].
+            SoundGroup              = FMOD_ERRORCALLBACK_INSTANCETYPE_SOUNDGROUP,
+            /// Type representing [Dsp].
+            Dsp                     = FMOD_ERRORCALLBACK_INSTANCETYPE_DSP,
+            /// Type representing [DspConnection].
+            DspConnection           = FMOD_ERRORCALLBACK_INSTANCETYPE_DSPCONNECTION,
+            /// Type representing [Geometry].
+            Geometry                = FMOD_ERRORCALLBACK_INSTANCETYPE_GEOMETRY,
+            /// Type representing [Reverb3d].
+            Reverb3d                = FMOD_ERRORCALLBACK_INSTANCETYPE_REVERB3D,
+            /// Type representing [studio::System].
+            StudioSystem            = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_SYSTEM,
+            /// Type representing [studio::EventDescription].
+            StudioEventDescription  = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTDESCRIPTION,
+            /// Type representing [studio::EventInstance].
+            StudioEventInstance     = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTINSTANCE,
+            /// Deprecated.
+            #[deprecated]
+            StudioParameterInstance = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_PARAMETERINSTANCE,
+            /// Type representing [studio::Bus].
+            StudioBus               = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BUS,
+            /// Type representing [studio::Vca].
+            StudioVca               = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_VCA,
+            /// Type representing [studio::Bank].
+            StudioBank              = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BANK,
+            /// Type representing [studio::CommandReplay].
+            StudioCommandReplay     = FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_COMMANDREPLAY,
+        }
+    }
+}
+
+#[non_exhaustive]
+pub enum Instance<'a> {
+    #[doc(hidden)]
+    Unknown,
+    System(&'a System),
+    Channel(&'a Channel),
+    ChannelGroup(&'a ChannelGroup),
+    ChannelControl(&'a ChannelControl),
+    Sound(&'a Sound),
+    SoundGroup(&'a SoundGroup),
+    Dsp(&'a Dsp),
+    DspConnection(&'a DspConnection),
+    Geometry(&'a Geometry),
+    Reverb3d(&'a Reverb3d),
+    // #[cfg(feature = "studio")]
+    // StudioSystem(&'a studio::System),
+    // #[cfg(feature = "studio")]
+    // StudioEventDescription(&'a studio::EventDescription),
+    // #[cfg(feature = "studio")]
+    // StudioEventInstance(&'a studio::EventInstance),
+    // #[cfg(feature = "studio")]
+    // StudioBus(&'a studio::Bus),
+    // #[cfg(feature = "studio")]
+    // StudioVca(&'a studio::Vca),
+    // #[cfg(feature = "studio")]
+    // StudioBank(&'a studio::Bank),
+    // #[cfg(feature = "studio")]
+    // StudioCommandReplay(&'a studio::CommandReplay),
+}
+
+flags! {
+    /// Types of callbacks called by the System.
+    ///
+    /// Using [SystemCallbackType::All] or [SystemCallbackType::DeviceListChanged] will disable any automated device ejection/insertion handling. Use this callback to control the behavior yourself.
+    /// Using [SystemCallbackType::DeviceListChanged] (Mac only) requires the application to be running an event loop which will allow external changes to device list to be detected.
+    pub struct SystemCallbackType: FMOD_SYSTEM_CALLBACK_TYPE {
+        /// Called from [System::update] when the enumerated list of devices has changed. Called from the main (calling) thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
+        DeviceListChanged      = FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED,
+        /// Deprecated.
+        DeviceLost             = FMOD_SYSTEM_CALLBACK_DEVICELOST,
+        /// Called directly when a memory allocation fails.
+        MemoryAllocationFailed = FMOD_SYSTEM_CALLBACK_MEMORYALLOCATIONFAILED,
+        /// Called from the game thread when a thread is created.
+        ThreadCreated          = FMOD_SYSTEM_CALLBACK_THREADCREATED,
+        /// Deprecated.
+        BadDspConnection       = FMOD_SYSTEM_CALLBACK_BADDSPCONNECTION,
+        /// Called from the mixer thread before it starts the next block.
+        PreMix                 = FMOD_SYSTEM_CALLBACK_PREMIX,
+        /// Called from the mixer thread after it finishes a block.
+        PostMix                = FMOD_SYSTEM_CALLBACK_POSTMIX,
+        /// Called directly when an API function returns an error, including delayed async functions.
+        Error                  = FMOD_SYSTEM_CALLBACK_ERROR,
+        /// Called from the mixer thread after clocks have been updated before the main mix occurs.
+        MidMix                 = FMOD_SYSTEM_CALLBACK_MIDMIX,
+        /// Called from the game thread when a thread is destroyed.
+        ThreadDestroyed        = FMOD_SYSTEM_CALLBACK_THREADDESTROYED,
+        /// Called at start of [System::update] from the main (calling) thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
+        PreUpdate              = FMOD_SYSTEM_CALLBACK_PREUPDATE,
+        /// Called at end of [System::update] from the main (calling) thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
+        PostUpdate             = FMOD_SYSTEM_CALLBACK_POSTUPDATE,
+        /// Called from [System::update] when the enumerated list of recording devices has changed. Called from the main (calling) thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
+        RecordListChanged      = FMOD_SYSTEM_CALLBACK_RECORDLISTCHANGED,
+        /// Called from the feeder thread after audio was consumed from the ring buffer, but not enough to allow another mix to run.
+        BufferedNoMix          = FMOD_SYSTEM_CALLBACK_BUFFEREDNOMIX,
+        /// Called from [System::update] when an output device is re-initialized. Called from the main (calling) thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
+        DeviceReinitialize     = FMOD_SYSTEM_CALLBACK_DEVICEREINITIALIZE,
+        /// Called from the mixer thread when the device output attempts to read more samples than are available in the output buffer.
+        OutputUnderrun         = FMOD_SYSTEM_CALLBACK_OUTPUTUNDERRUN,
+        /// Called from the mixer thread when the System record position changed.
+        RecordPositionChanged  = FMOD_SYSTEM_CALLBACK_RECORDPOSITIONCHANGED,
+        /// Mask representing all callback types.
+        All                    = FMOD_SYSTEM_CALLBACK_ALL,
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// Mutual exclusion lock for the FMOD DSP engine.
+pub struct DspLock<'a> {
+    system: &'a System,
+}
+
+impl DspLock<'_> {
+    pub fn unlock(self) -> Result {
+        let this = ManuallyDrop::new(self);
+        unsafe { this.system.unlock_dsp() }
+    }
+}
+
+impl Drop for DspLock<'_> {
+    fn drop(&mut self) {
+        match unsafe { self.system.unlock_dsp() } {
+            Ok(()) => (),
+            Err(e) => {
+                whoops!("Error unlocking DSP engine: {e}");
+            },
+        }
+    }
+}

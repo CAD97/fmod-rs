@@ -132,48 +132,45 @@ fmod_struct! {
 
 // -------------------------------------------------------------------------------------------------
 
-raw! {
-    flags! {
-        #[deprecated]
-        /// Flags that describe the speakers present in a given signal.
-        pub struct ChannelMask: FMOD_CHANNELMASK {
-            /// Front left channel.
-            FrontLeft       = FMOD_CHANNELMASK_FRONT_LEFT,
-            /// Front right channel.
-            FrontRight      = FMOD_CHANNELMASK_FRONT_RIGHT,
-            /// Front center channel.
-            FrontCenter     = FMOD_CHANNELMASK_FRONT_CENTER,
-            /// Low frequency channel.
-            LowFrequency    = FMOD_CHANNELMASK_LOW_FREQUENCY,
-            /// Surround left channel.
-            SurroundLeft    = FMOD_CHANNELMASK_SURROUND_LEFT,
-            /// Surround right channel.
-            SurroundRight   = FMOD_CHANNELMASK_SURROUND_RIGHT,
-            /// Back left channel.
-            BackLeft        = FMOD_CHANNELMASK_BACK_LEFT,
-            /// Back right channel.
-            BackRight       = FMOD_CHANNELMASK_BACK_RIGHT,
-            /// Back center channel, not represented in any [SpeakerMode].
-            BackCenter      = FMOD_CHANNELMASK_BACK_CENTER,
-            /// Mono channel mask.
-            Mono            = FMOD_CHANNELMASK_MONO,
-            /// Stereo channel mask.
-            Stereo          = FMOD_CHANNELMASK_STEREO,
-            /// Left / right / center channel mask.
-            Lrc             = FMOD_CHANNELMASK_LRC,
-            /// Quadphonic channel mask.
-            Quad            = FMOD_CHANNELMASK_QUAD,
-            /// 5.0 surround channel mask.
-            Surround        = FMOD_CHANNELMASK_SURROUND,
-            /// 5.1 surround channel mask.
-            Surround51      = FMOD_CHANNELMASK_5POINT1,
-            /// 5.1 surround channel mask, using rears instead of surrounds.
-            Surround51Rears = FMOD_CHANNELMASK_5POINT1_REARS,
-            /// 7.0 surround channel mask.
-            Surround70      = FMOD_CHANNELMASK_7POINT0,
-            /// 7.1 surround channel mask.
-            Surround71      = FMOD_CHANNELMASK_7POINT1,
-        }
+flags! {
+    /// Flags that describe the speakers present in a given signal.
+    pub struct ChannelMask: FMOD_CHANNELMASK {
+        /// Front left channel.
+        FrontLeft       = FMOD_CHANNELMASK_FRONT_LEFT,
+        /// Front right channel.
+        FrontRight      = FMOD_CHANNELMASK_FRONT_RIGHT,
+        /// Front center channel.
+        FrontCenter     = FMOD_CHANNELMASK_FRONT_CENTER,
+        /// Low frequency channel.
+        LowFrequency    = FMOD_CHANNELMASK_LOW_FREQUENCY,
+        /// Surround left channel.
+        SurroundLeft    = FMOD_CHANNELMASK_SURROUND_LEFT,
+        /// Surround right channel.
+        SurroundRight   = FMOD_CHANNELMASK_SURROUND_RIGHT,
+        /// Back left channel.
+        BackLeft        = FMOD_CHANNELMASK_BACK_LEFT,
+        /// Back right channel.
+        BackRight       = FMOD_CHANNELMASK_BACK_RIGHT,
+        /// Back center channel, not represented in any [SpeakerMode].
+        BackCenter      = FMOD_CHANNELMASK_BACK_CENTER,
+        /// Mono channel mask.
+        Mono            = FMOD_CHANNELMASK_MONO,
+        /// Stereo channel mask.
+        Stereo          = FMOD_CHANNELMASK_STEREO,
+        /// Left / right / center channel mask.
+        Lrc             = FMOD_CHANNELMASK_LRC,
+        /// Quadphonic channel mask.
+        Quad            = FMOD_CHANNELMASK_QUAD,
+        /// 5.0 surround channel mask.
+        Surround        = FMOD_CHANNELMASK_SURROUND,
+        /// 5.1 surround channel mask.
+        Surround51      = FMOD_CHANNELMASK_5POINT1,
+        /// 5.1 surround channel mask, using rears instead of surrounds.
+        Surround51Rears = FMOD_CHANNELMASK_5POINT1_REARS,
+        /// 7.0 surround channel mask.
+        Surround70      = FMOD_CHANNELMASK_7POINT0,
+        /// 7.1 surround channel mask.
+        Surround71      = FMOD_CHANNELMASK_7POINT1,
     }
 }
 
@@ -501,4 +498,13 @@ impl Time {
     pub fn mod_pattern(value: u32) -> Self {
         Self::new(value, TimeUnit::ModPattern)
     }
+}
+
+/// 3D attenuation factors for the direct and reverb paths.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct Occlusion {
+    /// Occlusion factor for the direct path where 0 represents no occlusion and 1 represents full occlusion.
+    pub direct: f32,
+    /// Occlusion factor for the reverb path where 0 represents no occlusion and 1 represents full occlusion.
+    pub reverb: f32,
 }

@@ -331,19 +331,19 @@ pub(crate) unsafe extern "system" fn channel_callback<C: ChannelCallback>(
     let callback_type = ChannelControlCallbackType::from_raw(callbacktype);
     let channel = Channel::from_raw(channelcontrol as *mut FMOD_CHANNEL);
     catch_user_unwind(|| match callback_type {
-        ChannelControlCallbackType::End => Ok(C::end(&channel)),
+        ChannelControlCallbackType::End => Ok(C::end(channel)),
         ChannelControlCallbackType::VirtualVoice => {
             let is_virtual = commanddata1 as i32 != 0;
-            Ok(C::virtual_voice(&channel, is_virtual))
+            Ok(C::virtual_voice(channel, is_virtual))
         },
         ChannelControlCallbackType::SyncPoint => {
             let point = commanddata1 as i32;
-            Ok(C::sync_point(&channel, point))
+            Ok(C::sync_point(channel, point))
         },
         ChannelControlCallbackType::Occlusion => {
-            let mut direct = &mut *(commanddata1 as *mut f32);
-            let mut reverb = &mut *(commanddata2 as *mut f32);
-            Ok(C::occlusion(&channel, &mut direct, &mut reverb))
+            let direct = &mut *(commanddata1 as *mut f32);
+            let reverb = &mut *(commanddata2 as *mut f32);
+            Ok(C::occlusion(channel, direct, reverb))
         },
         _ => {
             whoops!(no_panic: "unknown channel callback type {:?}", callback_type);

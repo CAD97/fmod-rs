@@ -154,7 +154,7 @@ where
     F: FnOnce() -> Result<R>,
 {
     let f = AssertUnwindSafe(f);
-    std::panic::catch_unwind(|| f()).unwrap_or_else(|err| {
+    std::panic::catch_unwind(f).unwrap_or_else(|err| {
         let callback = std::any::type_name::<F>();
         if let Some(e) = cool_asserts::get_panic_message(&err) {
             whoops!(no_panic: "FMOD.rs panicked in {callback}: {e}");

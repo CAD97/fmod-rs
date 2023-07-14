@@ -149,9 +149,9 @@ pub(crate) unsafe extern "system" fn channel_group_callback<C: ChannelGroupCallb
             yeet!(Error::InvalidParam)
         },
         ChannelControlCallbackType::Occlusion => {
-            let mut direct = &mut *(commanddata1 as *mut f32);
-            let mut reverb = &mut *(commanddata2 as *mut f32);
-            Ok(C::occlusion(&group, &mut direct, &mut reverb))
+            let direct = &mut *(commanddata1 as *mut f32);
+            let reverb = &mut *(commanddata2 as *mut f32);
+            Ok(C::occlusion(group, direct, reverb))
         },
         _ => {
             whoops!(no_panic: "unknown channel callback type {:?}", callback_type);

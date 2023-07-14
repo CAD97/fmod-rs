@@ -684,6 +684,7 @@ impl ChannelControl {
     ///
     /// If the System is initialized with [InitFlags::SpeakerModeRaw] calling
     /// this function will produce silence.
+    #[allow(clippy::too_many_arguments)] // it's on FMOD, not me
     pub fn set_mix_levels_output(
         &self,
         front_left: f32,

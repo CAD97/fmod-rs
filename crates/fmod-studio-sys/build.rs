@@ -4,8 +4,9 @@ fn main() {
     build::rerun_if_changed("build.rs");
 
     link_lib();
-    #[cfg(feature = "link-search")]
-    link_search();
+    if cfg!(feature = "link-search") {
+        link_search();
+    }
 }
 
 fn link_lib() {
