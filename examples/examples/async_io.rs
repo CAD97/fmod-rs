@@ -169,27 +169,21 @@ fn process_queue() {
                 };
 
                 let mut buf = info.buffer_mut();
-                match buf.fill_from(&mut file) {
-                    Ok(_) => {
-                        add_line(format_args!(
-                            "FED     {:5} bytes, offset {:5}",
-                            buf.written(),
-                            info.offset(),
-                        ));
-                        info.done(Ok(()));
-                    },
-                    Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
-                        add_line(format_args!(
-                            "FED     {:5} bytes, offset {:5} (* EOF)",
-                            buf.written(),
-                            info.offset(),
-                        ));
-                        info.done(Err(fmod::Error::FileEof));
-                    },
-                    Err(_) => {
-                        info.done(Err(fmod::Error::FileBad));
-                    },
+                let result = buf.fill_from(&mut file);
+                if buf.is_full() {
+                    add_line(format_args!(
+                        "FED     {:5} bytes, offset {:5}",
+                        buf.written(),
+                        info.offset(),
+                    ));
+                } else {
+                    add_line(format_args!(
+                        "FED     {:5} bytes, offset {:5} (* EOF)",
+                        buf.written(),
+                        info.offset(),
+                    ));
                 }
+                info.done(result.map_err(|_| fmod::Error::FileBad));
             }
         } else {
             // Example only: Use your native filesystem

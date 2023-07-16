@@ -45,16 +45,22 @@ pub fn set_disk_busy(busy: bool) -> Result {
     ffi!(FMOD_File_SetDiskBusy(busy as FMOD_BOOL))?;
     Ok(())
 }
+/// Lock the disk busy state (see [`file::set_disk_busy`]) and unlock it
+/// when dropping the returned guard object.
+pub fn lock_disk_busy() -> Result<DiskBusyLock> {
+    set_disk_busy(true)?;
+    Ok(DiskBusyLock { _priv: () })
+}
 
 #[derive(Debug)]
 /// Drop guard for file busy state.
 ///
 /// While you have this, FMOD won't do any file IO.
-pub struct FileBusyGuard {
+pub struct DiskBusyLock {
     _priv: (),
 }
 
-impl Drop for FileBusyGuard {
+impl Drop for DiskBusyLock {
     fn drop(&mut self) {
         match set_disk_busy(false) {
             Ok(()) => (),
@@ -63,13 +69,6 @@ impl Drop for FileBusyGuard {
             },
         }
     }
-}
-
-/// Lock the disk busy state (see [`file::set_disk_busy`]) and unlock it
-/// when dropping the returned guard object.
-pub fn lock_disk_busy() -> Result<FileBusyGuard> {
-    set_disk_busy(true)?;
-    Ok(FileBusyGuard { _priv: () })
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -93,6 +92,11 @@ impl<'a> FileBuffer<'a> {
         ix!(*self.written)
     }
 
+    /// Whether the buffer is completely filled.
+    pub fn is_full(&self) -> bool {
+        self.written() == self.capacity()
+    }
+
     /// The unfilled part of the buffer.
     pub fn unfilled(&mut self) -> &mut [MaybeUninit<u8>] {
         &mut self.buffer[ix!(*self.written)..]
@@ -104,6 +108,17 @@ impl<'a> FileBuffer<'a> {
     }
 
     /// Fill the buffer from a reader.
+    ///
+    /// Both filling up the buffer (`ErrorKind::WriteZero`) and exhausting the
+    /// reader (`ErrorKind::UnexpectedEof`) are considered successes and return
+    /// `Ok(())`. Check [`written`](Self::written) to see how many bytes have
+    /// been written and [`is_full`](Self::is_full) to see if the buffer has
+    /// been completely filled.
+    ///
+    /// This behavior was chosen to be the most useful for implementing
+    /// [`SyncFileSystem`] and [`AsyncFileSystem`], as reads through those
+    /// traits should succeed if the read itself was successful, and a success
+    /// gets automatically translated to [`Error::FileEof`] when appropriate.
     pub fn fill_from(&mut self, reader: &mut (impl Read + ?Sized)) -> io::Result<()> {
         let result;
 
@@ -121,8 +136,7 @@ impl<'a> FileBuffer<'a> {
         }
 
         match result {
-            Ok(_) if self.unfilled().is_empty() => Ok(()),
-            Ok(_) => yeet!(io::ErrorKind::UnexpectedEof),
+            Ok(_) => Ok(()),
             Err(e) if e.kind() == io::ErrorKind::WriteZero => Ok(()),
             Err(e) => yeet!(e),
         }
@@ -166,6 +180,20 @@ pub struct AsyncReadInfo<File> {
 
 unsafe impl<File> Send for AsyncReadInfo<File> where for<'a> &'a mut File: Send {}
 unsafe impl<File> Sync for AsyncReadInfo<File> where for<'a> &'a mut File: Sync {}
+
+impl<File> Copy for AsyncReadInfo<File> {}
+impl<File> Clone for AsyncReadInfo<File> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<File> Eq for AsyncReadInfo<File> {}
+impl<File> PartialEq for AsyncReadInfo<File> {
+    fn eq(&self, other: &Self) -> bool {
+        self.raw == other.raw
+    }
+}
 
 #[allow(clippy::missing_safety_doc)]
 impl<File> AsyncReadInfo<File> {
@@ -256,20 +284,6 @@ impl<File> AsyncReadInfo<File> {
             result = Err(Error::FileEof);
         }
         (*self.raw).done.unwrap_unchecked()(self.raw, result.into_raw());
-    }
-}
-
-impl<File> Copy for AsyncReadInfo<File> {}
-impl<File> Clone for AsyncReadInfo<File> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<File> Eq for AsyncReadInfo<File> {}
-impl<File> PartialEq for AsyncReadInfo<File> {
-    fn eq(&self, other: &Self) -> bool {
-        self.raw == other.raw
     }
 }
 
@@ -459,19 +473,6 @@ pub trait ListenFileSystem {
     }
 }
 
-/// 'Piggyback' on FMOD file reading routines to capture data as it's read.
-pub trait AsyncListenFileSystem: ListenFileSystem {
-    /// Callback for after an async read operation.
-    unsafe fn async_read(info: AsyncReadInfo<()>) {
-        let _ = info;
-    }
-
-    /// Callback for after an async cancel operation.
-    unsafe fn async_cancel(info: AsyncReadInfo<()>) {
-        let _ = info;
-    }
-}
-
 pub(crate) unsafe extern "system" fn useropen_listen<FS: ListenFileSystem>(
     name: *const c_char,
     filesize: *mut u32,
@@ -509,6 +510,19 @@ pub(crate) unsafe extern "system" fn userseek_listen<FS: ListenFileSystem>(
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
     catch_user_unwind(|| Ok(FS::seek(handle as usize, pos))).into_raw()
+}
+
+/// 'Piggyback' on FMOD file reading routines to capture data as it's read.
+pub trait AsyncListenFileSystem: ListenFileSystem {
+    /// Callback for after an async read operation.
+    unsafe fn async_read(info: AsyncReadInfo<()>) {
+        let _ = info;
+    }
+
+    /// Callback for after an async cancel operation.
+    unsafe fn async_cancel(info: AsyncReadInfo<()>) {
+        let _ = info;
+    }
 }
 
 pub(crate) unsafe extern "system" fn userasyncread_listen<FS: AsyncListenFileSystem>(
