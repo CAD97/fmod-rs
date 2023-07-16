@@ -5,6 +5,7 @@ use {
         borrow::Cow,
         ffi::{c_char, c_void, CStr},
         marker::PhantomData,
+        mem::ManuallyDrop,
     },
 };
 
@@ -129,7 +130,7 @@ impl ErrorInfo<'_> {
         // }
 
         whoops!("unknown/unmapped instance type: {:?}", self.instance_type);
-        Instance::Unknown
+        unsafe { Instance::Unknown(&*self.instance.cast()) }
     }
 
     /// Function that the error occurred on.
@@ -145,6 +146,7 @@ impl ErrorInfo<'_> {
     }
 }
 
+/// Callbacks called by the [`System`].
 pub trait SystemCallback {
     /// Called from [`System::update`] when the enumerated list of devices has
     /// changed. Called from the main (calling) thread when set from the Core
@@ -355,11 +357,12 @@ raw! {
     }
 }
 
+/// An instance of some FMOD object. Passed to error callbacks.
 #[non_exhaustive]
 #[derive(Copy, Clone)]
 pub enum Instance<'a> {
     #[doc(hidden)]
-    Unknown,
+    Unknown(&'a ()),
     System(&'a System),
     Channel(&'a Channel),
     ChannelGroup(&'a ChannelGroup),
@@ -384,6 +387,38 @@ pub enum Instance<'a> {
     // StudioBank(&'a studio::Bank),
     // #[cfg(feature = "studio")]
     // StudioCommandReplay(&'a studio::CommandReplay),
+}
+
+impl Instance<'_> {
+    pub fn addr(self) -> usize {
+        match self {
+            Instance::Unknown(p) => p as *const _ as _,
+            Instance::System(p) => p as *const _ as _,
+            Instance::Channel(p) => p as *const _ as _,
+            Instance::ChannelGroup(p) => p as *const _ as _,
+            Instance::ChannelControl(p) => p as *const _ as _,
+            Instance::Sound(p) => p as *const _ as _,
+            Instance::SoundGroup(p) => p as *const _ as _,
+            Instance::Dsp(p) => p as *const _ as _,
+            Instance::DspConnection(p) => p as *const _ as _,
+            Instance::Geometry(p) => p as *const _ as _,
+            Instance::Reverb3d(p) => p as *const _ as _,
+            // #[cfg(feature = "studio")]
+            // Instance::StudioSystem(p) => p as *const _ as _,
+            // #[cfg(feature = "studio")]
+            // Instance::StudioEventDescription(p) => p as *const _ as _,
+            // #[cfg(feature = "studio")]
+            // Instance::StudioEventInstance(p) => p as *const _ as _,
+            // #[cfg(feature = "studio")]
+            // Instance::StudioBus(p) => p as *const _ as _,
+            // #[cfg(feature = "studio")]
+            // Instance::StudioVca(p) => p as *const _ as _,
+            // #[cfg(feature = "studio")]
+            // Instance::StudioBank(p) => p as *const _ as _,
+            // #[cfg(feature = "studio")]
+            // Instance::StudioCommandReplay(p) => p as *const _ as _,
+        }
+    }
 }
 
 flags! {
@@ -429,4 +464,62 @@ flags! {
         /// Mask representing all callback types.
         All                    = FMOD_SYSTEM_CALLBACK_ALL,
     }
+}
+
+/// Mutual exclusion lock guard for the FMOD DSP engine.
+///
+/// The lock is released when this guard is dropped.
+pub struct DspLock<'a> {
+    system: &'a System,
+}
+
+impl DspLock<'_> {
+    /// Mutual exclusion function to lock the FMOD DSP engine (which runs
+    /// asynchronously in another thread), so that it will not execute.
+    ///
+    /// See [`System::lock_dsp`] for more information.
+    ///
+    /// # Safety
+    ///
+    /// The DSP engine must not already be locked when this function is called.
+    pub unsafe fn new(system: &System) -> Result<DspLock<'_>> {
+        system.lock_dsp()?;
+        Ok(DspLock { system })
+    }
+
+    /// Mutual exclusion function to unlock the FMOD DSP engine (which runs
+    /// asynchronously in another thread) and let it continue executing.
+    pub fn unlock(self) -> Result {
+        let this = ManuallyDrop::new(self);
+        unsafe { this.system.unlock_dsp() }
+    }
+}
+
+impl Drop for DspLock<'_> {
+    fn drop(&mut self) {
+        match unsafe { self.system.unlock_dsp() } {
+            Ok(()) => (),
+            Err(e) => {
+                whoops!("error unlocking DSP engine: {e}");
+            },
+        }
+    }
+}
+
+#[cfg(all(not(doc), windows))]
+pub type SystemThreadHandle = std::os::windows::io::RawHandle;
+#[cfg(all(not(doc), unix))]
+pub type SystemThreadHandle = std::os::unix::thread::RawPthread;
+
+/// A raw OS thread handle.
+///
+/// - Unix: [`std::os::unix::thread::RawPthread`]
+/// - Windows: [`std::os::windows::io::RawHandle`]
+#[cfg(doc)]
+#[cfg_attr(feature = "unstable", doc(cfg(any(unix, windows))))]
+pub type SystemThreadHandle = unknown::SystemThreadHandle;
+
+#[cfg(doc)]
+mod unknown {
+    pub struct SystemThreadHandle(*mut ());
 }

@@ -350,3 +350,16 @@ impl ReverbProperties {
     pub const SEWER_PIPE: Self =        reverb! {  2800.0,   14.0,  21.0, 5000.0,  14.0,  80.0,  60.0, 250.0, 0.0,  3400.0,  66.0,   1.2 };
     pub const UNDERWATER: Self =        reverb! {  1500.0,    7.0,  11.0, 5000.0,  10.0, 100.0, 100.0, 250.0, 0.0,   500.0,  92.0,   7.0 };
 }
+
+/// Position, velocity, and orientation of a 3D sound listener.
+#[derive(Debug, Copy, Clone, Default, PartialEq)]
+pub struct ListenerAttributes3d {
+    /// Position in 3D space used for panning and attenuation.
+    pub pos: Vector,
+    /// Velocity in 3D space used for doppler.
+    pub vel: Vector,
+    /// Forwards orientation.
+    pub forward: Vector,
+    /// Upwards orientation.
+    pub up: Vector,
+}

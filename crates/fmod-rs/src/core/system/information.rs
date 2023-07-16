@@ -92,3 +92,23 @@ impl System {
         Ok(channels as _)
     }
 }
+
+/// A number of playing channels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ChannelUsage {
+    /// Number of playing [Channel]s (both real and virtual).
+    pub all: i32,
+    /// Number of playing real (non-virtual) [Channel]s.
+    pub real: i32,
+}
+
+/// Running total information about file reads.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FileUsage {
+    /// Total bytes read from file for loading sample data.
+    pub sample_bytes_read: i64,
+    /// Total bytes read from file for streaming sounds.
+    pub stream_bytes_read: i64,
+    /// Total bytes read for non-audio data such as FMOD Studio banks.
+    pub other_bytes_read: i64,
+}

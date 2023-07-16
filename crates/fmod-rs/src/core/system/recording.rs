@@ -161,3 +161,12 @@ enum_struct! {
         Default   = FMOD_DRIVER_STATE_DEFAULT,
     }
 }
+
+/// Number of recording devices available.
+#[derive(Debug)]
+pub struct NumDrivers {
+    /// Number of recording drivers available for this output mode.
+    pub available: i32,
+    /// Number of recording driver currently plugged in.
+    pub connected: i32,
+}

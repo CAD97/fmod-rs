@@ -79,7 +79,7 @@ impl System {
             system_rate,
             speaker_mode,
             speaker_mode_channels,
-            ..Default::default()
+            state: DriverState::default(),
         })
     }
 
@@ -189,4 +189,20 @@ enum_struct! {
         /// Mac / iOS - PHASE framework. (Disabled)
         Phase        = FMOD_OUTPUTTYPE_PHASE,
     }
+}
+
+/// Identification information about a sound device.
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct DriverInfo {
+    /// GUID that uniquely identifies the device.
+    pub guid: Guid,
+    /// Sample rate this device operates at.
+    pub system_rate: i32,
+    /// Speaker setup this device is currently using.
+    pub speaker_mode: SpeakerMode,
+    /// Number of channels in the current speaker setup.
+    pub speaker_mode_channels: i32,
+    /// Flags that provide additional information about the driver.
+    /// Only meaningful for record drivers.
+    pub state: DriverState,
 }

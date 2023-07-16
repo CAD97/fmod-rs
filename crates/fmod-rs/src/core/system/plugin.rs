@@ -203,3 +203,12 @@ enum_struct! {
         Dsp    = FMOD_PLUGINTYPE_DSP,
     }
 }
+
+/// Information about a selected plugin.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginInfo {
+    /// Plugin type.
+    pub kind: PluginType,
+    /// Version number of the plugin.
+    pub version: u32,
+}

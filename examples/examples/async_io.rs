@@ -14,7 +14,7 @@ use {
         collections::VecDeque,
         fmt::{self, Write},
         fs::File,
-        io::{self, Seek, SeekFrom},
+        io::{Seek, SeekFrom},
         pin::Pin,
         sync::{
             atomic::{AtomicBool, Ordering::SeqCst},
@@ -84,11 +84,9 @@ impl fmod::file::FileSystem for MyFileSystem {
 
 unsafe impl fmod::file::SyncFileSystem for MyFileSystem {
     fn read(file: Pin<&mut File>, mut buffer: fmod::file::FileBuffer<'_>) -> fmod::Result {
-        match buffer.fill_from(file.get_mut()) {
-            Ok(_) => Ok(()),
-            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => Err(fmod::Error::FileEof),
-            Err(_) => Err(fmod::Error::FileBad),
-        }
+        buffer
+            .fill_from(file.get_mut())
+            .map_err(|_| fmod::Error::FileBad)
     }
 
     fn seek(mut file: Pin<&mut File>, pos: u32) -> fmod::Result {

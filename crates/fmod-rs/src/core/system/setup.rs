@@ -1,5 +1,6 @@
 use {
     fmod::{raw::*, *},
+    smart_default::SmartDefault,
     std::{
         borrow::Cow,
         ffi::{c_char, CStr},
@@ -589,4 +590,97 @@ enum_struct! {
         /// 5 point spline interpolation. Slowest resampling method but best quality.
         Spline   = FMOD_DSP_RESAMPLER_SPLINE,
     }
+}
+
+/// The buffer size for the FMOD software mixing engine.
+#[derive(Debug, SmartDefault, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct DspBufferSize {
+    /// The mixer engine block size. Use this to adjust mixer update
+    /// granularity. See below for more information on buffer length vs latency.
+    ///
+    /// <dl>
+    /// <dt>Units</dt><dd>Samples</dd>
+    /// <dt>Default</dt><dd>1024</dd>
+    /// </dl>
+    #[default(1024)]
+    pub buffer_length: u32,
+    /// The mixer engine number of buffers used. Use this to adjust mixer
+    /// latency. See [System::set_dsp_buffer_size] for more information on
+    /// number of buffers vs latency.
+    pub num_buffers: i32,
+}
+
+/// The global doppler scale, distance factor and log rolloff scale for all 3D
+/// sound in FMOD.
+#[derive(Debug, SmartDefault, Copy, Clone, PartialEq)]
+pub struct Settings3d {
+    /// A general scaling factor for how much the pitch varies due to doppler
+    /// shifting in 3D sound. Doppler is the pitch bending effect when a sound
+    /// comes towards the listener or moves away from it, much like the effect
+    /// you hear when a train goes past you with its horn sounding. With
+    /// `doppler_scale` you can exaggerate or diminish the effect. FMOD's
+    /// effective speed of sound at a doppler factor of 1.0 is 340 m/s.
+    #[default(1.0)]
+    pub doppler_scale: f32,
+    /// The FMOD 3D engine relative distance factor, compared to 1.0 meters.
+    /// Another way to put it is that it equates to "how many units per meter
+    /// does your engine have". For example, if you are using feet then "scale"
+    /// would equal 3.28.  
+    /// This only affects doppler. If you keep your min/max distance, custom
+    /// rolloff curves and positions in scale relative to each other the volume
+    /// rolloff will not change. If you set this, the min_distance of a sound
+    /// will automatically set itself to this value when it is created in case
+    /// the user forgets to set the min_distance to match the new
+    /// distance_factor.
+    #[default(1.0)]
+    pub distance_factor: f32,
+    /// The global attenuation rolloff factor. Volume for a sound will scale at
+    /// min_distance / distance. Setting this value makes the sound drop off
+    /// faster or slower. The higher the value, the faster volume will
+    /// attenuate, and conversely the lower the value, the slower it will
+    /// attenuate. For example, a rolloff factor of 1 will simulate the real
+    /// world, where as a value of 2 will make sounds attenuate 2 times quicker.
+    #[default(1.0)]
+    pub rolloff_scale: f32,
+}
+
+/// Output format for the software mixer.
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct SoftwareFormat {
+    /// Sample rate of the mixer.
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[8000, 192000]</dd>
+    /// <dt>Units</dt><dd>Hertz</dd>
+    /// <dt>Default</dt><dd>48000</dd>
+    /// </dl>
+    pub sample_rate: i32,
+    /// Speaker setup of the mixer.
+    pub speaker_mode: SpeakerMode,
+    /// Number of speakers for [SpeakerMode::Raw].
+    ///
+    /// <dl>
+    /// <dt>Range</dt><dd>[0, MAX_CHANNEL_WIDTH]</dd>
+    /// </dl>
+    pub num_raw_speakers: i32,
+}
+
+/// The position of a speaker for the current speaker mode.
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
+pub struct SpeakerPosition {
+    /// 2D X position relative to the listener. -1 = left, 0 = middle,
+    /// +1 = right.
+    /// <dl>
+    /// <dt>Range</dt><dd>[-1, 1]</dd>
+    /// </dl>
+    pub x: f32,
+    /// 2D Y position relative to the listener. -1 = back, 0 = middle,
+    /// +1 = front.
+    /// <dl>
+    /// <dt>Range</dt><dd>[-1, 1]</dd>
+    /// </dl>
+    pub y: f32,
+    /// Active state of a speaker. true = included in 3D calculations,
+    /// false = ignored.
+    pub active: bool,
 }

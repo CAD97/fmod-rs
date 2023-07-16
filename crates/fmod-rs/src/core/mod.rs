@@ -2,7 +2,9 @@
 
 // !!! module order is important for documentation listing order !!!
 
-mod common {
+pub mod common {
+    //! Functionality not associated with a specific object.
+
     pub mod debug;
     pub mod file;
     mod general;
@@ -13,7 +15,9 @@ mod common {
 }
 
 #[rustfmt::skip]
-mod system {
+pub mod system {
+    //! Management object from which all resources are created and played.
+
     use fmod::{raw::*, *};
 
     opaque! {
@@ -35,28 +39,39 @@ mod system {
     mod recording;
     mod geometry;
     mod general;
-    mod ex;
 
     pub use self::{
         lifetime::*, device::*, setup::*, file::*, plugin::*, network::*, information::*,
-        creation::*, runtime::*, recording::*, geometry::*, general::*, ex::*,
+        creation::*, runtime::*, recording::*, geometry::*, general::*,
     };
 }
 
-mod channel;
-mod channel_control;
-mod channel_group;
-mod dsp;
-mod dsp_connection;
+pub mod channel;
+pub mod channel_control;
+pub mod channel_group;
+pub mod dsp;
+pub mod dsp_connection;
 mod effect;
 mod ex;
-mod geometry;
+pub mod geometry;
 mod ios;
-mod reverb_3d;
-mod sound;
-mod sound_group;
+pub mod reverb_3d;
+pub mod sound;
+pub mod sound_group;
 
 pub use self::{
-    channel::*, channel_control::*, channel_group::*, common::*, dsp::*, dsp_connection::*,
-    effect::*, ex::*, geometry::*, ios::*, reverb_3d::*, sound::*, sound_group::*, system::*,
+    channel::{Channel, *},
+    channel_control::{ChannelControl, *},
+    channel_group::{ChannelGroup, *},
+    common::*,
+    dsp::{Dsp, *},
+    dsp_connection::{DspConnection, *},
+    effect::*,
+    ex::*,
+    geometry::{Geometry, *},
+    ios::*,
+    reverb_3d::{Reverb3d, *},
+    sound::{Sound, *},
+    sound_group::{SoundGroup, *},
+    system::{System, *},
 };
