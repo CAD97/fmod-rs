@@ -1,11 +1,13 @@
-use std::{mem::ManuallyDrop, ptr};
-
 use {
-    fmod::{raw::*, utils::fmod_get_string, *},
+    crate::utils::{fmod_get_string, string_from_utf16be_lossy, string_from_utf16le_lossy},
+    fmod::{raw::*, *},
     std::{
+        borrow::Cow,
+        ffi::CStr,
         mem,
+        mem::ManuallyDrop,
         ops::{Bound, Range, RangeBounds, RangeInclusive},
-        slice,
+        ptr, slice,
     },
 };
 
@@ -164,6 +166,217 @@ impl Sound {
             &mut tag,
         ))?;
         Ok(unsafe { Tag::from_raw(tag)? })
+    }
+}
+
+enum_struct! {
+    /// Recognized audio formats that can be loaded into a Sound.
+    pub enum SoundType: FMOD_SOUND_TYPE {
+        #[default]
+        /// Unknown or custom codec plugin.
+        Unknown         = FMOD_SOUND_TYPE_UNKNOWN,
+        /// Audio Interchange File Format (.aif, .aiff). Uncompressed integer formats only.
+        Aiff            = FMOD_SOUND_TYPE_AIFF,
+        /// Microsoft Advanced Systems Format (.asf, .wma, .wmv). Platform provided decoder, available only on Windows.
+        Asf             = FMOD_SOUND_TYPE_ASF,
+        /// Downloadable Sound (.dls). Multi-sound bank format used by MIDI (.mid).
+        Dls             = FMOD_SOUND_TYPE_DLS,
+        /// Free Lossless Audio Codec (.flac).
+        Flac            = FMOD_SOUND_TYPE_FLAC,
+        /// FMOD Sample Bank (.fsb). Proprietary multi-sound bank format. Supported encodings: PCM16, FADPCM, Vorbis, AT9, XMA, Opus.
+        Fsb             = FMOD_SOUND_TYPE_FSB,
+        /// Impulse Tracker (.it).
+        It              = FMOD_SOUND_TYPE_IT,
+        /// Musical Instrument Digital Interface (.mid).
+        Midi            = FMOD_SOUND_TYPE_MIDI,
+        /// Protracker / Fasttracker Module File (.mod).
+        Mod             = FMOD_SOUND_TYPE_MOD,
+        /// Moving Picture Experts Group (.mp2, .mp3). Also supports .wav (RIFF) container format.
+        Mpeg            = FMOD_SOUND_TYPE_MPEG,
+        /// Ogg Vorbis (.ogg).
+        OggVorbis       = FMOD_SOUND_TYPE_OGGVORBIS,
+        /// Play list information container (.asx, .pls, .m3u, .wax). No audio, tags only.
+        Playlist        = FMOD_SOUND_TYPE_PLAYLIST,
+        /// Raw uncompressed PCM data (.raw).
+        Raw             = FMOD_SOUND_TYPE_RAW,
+        /// ScreamTracker 3 Module (.s3m).
+        S3m             = FMOD_SOUND_TYPE_S3M,
+        /// User created sound.
+        User            = FMOD_SOUND_TYPE_USER,
+        /// Microsoft Waveform Audio File Format (.wav). Supported encodings: Uncompressed PCM, IMA ADPCM. Platform provided ACM decoder extensions, available only on Windows.
+        Wav             = FMOD_SOUND_TYPE_WAV,
+        /// FastTracker 2 Extended Module (.xm).
+        Xm              = FMOD_SOUND_TYPE_XM,
+        /// Microsoft XMA bit-stream supported by FSB (.fsb) container format. Platform provided decoder, available only on Xbox.
+        Xma             = FMOD_SOUND_TYPE_XMA,
+        /// Apple Audio Queue decoder (.mp4, .m4a, .mp3). Supported encodings: AAC, ALAC, MP3. Platform provided decoder, available only on iOS / tvOS devices.
+        AudioQueue      = FMOD_SOUND_TYPE_AUDIOQUEUE,
+        /// Sony ATRAC9 bit-stream supported by FSB (.fsb) container format. Platform provided decoder, available only on PlayStation.
+        At9             = FMOD_SOUND_TYPE_AT9,
+        /// Vorbis bit-stream supported by FSB (.fsb) container format.
+        Vorbis          = FMOD_SOUND_TYPE_VORBIS,
+        /// Microsoft Media Foundation decoder (.asf, .wma, .wmv, .mp4, .m4a). Platform provided decoder, available only on UWP.
+        MediaFoundation = FMOD_SOUND_TYPE_MEDIA_FOUNDATION,
+        /// Google Media Codec decoder (.m4a, .mp4). Platform provided decoder, available only on Android.
+        MediaCodec      = FMOD_SOUND_TYPE_MEDIACODEC,
+        /// FMOD Adaptive Differential Pulse Code Modulation bit-stream supported by FSB (.fsb) container format.
+        Fadpcm          = FMOD_SOUND_TYPE_FADPCM,
+        /// Opus bit-stream supported by FSB (.fsb) container format. Platform provided decoder, available only on Xbox Series X|S.
+        Opus            = FMOD_SOUND_TYPE_OPUS,
+    }
+
+    /// These definitions describe the native format of the hardware or software buffer that will be used.
+    pub enum SoundFormat: FMOD_SOUND_FORMAT {
+        #[default]
+        /// Uninitalized / unknown.
+        None      = FMOD_SOUND_FORMAT_NONE,
+        /// 8bit integer PCM data.
+        Pcm8      = FMOD_SOUND_FORMAT_PCM8,
+        /// 16bit integer PCM data.
+        Pcm16     = FMOD_SOUND_FORMAT_PCM16,
+        /// 24bit integer PCM data.
+        Pcm24     = FMOD_SOUND_FORMAT_PCM24,
+        /// 32bit integer PCM data.
+        Pcm32     = FMOD_SOUND_FORMAT_PCM32,
+        /// 32bit floating point PCM data.
+        PcmFloat  = FMOD_SOUND_FORMAT_PCMFLOAT,
+        /// Sound data is in its native compressed format. See [Mode::CreateCompressedSample]
+        Bitstream = FMOD_SOUND_FORMAT_BITSTREAM,
+    }
+
+    /// List of tag data / metadata types that could be stored within a sound. These include id3 tags, metadata from netstreams and vorbis/asf data.
+    pub enum TagType: FMOD_TAGTYPE {
+        /// Tag type that is not recognized by FMOD
+        Unknown       = FMOD_TAGTYPE_UNKNOWN,
+        /// MP3 ID3 Tag 1.0. Typically 1 tag stored 128 bytes from end of an MP3 file.
+        Id3v1         = FMOD_TAGTYPE_ID3V1,
+        /// MP3 ID3 Tag 2.0. Variable length tags with more than 1 possible.
+        Id3v2         = FMOD_TAGTYPE_ID3V2,
+        /// Metadata container used in Vorbis, FLAC, Theora, Speex and Opus file formats.
+        VorbisComment = FMOD_TAGTYPE_VORBISCOMMENT,
+        /// SHOUTcast internet stream metadata which can be issued during playback.
+        ShoutCast     = FMOD_TAGTYPE_SHOUTCAST,
+        /// Icecast internet stream metadata which can be issued during playback.
+        Icecast       = FMOD_TAGTYPE_ICECAST,
+        /// Advanced Systems Format metadata typically associated with Windows Media formats such as WMA.
+        Asf           = FMOD_TAGTYPE_ASF,
+        /// Metadata stored inside a MIDI file.
+        ///
+        /// Remarks. A midi file contains 16 channels. Not all of them are used, or in order. Use the tag 'Channel mask' and 'Number of channels' to find the channels used, to use with [Sound::set_music_channel_volume] / [Sound::get_music_channel_volume]. For example if the mask is 1001b, there are 2 channels, and channel 0 and channel 3 are the 2 channels used with the above functions.
+        Midi          = FMOD_TAGTYPE_MIDI,
+        /// Playlist files such as PLS,M3U,ASX and WAX will populate playlist information through this tag type.
+        Playlist      = FMOD_TAGTYPE_PLAYLIST,
+        /// Tag type used by FMOD's MIDI, MOD, S3M, XM, IT format support, and netstreams to notify of internet stream events like a sample rate change.
+        Fmod          = FMOD_TAGTYPE_FMOD,
+        /// For codec developers, this tag type can be used with [CodecMetadataFunc] to generate custom metadata.
+        User          = FMOD_TAGTYPE_USER,
+    }
+}
+
+raw! {
+    enum_struct! {
+        /// List of tag data / metadata types.
+        ///
+        /// See [Tag] structure for tag length in bytes.
+        pub enum TagDataType: FMOD_TAGDATATYPE {
+            /// Raw binary data. see [Tag] structure for length of data in bytes.
+            Binary        = FMOD_TAGDATATYPE_BINARY,
+            /// Integer - Note this integer could be 8bit / 16bit / 32bit / 64bit. See [Tag] structure for integer size (1 vs 2 vs 4 vs 8 bytes).
+            Int           = FMOD_TAGDATATYPE_INT,
+            /// IEEE floating point number. See [Tag] structure to confirm if the float data is 32bit or 64bit (4 vs 8 bytes).
+            Float         = FMOD_TAGDATATYPE_FLOAT,
+            /// 8bit ASCII char string. See [Tag] structure for string length in bytes.
+            String        = FMOD_TAGDATATYPE_STRING,
+            /// 16bit UTF string. Assume little endian byte order. See [Tag] structure for string length in bytes.
+            StringUtf16   = FMOD_TAGDATATYPE_STRING_UTF16,
+            /// 16bit UTF string Big endian byte order. See [Tag] structure for string length in bytes.
+            StringUtf16be = FMOD_TAGDATATYPE_STRING_UTF16BE,
+            /// 8 bit UTF string. See [Tag] structure for string length in bytes.
+            StringUtf8    = FMOD_TAGDATATYPE_STRING_UTF8,
+        }
+    }
+}
+
+/// Tag data / metadata description.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Tag<'a> {
+    /// Tag type.
+    pub kind: TagType,
+    /// Name.
+    pub name: Cow<'a, str>,
+    /// Tag data.
+    pub data: TagData<'a>,
+    /// True if this tag has been updated since last being accessed with [Sound::get_tag]
+    pub updated: bool,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TagData<'a> {
+    Binary(&'a [u8]),
+    Int(i64),
+    Float(f64),
+    Str(Cow<'a, str>),
+}
+
+impl Tag<'_> {
+    raw! {
+        pub unsafe fn from_raw(tag: FMOD_TAG) -> Result<Self> {
+            let name = CStr::from_ptr(tag.name);
+            let name = name.to_string_lossy();
+            let data = slice::from_raw_parts(tag.data as *const u8, ix!(tag.datalen));
+            let data = match TagDataType::from_raw(tag.datatype) {
+                TagDataType::Binary => TagData::Binary(data),
+                TagDataType::Int if data.len() == 1 => TagData::Int((tag.data as *const u8).read() as _),
+                TagDataType::Int if data.len() == 2 => TagData::Int((tag.data as *const u16).read_unaligned() as _),
+                TagDataType::Int if data.len() == 4 => TagData::Int((tag.data as *const u32).read_unaligned() as _),
+                TagDataType::Int if data.len() == 8 => TagData::Int((tag.data as *const u64).read_unaligned() as _),
+                TagDataType::Float if data.len() == 4 => TagData::Float((tag.data as *const f32).read_unaligned() as _),
+                TagDataType::Float if data.len() == 8 => TagData::Float((tag.data as *const f64).read_unaligned() as _),
+                TagDataType::String | TagDataType::StringUtf8 => TagData::Str(String::from_utf8_lossy(data)),
+                TagDataType::StringUtf16 => TagData::Str(Cow::Owned(string_from_utf16le_lossy(data))),
+                TagDataType::StringUtf16be => TagData::Str(Cow::Owned(string_from_utf16be_lossy(data))),
+                r#type => {
+                    whoops!(no_panic: "unknown {type:?} (len {}) encountered", tag.datalen);
+                    yeet!(Error::RustPanicked);
+                },
+            };
+            Ok(Tag {
+                kind: TagType::from_raw(tag.r#type),
+                name,
+                data,
+                updated: tag.updated == 0,
+            })
+        }
+    }
+}
+
+impl<'a> TagData<'a> {
+    pub fn as_binary(&self) -> Option<&[u8]> {
+        match self {
+            TagData::Binary(data) => Some(data),
+            _ => None,
+        }
+    }
+
+    pub fn as_int(&self) -> Option<i64> {
+        match self {
+            TagData::Int(data) => Some(*data),
+            _ => None,
+        }
+    }
+
+    pub fn as_float(&self) -> Option<f64> {
+        match self {
+            TagData::Float(data) => Some(*data),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            TagData::Str(data) => Some(data),
+            _ => None,
+        }
     }
 }
 
@@ -684,6 +897,32 @@ impl Sound {
     }
 }
 
+enum_struct! {
+    /// These values describe what state a sound is in after [Mode::NonBlocking] has been used to open it.
+    ///
+    /// With streams, if you are using [Mode::NonBlocking], note that if the user calls [Sound::get_sub_sound], a stream will go into [OpenState::Seeking] state and sound related commands will return [Error::NotReady].
+    ///
+    /// With streams, if you are using [Mode::NonBlocking], note that if the user calls [Channel::get_position], a stream will go into [OpenState::SetPosition] state and sound related commands will return [Error::NotReady].
+    pub enum OpenState: FMOD_OPENSTATE {
+        /// Opened and ready to play.
+        Ready       = FMOD_OPENSTATE_READY,
+        /// Initial load in progress.
+        Loading     = FMOD_OPENSTATE_LOADING,
+        /// Failed to open - file not found, out of memory etc. See return value of [Sound::get_open_state] for what happened.
+        Error       = FMOD_OPENSTATE_ERROR,
+        /// Connecting to remote host (internet sounds only).
+        Connecting  = FMOD_OPENSTATE_CONNECTING,
+        /// Buffering data.
+        Buffering   = FMOD_OPENSTATE_BUFFERING,
+        /// Seeking to subsound and re-flushing stream buffer.
+        Seeking     = FMOD_OPENSTATE_SEEKING,
+        /// Ready and playing, but not possible to release at this time without stalling the main thread.
+        Playing     = FMOD_OPENSTATE_PLAYING,
+        /// Seeking within a stream to a different position.
+        SetPosition = FMOD_OPENSTATE_SETPOSITION,
+    }
+}
+
 // XXX: io::Read and io::Seek impls?
 
 /// A read lock on a sound's sample data.
@@ -715,7 +954,7 @@ impl<'a> Drop for SampleDataLock<'a> {
     fn drop(&mut self) {
         match unsafe { self.sound.unlock(self.part1, self.part2) } {
             Ok(()) => (),
-            Err(e) => whoops!(no_panic: "failed to unlock sound: {e}"),
+            Err(e) => whoops!("failed to unlock sound: {e}"),
         }
     }
 }

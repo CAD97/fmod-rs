@@ -487,3 +487,15 @@ pub(crate) unsafe extern "system" fn dsp_callback<C: DspCallback>(
         },
     }
 }
+
+raw! {
+    enum_struct! {
+        /// Types of callbacks called by DSPs.
+        ///
+        /// Callbacks are called from the game thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
+        pub enum DspCallbackType: FMOD_DSP_CALLBACK_TYPE {
+            /// Called when a DSP's data parameter can be released.
+            DataParameterInfo = FMOD_DSP_CALLBACK_DATAPARAMETERRELEASE,
+        }
+    }
+}

@@ -852,6 +852,23 @@ impl ChannelControl {
     }
 }
 
+raw! {
+    enum_struct! {
+        /// References to built in DSP positions that reside in a Channel or ChannelGroup DSP chain.
+        ///
+        /// Before any [Dsp]s have been added by the user, there is only one [Dsp] available for a [Channel] or [ChannelGroup]. This is of type [DspType::Fader]. This handles volume and panning for a [Channel] or [ChannelGroup].
+        /// As only 1 [Dsp] exists by default, initially [ChannelControlDspIndex::Head], [ChannelControlDspIndex::Tail] and [ChannelControlDspIndex::Fader] all reference the same DSP.
+        pub enum ChannelControlDspIndex: FMOD_CHANNELCONTROL_DSP_INDEX {
+            /// Head of the DSP chain, equivalent of index 0.
+            Head  = FMOD_CHANNELCONTROL_DSP_HEAD,
+            /// Built in fader DSP.
+            Fader = FMOD_CHANNELCONTROL_DSP_FADER,
+            /// Tail of the DSP chain, equivalent of the number of [Dsp]s minus 1.
+            Tail  = FMOD_CHANNELCONTROL_DSP_TAIL,
+        }
+    }
+}
+
 /// # Sample accurate scheduling
 impl ChannelControl {
     /// Retrieves the DSP clock value for the tail DSP node.
@@ -1075,4 +1092,68 @@ pub(crate) unsafe extern "system" fn channel_control_callback<C: ChannelControlC
         commanddata1,
         commanddata2,
     )
+}
+
+raw! {
+    enum_struct! {
+        /// Identifier used to distinguish between Channel and ChannelGroup in the ChannelControl callback.
+        pub enum ChannelControlType: FMOD_CHANNELCONTROL_TYPE {
+            /// Type representing [Channel]
+            Channel      = FMOD_CHANNELCONTROL_CHANNEL,
+            /// Type representing [ChannelGroup]
+            ChannelGroup = FMOD_CHANNELCONTROL_CHANNELGROUP,
+        }
+    }
+}
+
+raw! {
+    enum_struct! {
+        /// Types of callbacks called by Channels and ChannelGroups.
+        pub enum ChannelControlCallbackType: FMOD_CHANNELCONTROL_CALLBACK_TYPE {
+            /// Called when a sound ends. Supported by [Channel] only.
+            End          = FMOD_CHANNELCONTROL_CALLBACK_END,
+            /// Called when a [Channel] is made virtual or real. Supported by [Channel] objects only.
+            ///
+            /// - `command_data_1`: (int) 0 represents 'virtual to real' and 1 represents 'real to virtual'.
+            VirtualVoice = FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE,
+            /// Called when a syncpoint is encountered. Can be from wav file markers or user added. Supported by [Channel] only.
+            ///
+            /// - `command_data_1`: (int) representing the index of the sync point for use with [Sound::get_sync_point_info].
+            SyncPoint    = FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT,
+            /// Called when geometry occlusion values are calculated. Can be used to clamp or change the value. Supported by [Channel] and [ChannelGroup].
+            Occlusion    = FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION,
+        }
+    }
+}
+
+/// Angles and attenuation levels of a 3D cone shape,
+/// for simulated occlusion which is based on direction.
+#[derive(Debug, Clone, Copy, SmartDefault, PartialEq)]
+pub struct Cone3dSettings {
+    /// Inside cone angle. This is the angle spread within which the sound
+    /// is unattenuated.
+    /// <dl>
+    /// <dt>Units</dt><dd>Degrees</dd>
+    /// <dt>Range</dt><dd>[0, <code>outside_angle</code></dd>
+    /// <dt>Default</dt><dd>360</dd>
+    /// </dl>
+    #[default(360.0)]
+    pub inside_angle: f32,
+    /// Outside cone angle. This is the angle spread outside of which the sound
+    /// is attenuated to its `outside_volume`.
+    /// <dl>
+    /// <dt>Units</dt><dd>Degrees</dd>
+    /// <dt>Range</dt><dd>[<code>inside_angle</code>, 360]</dd>
+    /// <dt>Default</dt><dd>360</dd>
+    /// </dl>
+    #[default(360.0)]
+    pub outside_angle: f32,
+    /// Cone outside volume.
+    /// <dl>
+    /// <dt>Units</dt><dd>Linear</dd>
+    /// <dt>Range</dt><dd>[0, 1]</dd>
+    /// <dt>Default</dt><dd>1</dd>
+    /// </dl>
+    #[default(1.0)]
+    pub outside_volume: f32,
 }

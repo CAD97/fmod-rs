@@ -36,13 +36,13 @@ mod system {
 mod channel;
 mod channel_control;
 mod channel_group;
-mod common;
 mod dsp;
 mod dsp_connection;
 mod effect;
 mod ex;
 mod general;
 mod geometry;
+mod ios;
 mod reverb_3d;
 mod sound;
 mod sound_group;
@@ -53,6 +53,6 @@ pub mod memory;
 pub mod thread;
 
 pub use self::{
-    channel::*, channel_control::*, channel_group::*, common::*, dsp::*, dsp_connection::*,
-    effect::*, ex::*, general::*, geometry::*, reverb_3d::*, sound::*, sound_group::*, system::*,
+    channel::*, channel_control::*, channel_group::*, dsp::*, dsp_connection::*, effect::*, ex::*,
+    general::*, geometry::*, ios::*, reverb_3d::*, sound::*, sound_group::*, system::*,
 };
