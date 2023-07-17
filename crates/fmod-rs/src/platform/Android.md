@@ -203,7 +203,7 @@ void Java_org_fmod_example_MainActivity_setStateDestroy(JNIEnv *env, jobject thi
 
  ## Performance Reference
 
- This section is a companion for the [CPU Performance](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-cpu-performance.html>) white paper and serves as a quick reference of facts targeting this platform.
+ This section is a companion for the [CPU Performance](<https://fmod.com/docs/2.02/api/white-papers-cpu-performance.html>) white paper and serves as a quick reference of facts targeting this platform.
 
  ### Format Choice
 

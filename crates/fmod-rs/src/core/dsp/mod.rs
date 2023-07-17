@@ -6,15 +6,6 @@ use {
     std::{borrow::Cow, ffi::c_void, ptr, time::Duration},
 };
 
-opaque! {
-    /// The Digital Signal Processor is one node within a graph that transforms
-    /// input audio signals to an output stream.
-    ///
-    /// Create with [`System::create_dsp`], [`System::create_dsp_by_type`] or
-    /// [`System::create_dsp_by_plugin`].
-    class Dsp = FMOD_DSP, FMOD_DSP_*;
-}
-
 /// # Connections.
 impl Dsp {
     /// Adds a DSP unit as an input to this object.
@@ -352,6 +343,12 @@ impl Dsp {
     pub fn reset(&self) -> Result {
         ffi!(FMOD_DSP_Reset(self.as_raw()))?;
         Ok(())
+    }
+
+    raw! {
+        pub unsafe fn raw_release(this: *mut FMOD_DSP) -> FMOD_RESULT {
+            FMOD_DSP_Release(this)
+        }
     }
 
     /// Retrieves the pre-defined type of a FMOD registered DSP unit.

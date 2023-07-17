@@ -199,18 +199,20 @@ impl System {
         Ok(())
     }
 
-    /// Closes and frees this object and its resources.
-    ///
-    /// This will internally call [`System::close`], so calling
-    /// [`System::close`] before this function is not necessary.
-    pub(super) unsafe fn raw_release(raw: *mut FMOD_SYSTEM) -> FMOD_RESULT {
-        let mut system_count = GLOBAL_SYSTEM_STATE.write();
-        let result = FMOD_System_Release(raw);
-        if result == FMOD_OK {
-            *system_count -= 1;
-            FMOD_OK
-        } else {
-            result
+    raw! {
+        /// Closes and frees this object and its resources.
+        ///
+        /// This will internally call [`System::close`], so calling
+        /// [`System::close`] before this function is not necessary.
+        pub unsafe fn raw_release(raw: *mut FMOD_SYSTEM) -> FMOD_RESULT {
+            let mut system_count = GLOBAL_SYSTEM_STATE.write();
+            let result = FMOD_System_Release(raw);
+            if result == FMOD_OK {
+                *system_count -= 1;
+                FMOD_OK
+            } else {
+                result
+            }
         }
     }
 

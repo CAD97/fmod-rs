@@ -8,11 +8,6 @@ use {
     },
 };
 
-opaque! {
-    /// The shared APIs between [`Channel`] and [`ChannelGroup`].
-    weak class ChannelControl = FMOD_CHANNELCONTROL, FMOD_ChannelControl_*;
-}
-
 // We make the potentially dangerous assumption that for the FMOD_CHANNELCONTROL
 // API, FMOD_Channel_Op and FMOD_ChannelGroup_Op call the same static function
 // that the C++ API exposes as FMOD::ChannelControl::op. This allows us to have

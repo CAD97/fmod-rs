@@ -3,11 +3,6 @@ use {
     std::ptr,
 };
 
-opaque! {
-    /// An interface that manages Sound Groups
-    class SoundGroup = FMOD_SOUNDGROUP, FMOD_SoundGroup_*;
-}
-
 /// # Group Functions.
 impl SoundGroup {
     /// Sets the maximum number of playbacks to be audible at once in a sound
@@ -166,6 +161,16 @@ impl SoundGroup {
                     buf.len() as _,
                 ))
             })
+        }
+    }
+
+    raw! {
+        /// Releases a soundgroup object and returns all sounds back to the
+        /// master sound group.
+        ///
+        /// You cannot release the master [`SoundGroup`].
+        pub unsafe fn raw_release(this: *mut FMOD_SOUNDGROUP) -> FMOD_RESULT {
+            FMOD_SoundGroup_Release(this)
         }
     }
 

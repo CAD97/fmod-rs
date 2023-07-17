@@ -53,13 +53,16 @@ macro_rules! whoops {
 
 macro_rules! opaque {
     {
+        #[doc = $doc:expr]
         $(#[$meta:meta])*
-        class $Name:ident {
-            type Raw = $Raw:ident;
+        class $prefix:literal $Name:ident {
+            type Raw = $Raw:ty;
             fn release = $release:expr;
         }
     } => {
         #[cfg(not(feature = "unstable"))]
+        #[doc = $doc]
+        $(#[$meta])*
         pub struct $Name {
             _data: ::std::cell::Cell<[u8; 0]>,
             _marker: ::std::marker::PhantomData<(*mut u8, std::marker::PhantomPinned)>,
@@ -69,6 +72,7 @@ macro_rules! opaque {
         #[allow(unused_doc_comments)] // false positive vvvvvv
         #[doc(cfg(all()))] // doesn't actually require cfg(feature = "unstable")
         extern {
+            #[doc = $doc]
             $(#[$meta])*
             pub type $Name;
         }
@@ -77,8 +81,8 @@ macro_rules! opaque {
         unsafe impl Sync for $Name {}
         impl ::std::panic::UnwindSafe for $Name {}
         impl ::std::panic::RefUnwindSafe for $Name {}
-        impl fmod::Sealed for $Name {}
-        unsafe impl fmod::Resource for $Name {
+        impl ::fmod::Sealed for $Name {}
+        unsafe impl ::fmod::Resource for $Name {
             type Raw = $Raw;
 
             unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self {
@@ -88,7 +92,7 @@ macro_rules! opaque {
 
             #[allow(clippy::redundant_closure_call)]
             unsafe fn release(this: *mut Self::Raw) -> fmod::Result {
-                std::ptr::drop_in_place(Self::from_raw(this) as *const Self as *mut Self);
+                ::std::ptr::drop_in_place(Self::from_raw(this) as *const Self as *mut Self);
                 ffi!(($release)(this))?;
                 Ok(())
             }
@@ -96,28 +100,135 @@ macro_rules! opaque {
 
         impl ::std::fmt::Debug for $Name {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                // TODO: enable using an fmod::studio:: prefix for studio types
-                write!(f, concat!("fmod::", stringify!($Name), "({:p})"), self)
+                write!(f, concat!($prefix, stringify!($Name), "({:p})"), self)
             }
         }
     };
 
-    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident* ($release:expr) $(;)?) => {
+    {
+        #[doc = $doc:expr]
+        $(#[$meta:meta])*
+        class $prefix:literal $Name:ident {
+            type Raw = $Raw:ty;
+            fn release = $release:expr;
+        }
+
+        mod $($module:ident),+;
+    } => {
         opaque! {
+            #[doc = $doc]
             $(#[$meta])*
-            class $Name {
+            class $prefix $Name {
                 type Raw = $Raw;
                 fn release = $release;
             }
         }
+
+        ::paste::paste! {
+            #[doc = $doc]
+            pub mod [<$Name:snake>] {
+                $(mod $module;)+
+                pub use super::$Name;
+                pub use /*self::*/{
+                    $($module::*,)+
+                };
+            }
+            pub use self::[<$Name:snake>]::*;
+        }
     };
 
-    ($(#[$meta:meta])* class $Name:ident = $Raw:ident, $raw:ident* $(;)?) => {
-        opaque! { $(#[$meta])* class $Name = $Raw, $raw* (paste::paste!([<$raw Release>])) }
+    {
+        #[doc = $doc:expr]
+        $(#[$meta:meta])*
+        class $prefix:literal $Name:ident {
+            type Raw = $Raw:ty;
+            fn release = $release:expr;
+        }
+
+        mod;
+    } => {
+        opaque! {
+            #[doc = $doc]
+            $(#[$meta])*
+            class $prefix $Name {
+                type Raw = $Raw;
+                fn release = $release;
+            }
+        }
+
+        ::paste::paste! {
+            #[doc = $doc]
+            pub mod [<$Name:snake>];
+            pub use self::[<$Name:snake>]::*;
+        }
     };
 
-    ($(#[$meta:meta])* weak class $Name:ident = $Raw:ident, $raw:ident* $(;)?) => {
-        opaque! { $(#[$meta])* class $Name = $Raw, $raw* (|_| FMOD_OK) }
+    {
+        #[doc = $doc:expr]
+        $(#[$meta:meta])*
+        class $Name:ident = $Raw:ident;
+        $(mod $($module:ident),*;)?
+    } => {
+        opaque! {
+            #[doc = $doc]
+            $(#[$meta])*
+            class "fmod::" $Name {
+                type Raw = ::fmod::raw::$Raw;
+                fn release = $Name::raw_release;
+            }
+            $(mod $($module),*;)?
+        }
+    };
+
+    {
+        #[doc = $doc:expr]
+        $(#[$meta:meta])*
+        weak class $Name:ident = $Raw:ident;
+        $(mod $($module:ident),*;)?
+    } => {
+        opaque! {
+            #[doc = $doc]
+            $(#[$meta])*
+            class "fmod::" $Name {
+                type Raw = ::fmod::raw::$Raw;
+                fn release = |_| ::fmod::raw::FMOD_OK;
+            }
+            $(mod $($module),*;)?
+        }
+    };
+
+    {
+        #[doc = $doc:expr]
+        $(#[$meta:meta])*
+        class studio::$Name:ident = $Raw:ident;
+        $(mod $($module:ident),*;)?
+    } => {
+        opaque! {
+            #[doc = $doc]
+            $(#[$meta])*
+            class "fmod::studio::" $Name {
+                type Raw = ::fmod::raw::$Raw;
+                fn release = $Name::raw_release;
+            }
+            $(mod $($module),*;)?
+        }
+    };
+
+    {
+        #[doc = $doc:expr]
+        $(#[$meta:meta])*
+        weak class studio::$Name:ident = $Raw:ident;
+        $(mod $($module:ident),*;)?
+    } => {
+        opaque! {
+            #[doc = $doc]
+            $(#[$meta])*
+            class "fmod::studio::" $Name {
+                type Raw = ::fmod::raw::$Raw;
+                fn release = |_| ::fmod::raw::FMOD_OK;
+            }
+            $(mod $($module),*;)?
+        }
     };
 }
 

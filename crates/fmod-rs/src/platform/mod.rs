@@ -1,4 +1,4 @@
-//! This module documents platform-specific details on using FMOD.
+//! Platform Details
 
 #[cfg(doc)]
 use fmod::*;

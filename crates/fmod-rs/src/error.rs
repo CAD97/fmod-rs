@@ -256,6 +256,7 @@ impl fmt::Display for Error {
 }
 
 raw! {
+    /// Extension trait for <code>Result&lt;(), [Error]&gt;</code>.
     pub trait ResultExt: Sealed {
         fn into_raw(self) -> FMOD_RESULT;
     }

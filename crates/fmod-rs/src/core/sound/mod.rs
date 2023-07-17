@@ -11,15 +11,6 @@ use {
     },
 };
 
-opaque! {
-    /// Container for [sample data] that can be played on a [Channel].
-    ///
-    /// Create with [System::create_sound] or [System::create_stream].
-    ///
-    /// [sample data]: https://fmod.com/docs/2.02/api/glossary.html#sample-data
-    class Sound = FMOD_SOUND, FMOD_Sound_*;
-}
-
 /// # Format information.
 impl Sound {
     /// Retrieves the name of a sound.
@@ -1107,6 +1098,21 @@ impl Sound {
 
 /// # General.
 impl Sound {
+    raw! {
+        /// Frees a sound object.
+        ///
+        /// This will stop any instances of this sound, and free the sound object
+        /// and its children if it is a multi-sound object.
+        ///
+        /// If the sound was opened with [`Mode::NonBlocking`] and hasn't finished
+        /// opening yet, it will block. Using [`Sound::get_open_state`] and checking
+        /// the open state for [`OpenState::Ready`] and [`OpenState::Error`] is a
+        /// good way to avoid stalls.
+        pub unsafe fn raw_release(this: *mut FMOD_SOUND) -> FMOD_RESULT {
+            FMOD_Sound_Release(this)
+        }
+    }
+
     // TODO: set_user_data, get_user_data
 
     /// Retrieves the parent System object.

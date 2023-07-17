@@ -63,6 +63,23 @@ mod error;
 mod handle;
 pub(crate) mod utils;
 
+// deliberate glob import ambiguity with self::core::* mods
+#[allow(ambiguous_glob_reexports, unused)]
+use _glob_prevention::*;
+mod _glob_prevention {
+    pub mod system {}
+    pub mod sound {}
+    pub mod channel_control {}
+    pub mod channel {}
+    pub mod channel_group {}
+    pub mod sound_group {}
+    pub mod dsp {}
+    pub mod dsp_connection {}
+    pub mod geometry {}
+    pub mod reverb3d {}
+    pub mod common {}
+}
+
 #[doc(no_inline)]
 pub use {
     self::core::*,
@@ -73,7 +90,7 @@ pub use {
 pub use self::{error::*, handle::*};
 
 raw! {
-    /// Raw access to the FMOD C API.
+    /// Raw API Bindings
     pub mod raw {
         #[doc(inline)]
         pub use fmod_core_sys::*;

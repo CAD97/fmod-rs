@@ -8,13 +8,6 @@ use {
     },
 };
 
-opaque! {
-    /// A source of audio signal that connects to the [ChannelGroup] mixing hierarchy.
-    ///
-    /// Create with [System::play_sound] or [System::play_dsp].
-    weak class Channel = FMOD_CHANNEL, FMOD_Channel_*;
-}
-
 impl Deref for Channel {
     type Target = ChannelControl;
     fn deref(&self) -> &Self::Target {

@@ -11,7 +11,7 @@
 
  ## Getting Started
 
- At the most basic level, this is achieved by creating the [`studio::System`](studio::System) object and calling [`studio::System::initialize`](studio::System::initialize) on it. You need to do this once when your game starts before you can use FMOD, once the system has been initialized you can start loading banks and creating event instances without having to do any other preparations. A more detailed description of initialization can be found in the FMOD [Getting Started](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-getting-started.html>) white paper.
+ At the most basic level, this is achieved by creating the [`studio::System`](studio::System) object and calling [`studio::System::initialize`](studio::System::initialize) on it. You need to do this once when your game starts before you can use FMOD, once the system has been initialized you can start loading banks and creating event instances without having to do any other preparations. A more detailed description of initialization can be found in the FMOD [Getting Started](<https://fmod.com/docs/2.02/api/white-papers-getting-started.html>) white paper.
 
  If using the C# wrapper you will need to call a Core API function before calling anything else in the Studio API. Some runtimes do not perform dependency loading, and because the Studio API depends on the Core API, fmod.dll needs to be loaded before fmod_studio.dll - this can be ensured by calling a Core API function before [`studio::System::new`](studio::System::new)
 
@@ -40,7 +40,7 @@
 
  The FMOD Studio Bank file contains event metadata and sound data in the one file.
 
- ![Studio Bank Layout](https://fmod.com/docs/2.02/api/images/studio-bank-layout.png)
+ ![Studio Bank Layout](https://d1s9dnlmdewoh1.cloudfront.net/2.02/api/images/studio-bank-layout.png)
 
  Loading a bank will load all metadata, which contains information about all the events, parameters, and other data needed for all events associated with that bank.
 
@@ -101,7 +101,7 @@
 
  ## Dialogue and Localization
 
- Start by [loading the banks](<https://fmod.com/resources/documentation-api?version=2.02&page=#bank-loading>) that contain the audio tables. Next, create an instance of an event that contains a programmer instrument. Using this instance, you will be able to register for [event callbacks](<https://fmod.com/resources/documentation-api?version=2.02&page=#event-callbacks>), specifically [`FMOD_STUDIO_EVENT_CALLBACK_CREATE_PROGRAMMER_SOUND`](FMOD_STUDIO_EVENT_CALLBACK_CREATE_PROGRAMMER_SOUND). Using the callbacks you will be able to create and assign sounds from the asset tables.
+ Start by [loading the banks](<https://fmod.com/docs/2.02/api/#bank-loading>) that contain the audio tables. Next, create an instance of an event that contains a programmer instrument. Using this instance, you will be able to register for [event callbacks](<https://fmod.com/docs/2.02/api/#event-callbacks>), specifically [`FMOD_STUDIO_EVENT_CALLBACK_CREATE_PROGRAMMER_SOUND`](FMOD_STUDIO_EVENT_CALLBACK_CREATE_PROGRAMMER_SOUND). Using the callbacks you will be able to create and assign sounds from the asset tables.
 
  For localized dialogue, make sure that the required localized bank has been loaded. Ensure that any other localizations on the same bank are unloaded before loading a new localization.
 
@@ -224,7 +224,7 @@ FMOD_RESULT F_CALLBACK programmerSoundCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE t
 
  If Studio has been initialized with [`FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE`](FMOD_STUDIO_INIT_SYNCHRONOUS_UPDATE) then all callbacks will be fired from the next call to [`studio::System::update`](studio::System::update).
 
- **See Also:** [Callback Behavior](<https://fmod.com/resources/documentation-api?version=2.02&page=glossary.html#callback-behavior>)
+ **See Also:** [Callback Behavior](<https://fmod.com/docs/2.02/api/glossary.html#callback-behavior>)
 
  ## Setting Parameters
 
@@ -247,7 +247,7 @@ FMOD_RESULT F_CALLBACK programmerSoundCallback(FMOD_STUDIO_EVENT_CALLBACK_TYPE t
  ## Spatialization (3D)
 
  Audio spatialization is the process of taking an audio file and making it sound "in the world".  
- See the [Studio API 3D Events](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-studio-3d-events.html>) and [Spatial Audio](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-spatial-audio.html>) white papers.
+ See the [Studio API 3D Events](<https://fmod.com/docs/2.02/api/white-papers-studio-3d-events.html>) and [Spatial Audio](<https://fmod.com/docs/2.02/api/white-papers-spatial-audio.html>) white papers.
 
  ## Working with Reverb
 

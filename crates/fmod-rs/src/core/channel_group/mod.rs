@@ -7,13 +7,6 @@ use {
     std::{ffi::c_void, ops::Deref, ptr},
 };
 
-opaque! {
-    /// A submix in the mixing hierarchy akin to a bus that can contain both [Channel] and [ChanelGroup] objects.
-    ///
-    /// Create with [System::create_channel_group].
-    class ChannelGroup = FMOD_CHANNELGROUP, FMOD_ChannelGroup_*;
-}
-
 impl Deref for ChannelGroup {
     type Target = ChannelControl;
     fn deref(&self) -> &Self::Target {
@@ -101,6 +94,16 @@ impl ChannelGroup {
                     buf.len() as _,
                 ))
             })
+        }
+    }
+
+    raw! {
+        /// Frees the memory for the group.
+        ///
+        /// Any [`Channel`]s or [`ChannelGroup`]s feeding into this group are moved
+        /// to the master [`ChannelGroup`].
+        pub unsafe fn raw_release(this: *mut FMOD_CHANNELGROUP) -> FMOD_RESULT {
+            FMOD_ChannelGroup_Release(this)
         }
     }
 }

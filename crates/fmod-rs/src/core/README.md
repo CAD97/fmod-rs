@@ -11,7 +11,7 @@
 
  ## Linking Plugins
 
- You can extend the functionality of FMOD through the use of plugins, each plugin type ([Codec](<https://fmod.com/resources/documentation-api?version=2.02&page=plugin-api-codec.html>), [DSP](<https://fmod.com/resources/documentation-api?version=2.02&page=plugin-api-dsp.html>) and [Output](<https://fmod.com/resources/documentation-api?version=2.02&page=plugin-api-output.html>)) has its own API you can use. Whether you have developed the plugin yourself or you are using one from a third party there are two ways you can integrate it into FMOD.
+ You can extend the functionality of FMOD through the use of plugins, each plugin type ([Codec](<https://fmod.com/docs/2.02/api/plugin-api-codec.html>), [DSP](<https://fmod.com/docs/2.02/api/plugin-api-dsp.html>) and [Output](<https://fmod.com/docs/2.02/api/plugin-api-output.html>)) has its own API you can use. Whether you have developed the plugin yourself or you are using one from a third party there are two ways you can integrate it into FMOD.
 
  ### Static
 
@@ -29,7 +29,7 @@
 
  FMOD Core API has an automatic configuration feature, which makes it simple to start.
 
- At the most basic level, creating the System object and calling [`System::init`](System::init) on it. This is all that is needed. A more detailed description of initialization can be found in the FMOD Core API [Getting Started](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-getting-started.html>) white paper.
+ At the most basic level, creating the System object and calling [`System::init`](System::init) on it. This is all that is needed. A more detailed description of initialization can be found in the FMOD Core API [Getting Started](<https://fmod.com/docs/2.02/api/white-papers-getting-started.html>) white paper.
 
  The sound card can be manually selected, using the [`System::set_driver`](System::set_driver) function. More settings can be configured, such as the mixing rate of the FMOD system, the resampling method, or the speaker mode with [`System::set_software_format`](System::set_software_format). When modifying the mixer settings, this only adjusts the internal mixing format. At the end, the audio stream is always converted to the settings that are set by the user (ie the settings in the control panel in Windows, or the standard 7.1/48khz output mode on Xbox One or PS4).
 
@@ -91,7 +91,7 @@
 
  The simplest way to get started, and basic functionality of FMOD Core API - is to initialize the FMOD system, load an audio file, and play it. That's it!
 
- Refer to the [Getting Started](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-getting-started.html>) white paper on how to initialize and load/play an audio file with the FMOD Core API.
+ Refer to the [Getting Started](<https://fmod.com/docs/2.02/api/white-papers-getting-started.html>) white paper on how to initialize and load/play an audio file with the FMOD Core API.
 
  Look at the play_sound example to refer to sample code for the simple playback of an audio file.
 
@@ -107,7 +107,7 @@
  - Voice over / dialogue
  - Long ambience tracks
  
- The user can simply play a [`Sound`](Sound) as a [stream](<https://fmod.com/resources/documentation-api?version=2.02&page=glossary.html#stream>) by adding the [`Mode::CreateStream`](Mode::CreateStream) flag to the [`System::create_sound`](System::create_sound) function, or using the [`System::create_stream`](System::create_stream) function. The 2 options equate to the same end behavior.
+ The user can simply play a [`Sound`](Sound) as a [stream](<https://fmod.com/docs/2.02/api/glossary.html#stream>) by adding the [`Mode::CreateStream`](Mode::CreateStream) flag to the [`System::create_sound`](System::create_sound) function, or using the [`System::create_stream`](System::create_stream) function. The 2 options equate to the same end behavior.
 
  ### Internet streaming
 
@@ -125,19 +125,19 @@
 
  For shorter sounds, rather than decompressing the audio file into memory, the user may wish to play the audio file in memory, as is.
 
- This is more efficient than a [stream](<https://fmod.com/resources/documentation-api?version=2.02&page=glossary.html#stream>), as it does not require disk access, or extra threads to read or decode. A stream has a limit of 1 [`Sound`](Sound) at a time, but a compressed sample does not. It can be played multiple times simultaneously.
+ This is more efficient than a [stream](<https://fmod.com/docs/2.02/api/glossary.html#stream>), as it does not require disk access, or extra threads to read or decode. A stream has a limit of 1 [`Sound`](Sound) at a time, but a compressed sample does not. It can be played multiple times simultaneously.
 
  If a platform supports a hardware format like AT9 on PS4, or XMA on Xbox One, then it is the best solution to use these codecs, as the decoding of the data is handled by separate media chips, taking the majority of the processing off the CPU.
 
- Refer to the [Getting Started](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-getting-started.html>) white paper on how to use the [`Mode::CreateCompressedSample`](Mode::CreateCompressedSample) flag and configuration of codec memory.
+ Refer to the [Getting Started](<https://fmod.com/docs/2.02/api/white-papers-getting-started.html>) white paper on how to use the [`Mode::CreateCompressedSample`](Mode::CreateCompressedSample) flag and configuration of codec memory.
 
- See the relevant [Platform Details](<https://fmod.com/resources/documentation-api?version=2.02&page=platforms.html>) section for details on platform specific audio formats.
+ See the relevant [Platform Details](<https://fmod.com/docs/2.02/api/platforms.html>) section for details on platform specific audio formats.
 
  ### Decompressed samples
 
  Loading a [`Sound`](Sound) with [`System::create_sound`](System::create_sound) will by default, cause audio data to be decompressed into memory, and played back as PCM format.
 
- PCM data is just raw uncompressed audio data, for more information see [Sample Data](<https://fmod.com/resources/documentation-api?version=2.02&page=glossary.html#sample-data>).
+ PCM data is just raw uncompressed audio data, for more information see [Sample Data](<https://fmod.com/docs/2.02/api/glossary.html#sample-data>).
 
  Decompressed / uncompressed samples uses little to no CPU time to process. PCM data is the same format that the FMOD mixing engine uses, and the audio device itself. This may be desirable, if you have enough memory, on a mobile device with limited CPU cycles.
 
@@ -153,7 +153,7 @@
 
  A [`Channel`](Channel) which is playing far away, or with a low volume will become virtual, and will change to a real [`Channel`](Channel) when it comes closer, or becomes louder due to [`Channel`](Channel) or [`ChannelGroup`](ChannelGroup) API calls.
 
- Read more about the virtual voice system on the [Virtual Voice](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-virtual-voices.html>) white paper.
+ Read more about the virtual voice system on the [Virtual Voice](<https://fmod.com/docs/2.02/api/white-papers-virtual-voices.html>) white paper.
 
  ### Channels / Grouping - 'Channel Groups' and hierarchical sub-mixing (buses)
 
@@ -179,8 +179,8 @@
  1. Doppler pitch shifting. Accurate pitch shifting, controlled by the user velocity setting of the listener and the [`Channel`](Channel) or [`ChannelGroup`](ChannelGroup), is calculated and set on the fly by the FMOD 3D spatialization system.
  1. Vector Based Amplitude Panning (VBAP). This system pans the [`Sound`](Sound) in the user's speakers in real time, supporting mono, stereo, up to 5.1 and 7.1 surround speaker setups.
  1. Occlusion. A [`Sound`](Sound)'s underlying [`Channel`](Channel)s or [`ChannelGroup`](ChannelGroup)s can have lowpass filtering applied to them to simulate sound going through walls or being muffled by large objects.
- 1. 3D Reverb Zones for reverb panning. See more about this in the [3D Reverb](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-3d-reverb.html>) section. Reverb can also be occluded to not go through walls or objects.
- 1. Polygon based geometry occlusion. Add polygon data to FMOD's geometry engine, and FMOD will automatically occlude sound in realtime using raycasting. See more about this in the [3D Polygon based geometry occlusion](<https://fmod.com/resources/documentation-api?version=2.02&page=#3d-polygon-based-geometry-occlusion>) section.
+ 1. 3D Reverb Zones for reverb panning. See more about this in the [3D Reverb](<https://fmod.com/docs/2.02/api/white-papers-3d-reverb.html>) section. Reverb can also be occluded to not go through walls or objects.
+ 1. Polygon based geometry occlusion. Add polygon data to FMOD's geometry engine, and FMOD will automatically occlude sound in realtime using raycasting. See more about this in the [3D Polygon based geometry occlusion](<https://fmod.com/docs/2.02/api/#3d-polygon-based-geometry-occlusion>) section.
  1. Multiple listeners. In a split screen mode game, FMOD can support a listener for each player, so that 3D [`Sound`](Sound) attenuate correctly.
  1. Morphing between 2D and 3D with multi-channel audio formats. [`Sound`](Sound)s can be a point source, or be morphed by the user into 2D audio, which is great for distance based envelopment. The closer a [`Sound`](Sound) is, the more it can spread into the other speakers, rather than flipping from one side to the other as it pans from one side to the other. See [`ChannelControl::set3DLevel`](ChannelControl::set3DLevel) for the function that lets the user change this mix.
  1. Stereo and multi-channel audio formats can be used for 3D audio. Typically a mono audio format is used for 3D audio. Multi-channel audio formats can be used to give extra impact. By default multi-channel sample data is collapsed into a mono point source. To 'spread' the multiple channels use [`ChannelControl::set_3d_spread`](ChannelControl::set_3d_spread). This can give a more spatial effect for a sound that is coming from a certain direction. A subtle spread of sound in the distance may give the impression of being more effectively spatialized as if it were reflecting off nearby surfaces, or being 'big' and emitting different parts of the sound in different directions.
@@ -194,7 +194,7 @@
  1. Set the [`Channel`](Channel) 3D attributes for handle that was returned from [`System::play_sound`](System::play_sound), with [`ChannelControl::set_3d_attributes`](ChannelControl::set_3d_attributes). If 3D positioning of a group of [`Channel`](Channel)s, or a [`ChannelGroup`](ChannelGroup) is required, set the [`ChannelGroup`](ChannelGroup) to be 3D once with [`ChannelControl::set_mode`](ChannelControl::set_mode), then call [`ChannelControl::set_3d_attributes`](ChannelControl::set_3d_attributes) instead.
  1. Call [`System::update`](System::update) once per frame so the 3D calculations can update based on the positions and other attributes.
  
- Read more about 3D sound in the [3D Sound](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-3d-sounds.html>) white paper or the [Spatial Audio](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-spatial-audio.html>) white paper.
+ Read more about 3D sound in the [3D Sound](<https://fmod.com/docs/2.02/api/white-papers-3d-sounds.html>) white paper or the [Spatial Audio](<https://fmod.com/docs/2.02/api/white-papers-spatial-audio.html>) white paper.
 
  ### 3D polygon based geometry occlusion
 
@@ -248,11 +248,11 @@
 
  Spheres can be overlapped and based on where the listener is within each sphere. FMOD will morph the reverb to the appropriate mix of environments.
 
- ![3D Reverb](https://fmod.com/docs/2.02/api/images/3d-reverb.png)
+ ![3D Reverb](https://d1s9dnlmdewoh1.cloudfront.net/2.02/api/images/3d-reverb.png)
 
  A 3D reverb sphere can be created with [`System::create_reverb_3d`](System::create_reverb_3d) and the position set with [`Reverb3D::set_3d_attributes`](Reverb3D::set_3d_attributes). To set a sphere's reverb properties, [`Reverb3D::set_properties`](Reverb3D::set_properties) can be used.
 
- For more information on the 3D reverb zone system, and implementation information, read the [3D Reverb](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-3d-reverb.html>) white paper.
+ For more information on the 3D reverb zone system, and implementation information, read the [3D Reverb](<https://fmod.com/docs/2.02/api/white-papers-3d-reverb.html>) white paper.
 
  ### DSP Effects - Support for plugins
 
@@ -268,7 +268,7 @@
 
  To create a stand alone dynamic library, use the same callbacks, but export the symbols through a the [`DspDescription`](DspDescription) struct, via the exported FMODGetDSPDescription function.
 
- See the [DSP Plugin API](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-dsp-plugin-api.html>) white paper on how to make a plugin, and /examples/fmod_gain.cpp in the API distribution as a working example.
+ See the [DSP Plugin API](<https://fmod.com/docs/2.02/api/white-papers-dsp-plugin-api.html>) white paper on how to make a plugin, and /examples/fmod_gain.cpp in the API distribution as a working example.
 
  ### DSP Engine - Flexible, programmable soft-synth architecture
 
@@ -276,7 +276,7 @@
 
  A directed graph processing tree allows the signal to flow from 'generators' (a [`Sound`](Sound) playing through from [`System::play_sound`](System::play_sound), or a DSP creating sound from [`System::play_dsp`](System::play_dsp) for example), to other nodes, mixing together until they reach the head node, where the final result is sent to the sound card.
 
- ![DSP Graph example](https://fmod.com/docs/2.02/api/images/dspnet-img011.png)
+ ![DSP Graph example](https://d1s9dnlmdewoh1.cloudfront.net/2.02/api/images/dspnet-img011.png)
 
  *A visual representation taken directly from the FMOD Profiler tool (in the /bin directory of the API distribution).*
 
@@ -284,7 +284,7 @@
 
  FMOD pre-built DSP effects can be inserted into the graph with functions like [`Dsp::add_input`](Dsp::add_input) and [`Dsp::disconnect_from`](Dsp::disconnect_from).
 
- For detailed information read the [DSP Architecture and Usage](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-dsp-architecture.html>) white paper.
+ For detailed information read the [DSP Architecture and Usage](<https://fmod.com/docs/2.02/api/white-papers-dsp-architecture.html>) white paper.
 
  ### Non blocking loads, threads and thread safety
 
@@ -298,7 +298,7 @@
 
  Thread affinity is configurable on some platforms.
 
- For detailed information about FMOD and threads please refer to the [Threads and Thread Safety](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-threads.html>) white paper.
+ For detailed information about FMOD and threads please refer to the [Threads and Thread Safety](<https://fmod.com/docs/2.02/api/white-papers-threads.html>) white paper.
 
  ### Performance
 
@@ -308,11 +308,11 @@
 
  Typically the most expensive part of [`Sound`](Sound) playback is real-time compressed sample playback.
 
- The FMOD API will allow configuration of how many [`Channel`](Channel)s should be audible at once, to reduce CPU overhead. This is configurable as mentioned in the [Compressed sample playback](<https://fmod.com/resources/documentation-api?version=2.02&page=#compressed-sample-playback>) section of this document, using the [`System::set_advanced_settings`](System::set_advanced_settings) function.
+ The FMOD API will allow configuration of how many [`Channel`](Channel)s should be audible at once, to reduce CPU overhead. This is configurable as mentioned in the [Compressed sample playback](<https://fmod.com/docs/2.02/api/#compressed-sample-playback>) section of this document, using the [`System::set_advanced_settings`](System::set_advanced_settings) function.
 
  Adjusting the sample rate quality, resampling quality, number of mixed [`Channel`](Channel)s and decoded [`Channel`](Channel)s is configurable to get the best scalability for your application.
 
- To find out more about configuring FMOD to save CPU time, refer to the [CPU Performance](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-cpu-performance.html>) white paper, or to get an idea about Core performance figures on various platforms, refer to the Performance Reference section of the documentation.
+ To find out more about configuring FMOD to save CPU time, refer to the [CPU Performance](<https://fmod.com/docs/2.02/api/white-papers-cpu-performance.html>) white paper, or to get an idea about Core performance figures on various platforms, refer to the Performance Reference section of the documentation.
 
  ## Configuration - memory and file systems
 
@@ -326,7 +326,7 @@
 
  To set up a custom memory allocator is done by calling [`raw::FMOD_Memory_Initialize`](raw::FMOD_Memory_Initialize). This is not an FMOD class member function because it needs to be called before any FMOD objects are created, including the System object.
 
- To read more about setting up memory pools or memory environments, refer to the [Memory Management](<https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-memory-management.html>) white paper.
+ To read more about setting up memory pools or memory environments, refer to the [Memory Management](<https://fmod.com/docs/2.02/api/white-papers-memory-management.html>) white paper.
 
  ## Controlling a Spatializer DSP
 

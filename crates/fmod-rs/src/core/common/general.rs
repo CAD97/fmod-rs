@@ -45,7 +45,7 @@ opaque! {
     /// For for more information on sync points see [Sync Points].
     ///
     /// [Sync Points]: https://fmod.com/docs/2.02/api/glossary.html#sync-points
-    weak class SyncPoint = FMOD_SYNCPOINT, FMOD_SYNCPOINT_*;
+    weak class SyncPoint = FMOD_SYNCPOINT;
 }
 
 fmod_struct! {
