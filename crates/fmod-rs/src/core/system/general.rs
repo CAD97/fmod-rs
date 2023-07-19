@@ -430,12 +430,14 @@ flags! {
         /// Called from [System::update] when the enumerated list of devices has changed. Called from the main (calling) thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.
         DeviceListChanged      = FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED,
         /// Deprecated.
+        #[deprecated]
         DeviceLost             = FMOD_SYSTEM_CALLBACK_DEVICELOST,
         /// Called directly when a memory allocation fails.
         MemoryAllocationFailed = FMOD_SYSTEM_CALLBACK_MEMORYALLOCATIONFAILED,
         /// Called from the game thread when a thread is created.
         ThreadCreated          = FMOD_SYSTEM_CALLBACK_THREADCREATED,
         /// Deprecated.
+        #[deprecated]
         BadDspConnection       = FMOD_SYSTEM_CALLBACK_BADDSPCONNECTION,
         /// Called from the mixer thread before it starts the next block.
         PreMix                 = FMOD_SYSTEM_CALLBACK_PREMIX,

@@ -47,6 +47,7 @@ link-search = ["fmod-core-sys/link-search", "fmod-studio-sys?/link-search"]
 ## - Use `feature(extern_type)` for FMOD resource types.
 ## - Use `feature(doc_auto_cfg, doc_cfg)` to display cfg gates in documentation.
 ## - Use `feature(read_buf)` to elide some defensively duplicated stack buffers.
+## - Use `feature(trait_alias)` for the `ChannelControlCallback` trait alias.
 unstable = []
 
 [dependencies]

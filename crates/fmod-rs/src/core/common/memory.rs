@@ -241,6 +241,7 @@ flags! {
         /// Sample data buffer. Raw audio data, usually PCM/MPEG/ADPCM/XMA data.
         SampleData   = FMOD_MEMORY_SAMPLEDATA,
         /// Deprecated.
+        #[deprecated]
         DspBuffer    = FMOD_MEMORY_DSP_BUFFER,
         /// Memory allocated by a third party plugin.
         Plugin       = FMOD_MEMORY_PLUGIN,

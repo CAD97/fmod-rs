@@ -27,14 +27,14 @@ opaque! {
     /// Create with [`System::create_sound`] or [System::create_stream].
     class Sound = FMOD_SOUND;
 
-    mod;
+    mod format, default, relationship, data, music, synchronization, general;
 }
 
 opaque! {
     /// The shared APIs between [`Channel`] and [`ChannelGroup`].
     weak class ChannelControl = FMOD_CHANNELCONTROL;
 
-    mod;
+    mod playback, volume, spatialization, panning, filtering, dsp, scheduling, general;
 }
 
 opaque! {
@@ -43,7 +43,7 @@ opaque! {
     /// Create with [System::play_sound] or [System::play_dsp].
     weak class Channel = FMOD_CHANNEL;
 
-    mod;
+    mod playback, information, general;
 }
 
 opaque! {
@@ -52,14 +52,14 @@ opaque! {
     /// Create with [`System::create_channel_group`].
     class ChannelGroup = FMOD_CHANNELGROUP;
 
-    mod;
+    mod channel, group, general;
 }
 
 opaque! {
     /// An interface that manages groups of [`Sound`]s.
     class SoundGroup = FMOD_SOUNDGROUP;
 
-    mod;
+    mod group, sound, general;
 }
 
 opaque! {
@@ -68,14 +68,14 @@ opaque! {
     /// Create with [`System::create_dsp`], [`System::create_dsp_by_type`] or [`System::create_dsp_by_plugin`].
     class Dsp = FMOD_DSP;
 
-    mod;
+    mod connections, parameters, channel, metering, processing, general;
 }
 
 opaque! {
     /// An interface that manages Digital Signal Processor (DSP) Connections.
     weak class DspConnection = FMOD_DSPCONNECTION;
 
-    mod;
+    mod mix, general;
 }
 
 opaque! {
@@ -94,17 +94,7 @@ opaque! {
     mod;
 }
 
-// pub mod channel;
-// pub mod channel_control;
-// pub mod channel_group;
-// pub mod dsp;
-// pub mod dsp_connection;
 mod effect;
-mod ex;
-// pub mod geometry;
 mod ios;
-// pub mod reverb3d;
-// pub mod sound;
-// pub mod sound_group;
 
-pub use self::{common::*, effect::*, ex::*, ios::*};
+pub use self::{common::*, effect::*, ios::*};

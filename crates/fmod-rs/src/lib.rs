@@ -1,6 +1,6 @@
 #![cfg_attr(
     feature = "unstable",
-    feature(doc_auto_cfg, doc_cfg, read_buf, extern_types)
+    feature(doc_auto_cfg, doc_cfg, read_buf, extern_types, trait_alias)
 )]
 #![allow(rustdoc::broken_intra_doc_links)] // TODO: remove once more items exist
 #![allow(clippy::unit_arg)]

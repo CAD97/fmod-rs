@@ -1,18 +1,10 @@
 use {
-    crate::{
-        file::{
-            userasynccancel_listen, userasyncread_listen, userclose_listen, useropen_listen,
-            userread_listen, userseek_listen, AsyncListenFileSystem,
-        },
-        utils::catch_user_unwind,
+    crate::file::{
+        userasynccancel_listen, userasyncread_listen, userclose_listen, useropen_listen,
+        userread_listen, userseek_listen, AsyncListenFileSystem,
     },
     fmod::{raw::*, *},
-    std::{
-        ffi::{c_void, CStr},
-        fmt,
-        marker::PhantomData,
-        mem, ptr, slice,
-    },
+    std::{ffi::CStr, fmt, marker::PhantomData, mem, ptr},
 };
 
 /// # Creation and retrieval.
@@ -179,7 +171,7 @@ impl System {
     /// [ChannelGroup]s can be used to assign / group [Channel]s, for things
     /// such as volume scaling. [ChannelGroup]s are also used for sub-mixing.
     /// Any [Channel]s that are assigned to a [ChannelGroup] get submixed into
-    /// that [ChannelGroup]'s 'tail' [Dsp]. See [ChannelControlDspIndex::Tail].
+    /// that [ChannelGroup]'s 'tail' [Dsp]. See [ChannelControl::DSP_TAIL].
     ///
     /// If a [ChannelGroup] has an effect added to it, the effect is processed
     /// post-mix from the [Channel]s and [ChannelGroup]s below it in the mix
@@ -569,27 +561,6 @@ impl<'a> CreateSoundEx<'a> {
     /// Callbacks to provide audio and seek data for [`Mode::OpenUser`], or
     /// capture audio as it is decoded.
     pub fn pcm_callback<F: PcmCallback>(&mut self) -> &mut Self {
-        unsafe extern "system" fn pcm_read_callback<F: PcmCallback>(
-            sound: *mut FMOD_SOUND,
-            data: *mut c_void,
-            datalen: u32,
-        ) -> FMOD_RESULT {
-            let sound = Sound::from_raw(sound);
-            let data = slice::from_raw_parts_mut(data as *mut u8, datalen as usize);
-            catch_user_unwind(|| F::read(sound, data)).into_raw()
-        }
-
-        unsafe extern "system" fn pcm_setpos_callback<F: PcmCallback>(
-            sound: *mut FMOD_SOUND,
-            subsound: i32,
-            position: u32,
-            postype: FMOD_TIMEUNIT,
-        ) -> FMOD_RESULT {
-            let sound = Sound::from_raw(sound);
-            let position = Time::new(position, TimeUnit::from_raw(postype));
-            catch_user_unwind(|| F::seek(sound, subsound, position)).into_raw()
-        }
-
         self.info.pcmreadcallback = Some(pcm_read_callback::<F>);
         self.info.pcmsetposcallback = Some(pcm_setpos_callback::<F>);
         self
@@ -598,18 +569,7 @@ impl<'a> CreateSoundEx<'a> {
     /// Callback to notify completion for [`Mode::Nonblocking`], occurs during
     /// creation and seeking / restarting streams.
     pub fn nonblock_callback<F: NonBlockCallback>(&mut self) -> &mut Self {
-        unsafe extern "system" fn nonblock_callback<F: NonBlockCallback>(
-            sound: *mut FMOD_SOUND,
-            result: FMOD_RESULT,
-        ) -> FMOD_RESULT {
-            let sound = Sound::from_raw(sound);
-            match F::notify(sound, Error::from_raw(result)) {
-                Ok(()) => FMOD_OK,
-                Err(e) => e.into_raw(),
-            }
-        }
-
-        self.info.nonblockcallback = Some(nonblock_callback::<F>);
+        self.info.nonblockcallback = Some(non_block_callback::<F>);
         self
     }
 

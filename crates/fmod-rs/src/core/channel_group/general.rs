@@ -1,84 +1,13 @@
 use {
-    fmod::{
-        raw::*,
-        utils::{catch_user_unwind, fmod_get_string},
-        *,
-    },
-    std::{ffi::c_void, ops::Deref, ptr},
+    crate::utils::{catch_user_unwind, fmod_get_string},
+    fmod::{raw::*, *},
+    std::{ffi::c_void, ops::Deref},
 };
 
 impl Deref for ChannelGroup {
     type Target = ChannelControl;
     fn deref(&self) -> &Self::Target {
         unsafe { ChannelControl::from_raw(self.as_raw() as _) }
-    }
-}
-
-/// # Channel management.
-impl ChannelGroup {
-    /// Retrieves the number of Channels that feed into this group.
-    pub fn get_num_channels(&self) -> Result<i32> {
-        let mut num_channels = 0;
-        ffi!(FMOD_ChannelGroup_GetNumChannels(
-            self.as_raw(),
-            &mut num_channels
-        ))?;
-        Ok(num_channels)
-    }
-
-    /// Retrieves the Channel at the specified index in the list of Channel inputs.
-    pub fn get_channel(&self, index: i32) -> Result<&Channel> {
-        let mut channel = ptr::null_mut();
-        ffi!(FMOD_ChannelGroup_GetChannel(
-            self.as_raw(),
-            index,
-            &mut channel,
-        ))?;
-        Ok(unsafe { Channel::from_raw(channel) })
-    }
-}
-
-/// # ChannelGroup management.
-impl ChannelGroup {
-    // TODO: allow setting propagated_dsp_clock = false somehow
-    /// Adds a ChannelGroup as an input to this group.
-    pub fn add_group(&self, group: &ChannelGroup) -> Result<&DspConnection> {
-        let mut connection = ptr::null_mut();
-        ffi!(FMOD_ChannelGroup_AddGroup(
-            self.as_raw(),
-            group.as_raw(),
-            /* propagated_dsp_clock */ true as _,
-            &mut connection,
-        ))?;
-        Ok(unsafe { DspConnection::from_raw(connection) })
-    }
-
-    /// Retrieves the number of ChannelGroups that feed into this group.
-    pub fn get_num_groups(&self) -> Result<i32> {
-        let mut num_groups = 0;
-        ffi!(FMOD_ChannelGroup_GetNumGroups(
-            self.as_raw(),
-            &mut num_groups
-        ))?;
-        Ok(num_groups)
-    }
-
-    /// Retrieves the ChannelGroup at the specified index in the list of group inputs.
-    pub fn get_group(&self, index: i32) -> Result<&ChannelGroup> {
-        let mut group = ptr::null_mut();
-        ffi!(FMOD_ChannelGroup_GetGroup(self.as_raw(), index, &mut group))?;
-        Ok(unsafe { ChannelGroup::from_raw(group) })
-    }
-
-    /// Retrieves the ChannelGroup this object outputs to.
-    pub fn get_parent_group(&self) -> Result<Option<&ChannelGroup>> {
-        let mut group = ptr::null_mut();
-        ffi!(FMOD_ChannelGroup_GetParentGroup(self.as_raw(), &mut group))?;
-        if group.is_null() {
-            Ok(None)
-        } else {
-            Ok(Some(unsafe { ChannelGroup::from_raw(group) }))
-        }
     }
 }
 
@@ -106,12 +35,8 @@ impl ChannelGroup {
             FMOD_ChannelGroup_Release(this)
         }
     }
-}
 
-// Inherited from ChannelControl
-#[doc(hidden)]
-impl ChannelGroup {
-    /// Sets the callback for ChannelControl level notifications.
+    /// Sets the callback for ChannelGroup level notifications.
     pub fn set_callback<C: ChannelGroupCallback>(&self) -> Result {
         ffi!(FMOD_ChannelGroup_SetCallback(
             self.as_raw(),
@@ -121,6 +46,11 @@ impl ChannelGroup {
     }
 }
 
+/// Callback for ChannelGroup notifications.
+///
+/// Callbacks are called from the game thread when set from the Core API or
+/// Studio API in synchronous mode, and from the Studio Update Thread when in
+/// default / async mode.
 pub trait ChannelGroupCallback {
     /// Called when geometry occlusion values are calculated.
     /// Can be used to clamp or change the value.

@@ -449,6 +449,7 @@ fmod_struct! {
         /// </dl>
         pub max_fadpcm_codecs: i32,
         /// Deprecated.
+        #[deprecated]
         max_pcm_codecs: i32,
         /// Number of elements in `asio_speaker_list` on input, number of elements
         /// in `asio_channel_list` on output.

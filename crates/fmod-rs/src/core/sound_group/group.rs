@@ -1,7 +1,4 @@
-use {
-    fmod::{raw::*, utils::fmod_get_string, *},
-    std::ptr,
-};
+use fmod::{raw::*, *};
 
 /// # Group Functions.
 impl SoundGroup {
@@ -106,80 +103,5 @@ enum_struct! {
         Mute        = FMOD_SOUNDGROUP_BEHAVIOR_MUTE,
         /// Excess sounds will steal from the quietest [Sound] playing in the group.
         StealLowest = FMOD_SOUNDGROUP_BEHAVIOR_STEALLOWEST,
-    }
-}
-
-/// # Sound Functions.
-impl SoundGroup {
-    /// Retrieves the current number of sounds in this sound group.
-    pub fn get_num_sounds(&self) -> Result<i32> {
-        let mut num_sounds = 0;
-        ffi!(FMOD_SoundGroup_GetNumSounds(self.as_raw(), &mut num_sounds))?;
-        Ok(num_sounds)
-    }
-
-    /// Retrieves a sound.
-    ///
-    /// Use [`SoundGroup::get_num_sounds`] in conjunction with this function to
-    /// enumerate all sounds in a [`SoundGroup`].
-    pub fn get_sound(&self, index: i32) -> Result<&Sound> {
-        let mut sound = ptr::null_mut();
-        ffi!(FMOD_SoundGroup_GetSound(self.as_raw(), index, &mut sound))?;
-        Ok(unsafe { Sound::from_raw(sound) })
-    }
-
-    /// Retrieves the number of currently playing Channels for the SoundGroup.
-    ///
-    /// This routine returns the number of [`Channel`]s playing. If the
-    /// [`SoundGroup`] only has one [`Sound`], and that [`Sound`] is playing
-    /// twice, the figure returned will be two.
-    pub fn get_num_playing(&self) -> Result<i32> {
-        let mut num_playing = 0;
-        ffi!(FMOD_SoundGroup_GetNumPlaying(
-            self.as_raw(),
-            &mut num_playing,
-        ))?;
-        Ok(num_playing)
-    }
-
-    /// Stops all sounds within this soundgroup.
-    pub fn stop(&self) -> Result {
-        ffi!(FMOD_SoundGroup_Stop(self.as_raw()))?;
-        Ok(())
-    }
-}
-
-/// # General.
-impl SoundGroup {
-    /// Retrieves the name of the sound group.
-    pub fn get_name(&self, name: &mut String) -> Result {
-        unsafe {
-            fmod_get_string(name, |buf| {
-                ffi!(FMOD_SoundGroup_GetName(
-                    self.as_raw(),
-                    buf.as_mut_ptr().cast(),
-                    buf.len() as _,
-                ))
-            })
-        }
-    }
-
-    raw! {
-        /// Releases a soundgroup object and returns all sounds back to the
-        /// master sound group.
-        ///
-        /// You cannot release the master [`SoundGroup`].
-        pub unsafe fn raw_release(this: *mut FMOD_SOUNDGROUP) -> FMOD_RESULT {
-            FMOD_SoundGroup_Release(this)
-        }
-    }
-
-    // TODO: set_user_data, get_user_data
-
-    /// Retrieves the parent System object.
-    pub fn get_system_object(&self) -> Result<&System> {
-        let mut system = ptr::null_mut();
-        ffi!(FMOD_SoundGroup_GetSystemObject(self.as_raw(), &mut system))?;
-        Ok(unsafe { System::from_raw(system) })
     }
 }

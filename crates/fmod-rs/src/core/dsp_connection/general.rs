@@ -3,6 +3,9 @@ use fmod::{raw::*, *};
 // TODO: connections are invalidated when units are disconnected.
 //       it is extremely unclear how to model this in Rust.
 
+/// # General.
+impl DspConnection {}
+
 enum_struct! {
     /// List of connection types between 2 DSP nodes.
     pub enum DspConnectionType: FMOD_DSPCONNECTION_TYPE {
