@@ -55,6 +55,28 @@ macro_rules! whoops {
     ($($args:tt)*) => { whoops!{panic: $($args)*} };
 }
 
+macro_rules! opaque_type {
+    {
+        $(#[$meta:meta])*
+        $vis:vis struct $Name:ident $(;)?
+    } => {
+        #[cfg(not(feature = "unstable"))]
+        $(#[$meta])*
+        $vis struct $Name {
+            _data: ::std::cell::Cell<[u8; 0]>,
+            _marker: ::std::marker::PhantomData<(*mut u8, std::marker::PhantomPinned)>,
+        }
+
+        #[cfg(feature = "unstable")]
+        #[allow(unused_doc_comments)] // false positive vvvvvv
+        #[doc(cfg(all()))] // doesn't actually require cfg(feature = "unstable")
+        extern {
+            $(#[$meta])*
+            $vis type $Name;
+        }
+    };
+}
+
 macro_rules! fmod_class {
     {
         #[doc = $doc:expr]
@@ -64,21 +86,10 @@ macro_rules! fmod_class {
             fn release = $release:expr;
         }
     } => {
-        #[cfg(not(feature = "unstable"))]
-        #[doc = $doc]
-        $(#[$meta])*
-        pub struct $Name {
-            _data: ::std::cell::Cell<[u8; 0]>,
-            _marker: ::std::marker::PhantomData<(*mut u8, std::marker::PhantomPinned)>,
-        }
-
-        #[cfg(feature = "unstable")]
-        #[allow(unused_doc_comments)] // false positive vvvvvv
-        #[doc(cfg(all()))] // doesn't actually require cfg(feature = "unstable")
-        extern {
+        opaque_type! {
             #[doc = $doc]
             $(#[$meta])*
-            pub type $Name;
+            pub struct $Name;
         }
 
         unsafe impl Send for $Name {}

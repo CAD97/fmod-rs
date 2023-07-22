@@ -6,9 +6,10 @@ pub mod common {
     pub mod file;
     mod general;
     pub mod memory;
+    mod mix;
     pub mod thread;
 
-    pub use self::general::*;
+    pub use self::{general::*, mix::*};
 }
 
 fmod_class! {
