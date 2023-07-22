@@ -304,16 +304,18 @@ pub(crate) unsafe extern "system" fn system_callback<C: SystemCallback>(
         },
         _ => {
             whoops!(no_panic: "unknown system callback type: {kind:?}");
-            yeet!(Error::InvalidParam);
+            yeet!(Error::InvalidParam)
         },
     })
     .into_raw()
 }
 
 raw! {
-    enum_struct! {
+    fmod_enum! {
         /// Identifier used to represent the different types of instance in the error callback.
-        pub enum InstanceType: FMOD_ERRORCALLBACK_INSTANCETYPE {
+        pub enum InstanceType: FMOD_ERRORCALLBACK_INSTANCETYPE
+        where const { self <= FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_COMMANDREPLAY }
+        {
             /// Type representing no known instance type.
             None                    = FMOD_ERRORCALLBACK_INSTANCETYPE_NONE,
             /// Type representing [System].
@@ -421,7 +423,7 @@ impl Instance<'_> {
     }
 }
 
-flags! {
+fmod_flags! {
     /// Types of callbacks called by the System.
     ///
     /// Using [SystemCallbackType::All] or [SystemCallbackType::DeviceListChanged] will disable any automated device ejection/insertion handling. Use this callback to control the behavior yourself.

@@ -574,10 +574,11 @@ impl AdvancedSettings {
 /// Callback to allow custom calculation of distance attenuation.
 pub type Rolloff3dCallback = extern "system" fn(channel: &Channel, distance: f32) -> f32;
 
-enum_struct! {
+fmod_enum! {
     /// List of interpolation types used for resampling.
     ///
     /// Use [System::set_advanced_settings] and [AdvancedSettings::resampler_method] to configure the resampling quality you require for sample rate conversion during sound playback.
+    #[derive(Default)]
     pub enum DspResampler: FMOD_DSP_RESAMPLER {
         #[default]
         /// Default interpolation method, same as [DspResampler::Linear].

@@ -228,7 +228,7 @@ unsafe extern "system" fn userrealloc<A: ReallocCallback>(
 
 // -------------------------------------------------------------------------------------------------
 
-flags! {
+fmod_flags! {
     /// Bitfields for memory allocation type being passed into FMOD memory callbacks.
     pub struct MemoryType: FMOD_MEMORY_TYPE {
         #[default]

@@ -40,7 +40,7 @@ pub unsafe fn set_attributes(
 
 // -------------------------------------------------------------------------------------------------
 
-enum_struct! {
+fmod_enum! {
     /// Named constants for threads created at runtime.
     pub enum ThreadType: FMOD_THREAD_TYPE {
         /// Thread responsible for mixing and processing blocks of audio.
@@ -72,7 +72,7 @@ enum_struct! {
     }
 }
 
-flags! {
+fmod_flags! {
     /// Bitfield for specifying the CPU core a given thread runs on.
     ///
     /// The platform agnostic thread groups, A, B and C give recommendations about FMOD threads that should be separated from one another.
@@ -169,7 +169,7 @@ impl ThreadAffinity {
     }
 }
 
-enum_struct! {
+fmod_typedef! {
     /// Scheduling priority to assign a given thread to.
     ///
     /// The platform agnostic priorities are used to rank FMOD threads against one another for best runtime scheduling.
@@ -243,7 +243,7 @@ impl ThreadPriority {
     }
 }
 
-enum_struct! {
+fmod_typedef! {
     /// Stack space available to the given thread.
     ///
     /// Stack size can be specified explicitly, however for each thread you should provide a size equal to or larger than the expected default or risk causing a stack overflow at runtime.

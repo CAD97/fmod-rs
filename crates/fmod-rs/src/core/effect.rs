@@ -1,8 +1,8 @@
 use fmod::{raw::*, *};
 
-enum_struct! {
+fmod_enum! {
     /// DSP types.
-    pub enum DspType: i32 {
+    pub enum DspType: FMOD_DSP_TYPE {
         /// Was created via a non-FMOD plugin and has an unknown purpose.
         Unknown           = FMOD_DSP_TYPE_UNKNOWN,
         /// Does not process the signal, acts as a unit purely for mixing inputs.
@@ -211,7 +211,7 @@ enum_struct! {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// Channel Mix DSP parameter types.
     ///
     /// For [DspChannelMix::OutputGrouping], this value will set the output
@@ -222,7 +222,9 @@ enum_struct! {
     /// of output channels, it will instead be mapped to the modulo of that
     /// channel index. Eg if there are 4 output channels, the input channel
     /// mapped to output channel index 5 will be mapped to index 1.
-    pub enum DspChannelMix: i32 {
+    pub enum DspChannelMix: FMOD_DSP_CHANNELMIX
+    where const { self <= FMOD_DSP_CHANNELMIX_OUTPUT_CH31 }
+    {
         /// Channel mix output grouping.
         OutputGrouping = FMOD_DSP_CHANNELMIX_OUTPUTGROUPING,
         /// Channel #0 gain.

@@ -235,8 +235,9 @@ impl<'a> TagData<'a> {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// Recognized audio formats that can be loaded into a Sound.
+    #[derive(Default)]
     pub enum SoundType: FMOD_SOUND_TYPE {
         #[default]
         /// Unknown or custom codec plugin.
@@ -292,8 +293,9 @@ enum_struct! {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// These definitions describe the native format of the hardware or software buffer that will be used.
+    #[derive(Default)]
     pub enum SoundFormat: FMOD_SOUND_FORMAT {
         #[default]
         /// Uninitalized / unknown.
@@ -313,7 +315,7 @@ enum_struct! {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// List of tag data / metadata types that could be stored within a sound. These include id3 tags, metadata from netstreams and vorbis/asf data.
     pub enum TagType: FMOD_TAGTYPE {
         /// Tag type that is not recognized by FMOD
@@ -344,7 +346,7 @@ enum_struct! {
 }
 
 raw! {
-    enum_struct! {
+    fmod_enum! {
         /// List of tag data / metadata types.
         ///
         /// See [Tag] structure for tag length in bytes.

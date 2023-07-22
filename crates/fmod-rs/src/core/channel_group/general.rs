@@ -66,30 +66,29 @@ pub(crate) unsafe extern "system" fn channel_group_callback<C: ChannelGroupCallb
     commanddata1: *mut c_void,
     commanddata2: *mut c_void,
 ) -> FMOD_RESULT {
-    let control_type = ChannelControlType::from_raw(controltype);
-    if control_type != ChannelControlType::ChannelGroup {
-        whoops!(no_panic: "channel group callback called with channel");
-        return Error::InvalidParam.into_raw();
-    }
+    catch_user_unwind(|| {
+        let control_type = ChannelControlType::from_raw(controltype);
+        if control_type != ChannelControlType::ChannelGroup {
+            whoops!(no_panic: "channel group callback called with channel");
+            yeet!(Error::InvalidParam);
+        }
 
-    let callback_type = ChannelControlCallbackType::from_raw(callbacktype);
-    let group = ChannelGroup::from_raw(channelcontrol as *mut FMOD_CHANNELGROUP);
-    catch_user_unwind(|| match callback_type {
-        | ChannelControlCallbackType::End
-        | ChannelControlCallbackType::VirtualVoice
-        | ChannelControlCallbackType::SyncPoint => {
-            whoops!(no_panic: "invalid callback type {:?} for channel group", callbacktype);
-            yeet!(Error::InvalidParam)
-        },
-        ChannelControlCallbackType::Occlusion => {
-            let direct = &mut *(commanddata1 as *mut f32);
-            let reverb = &mut *(commanddata2 as *mut f32);
-            Ok(C::occlusion(group, direct, reverb))
-        },
-        _ => {
-            whoops!(no_panic: "unknown channel callback type {:?}", callback_type);
-            yeet!(Error::InvalidParam)
-        },
+        let callback_type = ChannelControlCallbackType::try_from_raw(callbacktype)?;
+        let group = ChannelGroup::from_raw(channelcontrol as *mut FMOD_CHANNELGROUP);
+
+        match callback_type {
+            | ChannelControlCallbackType::End
+            | ChannelControlCallbackType::VirtualVoice
+            | ChannelControlCallbackType::SyncPoint => {
+                whoops!(no_panic: "invalid callback type {:?} for channel group", callbacktype);
+                yeet!(Error::InvalidParam)
+            },
+            ChannelControlCallbackType::Occlusion => {
+                let direct = &mut *(commanddata1 as *mut f32);
+                let reverb = &mut *(commanddata2 as *mut f32);
+                Ok(C::occlusion(group, direct, reverb))
+            },
+        }
     })
     .into_raw()
 }

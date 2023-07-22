@@ -1,4 +1,4 @@
-use fmod::{raw::*, *};
+use fmod::*;
 
 /// # Parameters.
 impl Dsp {

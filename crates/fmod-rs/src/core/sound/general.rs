@@ -123,8 +123,5 @@ pub(crate) unsafe extern "system" fn non_block_callback<F: NonBlockCallback>(
     result: FMOD_RESULT,
 ) -> FMOD_RESULT {
     let sound = Sound::from_raw(sound);
-    match F::notify(sound, Error::from_raw(result)) {
-        Ok(()) => FMOD_OK,
-        Err(e) => e.into_raw(),
-    }
+    catch_user_unwind(|| F::notify(sound, Error::from_raw(result))).into_raw()
 }

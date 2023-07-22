@@ -46,7 +46,7 @@ format into your tools and development pipelines, use the [fsbank] module.
 #![doc = ::document_features::document_features!()]
 
 #[macro_use]
-mod macros;
+pub(crate) mod macros;
 
 extern crate self as fmod;
 

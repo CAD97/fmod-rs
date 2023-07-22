@@ -39,8 +39,9 @@ impl DspConnection {
     // set_user_data, get_user_data
 }
 
-enum_struct! {
+fmod_enum! {
     /// List of connection types between 2 DSP nodes.
+    #[derive(Default)]
     pub enum DspConnectionType: FMOD_DSPCONNECTION_TYPE {
         #[default]
         /// Default connection type. Audio is mixed from the input to the output [Dsp]'s audible buffer.

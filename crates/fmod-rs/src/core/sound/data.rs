@@ -216,7 +216,7 @@ impl Sound {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// These values describe what state a sound is in after [Mode::NonBlocking] has been used to open it.
     ///
     /// With streams, if you are using [Mode::NonBlocking], note that if the user calls [Sound::get_sub_sound], a stream will go into [OpenState::Seeking] state and sound related commands will return [Error::NotReady].

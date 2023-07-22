@@ -18,6 +18,22 @@ macro_rules! error_enum_struct {
         }
 
         impl $Name {
+            // to clean up rustdoc, call this helper rather than inlining it
+            const fn cook(raw: i32) -> Self {
+                match Self::from_raw(raw) {
+                    Err(this) => this,
+                    Ok(()) => panic!("cooked FMOD_OK as an error"),
+                }
+            }
+
+            $(
+                $(#[$vmeta])*
+                #[allow(non_upper_case_globals)]
+                pub const $Variant: Self = Self::cook($value);
+            )*
+        }
+
+        impl $Name {
             raw! {
                 pub const fn from_raw(raw: FMOD_RESULT) -> Result {
                     static_assert!(FMOD_OK == 0);
@@ -32,20 +48,11 @@ macro_rules! error_enum_struct {
                     self.raw.get()
                 }
             }
+        }
 
-            // to clean up rustdoc, call this helper rather than inlining it
-            const fn cook(raw: i32) -> Self {
-                match Self::from_raw(raw) {
-                    Err(this) => this,
-                    Ok(()) => panic!("cooked FMOD_OK as an error"),
-                }
-            }
-
-            $(
-                $(#[$vmeta])*
-                #[allow(non_upper_case_globals)]
-                pub const $Variant: Self = Self::cook($value);
-            )*
+        static_assert! {
+            [$($Name::$Variant),*].len() == (FMOD_ERR_TOOMANYSAMPLES + 1) as usize,
+            "fmod::Error is missing some variant(s)",
         }
 
         impl fmt::Debug for $Name {
@@ -238,7 +245,7 @@ pub type Result<T = (), E = Error> = std::result::Result<T, E>;
 impl std::error::Error for Error {
     fn description(&self) -> &str {
         if *self == Error::RustPanicked {
-            return "Rust code panicked in an FMOD callback.";
+            return "Rust code panicked (attempted unwind).";
         }
 
         // SAFETY: FMOD_ErrorString is a C `static` function which thus isn't

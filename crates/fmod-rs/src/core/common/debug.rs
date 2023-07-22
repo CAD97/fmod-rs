@@ -236,11 +236,13 @@ unsafe extern "system" fn debug_callback<C: DebugCallback>(
 // -------------------------------------------------------------------------------------------------
 
 raw! {
-    enum_struct! {
+    fmod_enum! {
         /// Specify the destination of log output when using the logging version of FMOD.
         ///
         /// TTY destination can vary depending on platform, common examples include the Visual Studio / Xcode output window, stderr and LogCat.
-        pub enum DebugMode: FMOD_DEBUG_MODE {
+        pub enum DebugMode: FMOD_DEBUG_MODE
+        where const { self <= FMOD_DEBUG_MODE_CALLBACK }
+        {
             /// Default log location per platform, i.e. Visual Studio output window, stderr, LogCat, etc.
             Tty      = FMOD_DEBUG_MODE_TTY,
             /// Write log to specified file path.
@@ -251,7 +253,7 @@ raw! {
     }
 }
 
-flags! {
+fmod_flags! {
     /// Specify the requested information to be output when using the logging version of FMOD.
     pub struct DebugFlags: FMOD_DEBUG_FLAGS {
         /// Disable all messages.

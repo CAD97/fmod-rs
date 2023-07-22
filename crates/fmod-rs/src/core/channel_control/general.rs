@@ -83,9 +83,11 @@ pub(crate) unsafe extern "system" fn channel_control_callback<C: ChannelControlC
 }
 
 raw! {
-    enum_struct! {
+    fmod_enum! {
         /// Identifier used to distinguish between Channel and ChannelGroup in the ChannelControl callback.
-        pub enum ChannelControlType: FMOD_CHANNELCONTROL_TYPE {
+        pub enum ChannelControlType: FMOD_CHANNELCONTROL_TYPE
+        where const { self < FMOD_CHANNELCONTROL_MAX }
+        {
             /// Type representing [Channel]
             Channel      = FMOD_CHANNELCONTROL_CHANNEL,
             /// Type representing [ChannelGroup]
@@ -95,9 +97,11 @@ raw! {
 }
 
 raw! {
-    enum_struct! {
+    fmod_enum! {
         /// Types of callbacks called by Channels and ChannelGroups.
-        pub enum ChannelControlCallbackType: FMOD_CHANNELCONTROL_CALLBACK_TYPE {
+        pub enum ChannelControlCallbackType: FMOD_CHANNELCONTROL_CALLBACK_TYPE
+        where const { self < FMOD_CHANNELCONTROL_CALLBACK_MAX }
+        {
             /// Called when a sound ends. Supported by [Channel] only.
             End          = FMOD_CHANNELCONTROL_CALLBACK_END,
             /// Called when a [Channel] is made virtual or real. Supported by [Channel] objects only.

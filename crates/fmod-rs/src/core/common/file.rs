@@ -322,8 +322,8 @@ pub(crate) unsafe extern "system" fn useropen<FS: FileSystem>(
     handle: *mut *mut c_void,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
-    let name = CStr::from_ptr(name);
     catch_user_unwind(|| {
+        let name = CStr::from_ptr(name);
         let file = FS::open(name)?;
         *filesize = file.file_size.try_into().map_err(|_| Error::FileBad)?;
         *handle = Box::into_raw(Pin::into_inner_unchecked(file.handle)).cast();
@@ -363,16 +363,16 @@ pub(crate) unsafe extern "system" fn userread<FS: SyncFileSystem>(
     bytesread: *mut u32,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
-    let buffer = slice::from_raw_parts_mut(buffer.cast(), ix!(sizebytes));
-    let file = Pin::new_unchecked(&mut *handle.cast());
-
-    *bytesread = 0; // ensure this starts at 0 in case FMOD doesn't
-    let buf = FileBuffer {
-        buffer,
-        written: &mut *bytesread,
-    };
-
     catch_user_unwind(|| {
+        let buffer = slice::from_raw_parts_mut(buffer.cast(), ix!(sizebytes));
+        let file = Pin::new_unchecked(&mut *handle.cast());
+
+        *bytesread = 0; // ensure this starts at 0 in case FMOD doesn't
+        let buf = FileBuffer {
+            buffer,
+            written: &mut *bytesread,
+        };
+
         FS::read(file, buf)?;
         if *bytesread < sizebytes {
             Err(Error::FileEof)
@@ -480,16 +480,14 @@ pub(crate) unsafe extern "system" fn useropen_listen<FS: ListenFileSystem>(
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
     let name = CStr::from_ptr(name);
-    FS::open(name, *filesize, (*handle) as usize);
-    FMOD_OK
+    catch_user_unwind(|| Ok(FS::open(name, *filesize, (*handle) as usize))).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userclose_listen<FS: ListenFileSystem>(
     handle: *mut c_void,
     _userdata: *mut c_void,
 ) -> FMOD_RESULT {
-    FS::close(handle as usize);
-    FMOD_OK
+    catch_user_unwind(|| Ok(FS::close(handle as usize))).into_raw()
 }
 
 pub(crate) unsafe extern "system" fn userread_listen<FS: ListenFileSystem>(

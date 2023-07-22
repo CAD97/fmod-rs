@@ -27,14 +27,14 @@ impl Dsp {
     /// Retrieves the PCM input format this DSP will receive when processing.
     pub fn get_channel_format(&self) -> Result<(i32, SpeakerMode)> {
         let mut num_channels = 0;
-        let mut source_speaker_mode = 0;
+        let mut source_speaker_mode = SpeakerMode::zeroed();
         ffi!(FMOD_DSP_GetChannelFormat(
             self.as_raw(),
             /* channel_mask */ ptr::null_mut(), // deprecated
             &mut num_channels,
-            &mut source_speaker_mode,
+            source_speaker_mode.as_raw_mut(),
         ))?;
-        Ok((num_channels, SpeakerMode::from_raw(source_speaker_mode)))
+        Ok((num_channels, source_speaker_mode))
     }
 
     pub fn get_output_channel_format(
@@ -43,7 +43,7 @@ impl Dsp {
         in_speaker_mode: SpeakerMode,
     ) -> Result<(i32, SpeakerMode)> {
         let mut out_channels = 0;
-        let mut out_speaker_mode = 0;
+        let mut out_speaker_mode = SpeakerMode::zeroed();
         ffi!(FMOD_DSP_GetOutputChannelFormat(
             self.as_raw(),
             /* channel_mask */ 0, // deprecated
@@ -51,8 +51,8 @@ impl Dsp {
             in_speaker_mode.into_raw(),
             /* channel_mask */ ptr::null_mut(), // deprecated
             &mut out_channels,
-            &mut out_speaker_mode,
+            out_speaker_mode.as_raw_mut(),
         ))?;
-        Ok((out_channels, SpeakerMode::from_raw(out_speaker_mode)))
+        Ok((out_channels, out_speaker_mode))
     }
 }

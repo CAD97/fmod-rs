@@ -1,6 +1,7 @@
 use {
     crate::utils::fmod_get_string,
     fmod::{raw::*, *},
+    smart_default::SmartDefault,
     std::ptr,
 };
 
@@ -79,7 +80,7 @@ impl System {
             system_rate,
             speaker_mode,
             speaker_mode_channels,
-            state: DriverState::default(),
+            state: DriverState::zeroed(),
         })
     }
 
@@ -132,7 +133,7 @@ impl System {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// Built-in output types that can be used to run the mixer.
     ///
     /// To pass information to the driver when initializing use the `extra_driver_data` parameter in [System::init_ex] for the following reasons:
@@ -192,7 +193,7 @@ enum_struct! {
 }
 
 /// Identification information about a sound device.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, SmartDefault, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct DriverInfo {
     /// GUID that uniquely identifies the device.
     pub guid: Guid,
@@ -204,5 +205,6 @@ pub struct DriverInfo {
     pub speaker_mode_channels: i32,
     /// Flags that provide additional information about the driver.
     /// Only meaningful for record drivers.
+    #[default(DriverState::zeroed())]
     pub state: DriverState,
 }

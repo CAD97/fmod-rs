@@ -90,11 +90,12 @@ impl SoundGroup {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// Values specifying behavior when a sound group's max audible value is exceeded.
     ///
     /// When using [SoundGroupBehavior::Mute], [SoundGroup::set_mute_fade_speed] can be used to stop a sudden transition.
     /// Instead, the time specified will be used to cross fade between the sounds that go silent and the ones that become audible.
+    #[derive(Default)]
     pub enum SoundGroupBehavior: FMOD_SOUNDGROUP_BEHAVIOR {
         #[default]
         /// Excess sounds will fail when calling [System::play_sound].

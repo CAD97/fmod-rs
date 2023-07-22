@@ -39,7 +39,7 @@ fmod_struct! {
     }
 }
 
-opaque! {
+fmod_class! {
     /// Named marker for a given point in time.
     ///
     /// For for more information on sync points see [Sync Points].
@@ -132,7 +132,7 @@ fmod_struct! {
 
 // -------------------------------------------------------------------------------------------------
 
-flags! {
+fmod_flags! {
     /// Flags that describe the speakers present in a given signal.
     pub struct ChannelMask: FMOD_CHANNELMASK {
         /// Front left channel.
@@ -174,8 +174,9 @@ flags! {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// Speaker ordering for multichannel signals.
+    #[derive(Default)]
     pub enum ChannelOrder: FMOD_CHANNELORDER {
         #[default]
         /// Left, Right, Center, LFE, Surround Left, Surround Right, Back Left, Back Right (see [Speaker] enumeration)
@@ -246,7 +247,7 @@ impl Version {
     }
 }
 
-flags! {
+fmod_flags! {
     /// Sound description bitfields, bitwise OR them together for loading and describing sounds.
     ///
     /// By default a sound will open as a static sound that is decompressed fully into memory to PCM. (ie equivalent of [Mode::CreateSample]) To have a sound stream instead, use [Mode::CreateStream], or use the wrapper function [System::create_stream].
@@ -321,9 +322,12 @@ flags! {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// Assigns an enumeration for a speaker index.
-    pub enum Speaker: FMOD_SPEAKER {
+    pub enum Speaker: FMOD_SPEAKER
+    where
+        const { self >= FMOD_SPEAKER_NONE },
+    {
         /// No speaker
         None          = FMOD_SPEAKER_NONE,
         /// The front left speaker
@@ -353,7 +357,7 @@ enum_struct! {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// Speaker mode types.
     ///
     /// Note below the phrase 'sound channels' is used. These are the subchannels inside a sound, they are not related and have nothing to do with the FMOD class "Channel".
@@ -361,6 +365,7 @@ enum_struct! {
     /// For example a mono sound has 1 sound channel, a stereo sound has 2 sound channels, and an AC3 or 6 channel wav file have 6 "sound channels".
     ///
     /// See the FMOD Studio Mixing Guide for graphical depictions of each speaker mode.
+    #[derive(Default)]
     pub enum SpeakerMode: FMOD_SPEAKERMODE {
         #[default]
         /// Default speaker mode for the chosen output mode which will resolve after [System::init].
@@ -427,7 +432,7 @@ enum_struct! {
     }
 }
 
-enum_struct! {
+fmod_typedef! {
     /// Time types used for position or length.
     pub enum TimeUnit: FMOD_TIMEUNIT {
         /// Milliseconds.

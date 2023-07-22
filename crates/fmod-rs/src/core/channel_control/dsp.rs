@@ -76,7 +76,7 @@ impl ChannelControl {
 }
 
 raw! {
-    enum_struct! {
+    fmod_typedef! {
         /// References to built in DSP positions that reside in a Channel or ChannelGroup DSP chain.
         ///
         /// Before any [Dsp]s have been added by the user, there is only one [Dsp] available for a [Channel] or [ChannelGroup]. This is of type [DspType::Fader]. This handles volume and panning for a [Channel] or [ChannelGroup].

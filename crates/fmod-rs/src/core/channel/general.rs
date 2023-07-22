@@ -59,33 +59,32 @@ pub(crate) unsafe extern "system" fn channel_callback<C: ChannelCallback>(
     commanddata1: *mut c_void,
     commanddata2: *mut c_void,
 ) -> FMOD_RESULT {
-    let control_type = ChannelControlType::from_raw(controltype);
-    if control_type != ChannelControlType::Channel {
-        whoops!(no_panic: "channel callback called with channel group");
-        return Error::InvalidParam.into_raw();
-    }
+    catch_user_unwind(|| {
+        let control_type = ChannelControlType::try_from_raw(controltype)?;
+        if control_type != ChannelControlType::Channel {
+            whoops!(no_panic: "channel callback called with channel group");
+            yeet!(Error::InvalidParam);
+        }
 
-    let callback_type = ChannelControlCallbackType::from_raw(callbacktype);
-    let channel = Channel::from_raw(channelcontrol as *mut FMOD_CHANNEL);
-    catch_user_unwind(|| match callback_type {
-        ChannelControlCallbackType::End => Ok(C::end(channel)),
-        ChannelControlCallbackType::VirtualVoice => {
-            let is_virtual = commanddata1 as i32 != 0;
-            Ok(C::virtual_voice(channel, is_virtual))
-        },
-        ChannelControlCallbackType::SyncPoint => {
-            let point = commanddata1 as i32;
-            Ok(C::sync_point(channel, point))
-        },
-        ChannelControlCallbackType::Occlusion => {
-            let direct = &mut *(commanddata1 as *mut f32);
-            let reverb = &mut *(commanddata2 as *mut f32);
-            Ok(C::occlusion(channel, direct, reverb))
-        },
-        _ => {
-            whoops!(no_panic: "unknown channel callback type {:?}", callback_type);
-            yeet!(Error::InvalidParam)
-        },
+        let callback_type = ChannelControlCallbackType::try_from_raw(callbacktype)?;
+        let channel = Channel::from_raw(channelcontrol as *mut FMOD_CHANNEL);
+
+        match callback_type {
+            ChannelControlCallbackType::End => Ok(C::end(channel)),
+            ChannelControlCallbackType::VirtualVoice => {
+                let is_virtual = commanddata1 as i32 != 0;
+                Ok(C::virtual_voice(channel, is_virtual))
+            },
+            ChannelControlCallbackType::SyncPoint => {
+                let point = commanddata1 as i32;
+                Ok(C::sync_point(channel, point))
+            },
+            ChannelControlCallbackType::Occlusion => {
+                let direct = &mut *(commanddata1 as *mut f32);
+                let reverb = &mut *(commanddata2 as *mut f32);
+                Ok(C::occlusion(channel, direct, reverb))
+            },
+        }
     })
     .into_raw()
 }

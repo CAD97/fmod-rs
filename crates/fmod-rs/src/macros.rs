@@ -1,8 +1,10 @@
 macro_rules! static_assert {
     ($cond:expr $(,)?) => {
+        #[allow(deprecated)]
         const _: () = { ::std::assert!($cond) };
     };
-    ($cond:expr, $msg:expr) => {
+    ($cond:expr, $msg:expr $(,)?) => {
+        #[allow(deprecated)]
         const _: () = { ::std::assert!($cond, $msg) };
     };
 }
@@ -53,7 +55,7 @@ macro_rules! whoops {
     ($($args:tt)*) => { whoops!{panic: $($args)*} };
 }
 
-macro_rules! opaque {
+macro_rules! fmod_class {
     {
         #[doc = $doc:expr]
         $(#[$meta:meta])*
@@ -117,7 +119,7 @@ macro_rules! opaque {
 
         mod $($module:ident),+;
     } => {
-        opaque! {
+        fmod_class! {
             #[doc = $doc]
             $(#[$meta])*
             class $prefix $Name {
@@ -131,6 +133,7 @@ macro_rules! opaque {
             pub mod [<$Name:snake>] {
                 $(mod $module;)+
                 pub use super::$Name;
+                #[allow(unused_imports)]
                 pub use /*self::*/{
                     $($module::*,)+
                 };
@@ -149,7 +152,7 @@ macro_rules! opaque {
 
         mod;
     } => {
-        opaque! {
+        fmod_class! {
             #[doc = $doc]
             $(#[$meta])*
             class $prefix $Name {
@@ -171,7 +174,7 @@ macro_rules! opaque {
         class $Name:ident = $Raw:ident;
         $(mod $($module:ident),*;)?
     } => {
-        opaque! {
+        fmod_class! {
             #[doc = $doc]
             $(#[$meta])*
             class "fmod::" $Name {
@@ -188,7 +191,7 @@ macro_rules! opaque {
         weak class $Name:ident = $Raw:ident;
         $(mod $($module:ident),*;)?
     } => {
-        opaque! {
+        fmod_class! {
             #[doc = $doc]
             $(#[$meta])*
             class "fmod::" $Name {
@@ -205,7 +208,7 @@ macro_rules! opaque {
         class studio::$Name:ident = $Raw:ident;
         $(mod $($module:ident),*;)?
     } => {
-        opaque! {
+        fmod_class! {
             #[doc = $doc]
             $(#[$meta])*
             class "fmod::studio::" $Name {
@@ -222,7 +225,7 @@ macro_rules! opaque {
         weak class studio::$Name:ident = $Raw:ident;
         $(mod $($module:ident),*;)?
     } => {
-        opaque! {
+        fmod_class! {
             #[doc = $doc]
             $(#[$meta])*
             class "fmod::studio::" $Name {
@@ -272,7 +275,7 @@ macro_rules! ffi {
     }};
 }
 
-macro_rules! flags_ops {
+macro_rules! fmod_flags_ops {
     ($Name:ty: $($Op:ident)::+ $fn_op:ident $op:tt) => {
         #[allow(deprecated)]
         impl $($Op)::+ for $Name {
@@ -341,7 +344,7 @@ macro_rules! flags_ops {
     };
 }
 
-macro_rules! flags {
+macro_rules! fmod_flags {
     {$(
         $(#[$meta:meta])*
         $vis:vis struct $Name:ident: $Raw:ty {$(
@@ -360,7 +363,7 @@ macro_rules! flags {
         #[allow(deprecated)]
         impl $Name {
             $(
-                flags! {@stripdefault
+                fmod_flags! {@stripdefault
                     $(#[$($vmeta)*])*
                     #[allow(non_upper_case_globals)]
                     pub const $Variant: Self = Self::from_raw($value);
@@ -411,10 +414,10 @@ macro_rules! flags {
             }
         }
 
-        flags_ops!($Name: std::ops::BitAnd bitand & std::ops::BitAndAssign bitand_assign);
-        flags_ops!($Name: std::ops::BitOr bitor | std::ops::BitOrAssign bitor_assign);
-        flags_ops!($Name: std::ops::BitXor bitxor ^ std::ops::BitXorAssign bitxor_assign);
-        flags_ops!($Name: std::ops::Not not !);
+        fmod_flags_ops!($Name: std::ops::BitAnd bitand & std::ops::BitAndAssign bitand_assign);
+        fmod_flags_ops!($Name: std::ops::BitOr bitor | std::ops::BitOrAssign bitor_assign);
+        fmod_flags_ops!($Name: std::ops::BitXor bitxor ^ std::ops::BitXorAssign bitxor_assign);
+        fmod_flags_ops!($Name: std::ops::Not not !);
 
         #[allow(deprecated)]
         impl std::fmt::Debug for $Name {
@@ -427,7 +430,7 @@ macro_rules! flags {
             }
         }
 
-        flags! {@default $Name {$(
+        fmod_flags! {@default $Name {$(
             $(#[$($vmeta)*])*
             $Variant = $value,
         )*}}
@@ -450,7 +453,7 @@ macro_rules! flags {
                 $Name::$Variant
             }
         }
-        flags! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+        fmod_flags! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
     };
 
     {@default $Name:ident {
@@ -461,16 +464,193 @@ macro_rules! flags {
             $VVariant:ident = $vvalue:expr,
         )*
     }} => {
-        flags! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+        fmod_flags! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
     };
 
     {@stripdefault #[default] $($tt:tt)*} => { $($tt)* };
     {@stripdefault $($tt:tt)*} => { $($tt)* };
 }
 
-// TODO: validate each that each enum_struct! has a _MAX and make from unsafe
-// TODO: if so, consider making enum_struct! into a Rust enum with #[repr]
-macro_rules! enum_struct {
+macro_rules! fmod_enum {
+    {
+        $(#[$meta:meta])*
+        $vis:vis enum $Name:ident: $Raw:ty
+        $(where)?
+        {$(
+            $(#[$($vmeta:tt)*])*
+            $Variant:ident = $value:expr,
+        )*}
+    } => {
+        ::paste::paste! {
+            fmod_enum! {
+                $(#[$meta])*
+                $vis enum $Name: $Raw
+                where
+                    const { self < [<$Raw _MAX>] },
+                    const { self >= 0 },
+                {$(
+                    $(#[$($vmeta)*])*
+                    $Variant = $value,
+                )*}
+            }
+        }
+    };
+    {
+        $(#[$meta:meta])*
+        $vis:vis enum $Name:ident: $Raw:ty
+        where const { self <= $MAX:expr } $(,)?
+        {$(
+            $(#[$($vmeta:tt)*])*
+            $Variant:ident = $value:expr,
+        )*}
+    } => {
+        fmod_enum! {
+            $(#[$meta])*
+            $vis enum $Name: $Raw
+            where
+                const { self < $MAX + 1 },
+                const { self >= 0 },
+            {$(
+                $(#[$($vmeta)*])*
+                $Variant = $value,
+            )*}
+        }
+    };
+    {
+        $(#[$meta:meta])*
+        $vis:vis enum $Name:ident: $Raw:ty
+        where
+            const { self < $MAX:expr } $(,)?
+        {$(
+            $(#[$($vmeta:tt)*])*
+            $Variant:ident = $value:expr,
+        )*}
+    } => {
+        fmod_enum! {
+            $(#[$meta])*
+            $vis enum $Name: $Raw
+            where
+                const { self < $MAX },
+                const { self >= 0 },
+            {$(
+                $(#[$($vmeta)*])*
+                $Variant = $value,
+            )*}
+        }
+    };
+    {
+        $(#[$meta:meta])*
+        $vis:vis enum $Name:ident: $Raw:ty
+        where
+            const { self >= $MIN:expr } $(,)?
+        {$(
+            $(#[$($vmeta:tt)*])*
+            $Variant:ident = $value:expr,
+        )*}
+    } => {
+        ::paste::paste! {
+            fmod_enum! {
+                $(#[$meta])*
+                $vis enum $Name: $Raw
+                where
+                    const { self < [<$Raw _MAX>] },
+                    const { self >= $MIN },
+                {$(
+                    $(#[$($vmeta)*])*
+                    $Variant = $value,
+                )*}
+            }
+        }
+    };
+
+    {
+        $(#[$meta:meta])*
+        $vis:vis enum $Name:ident: $Raw:ty
+        where
+            const { self < $MAX:expr },
+            const { self >= $MIN:expr },
+        {$(
+            $(#[$($vmeta:tt)*])*
+            $Variant:ident = $value:expr,
+        )*}
+    } => {
+        $(#[$meta])*
+        #[repr(i32)]
+        #[non_exhaustive]
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+        $vis enum $Name {
+            $(
+                $(#[$($vmeta)*])*
+                $Variant = $value,
+            )*
+        }
+
+        impl $Name {
+            raw! {
+                pub const RAW_RANGE: ::std::ops::Range<i32> = $MIN..$MAX;
+            }
+            raw! {
+                pub const fn zeroed() -> $Name {
+                    unsafe { Self::from_raw(0) }
+                }
+            }
+            raw! {
+                pub const unsafe fn from_raw(raw: $Raw) -> $Name {
+                    debug_assert!($MIN <= raw && raw < $MAX);
+                    unsafe { ::std::mem::transmute(raw) }
+                }
+            }
+            raw! {
+                pub const fn try_from_raw(raw: $Raw) -> Result<$Name> {
+                    if $MIN <= raw && raw < $MAX {
+                        Ok(unsafe { Self::from_raw(raw) })
+                    } else {
+                        Err(Error::InvalidParam)
+                    }
+                }
+            }
+            raw! {
+                pub const unsafe fn from_raw_ref(raw: &$Raw) -> &$Name {
+                    debug_assert!($MIN <= *raw && *raw < $MAX);
+                    unsafe { &*(raw as *const $Raw as *const $Name ) }
+                }
+            }
+            raw! {
+                pub unsafe fn from_raw_mut(raw: &mut $Raw) -> &mut $Name {
+                    debug_assert!($MIN <= *raw && *raw < $MAX);
+                    unsafe { &mut *(raw as *mut $Raw as *mut $Name ) }
+                }
+            }
+            raw! {
+                pub const fn into_raw(self) -> $Raw {
+                    unsafe { ::std::mem::transmute(self) }
+                }
+            }
+            raw! {
+                pub const fn as_raw(&self) -> &$Raw {
+                    unsafe { &*(self as *const $Name as *const $Raw ) }
+                }
+            }
+            raw! {
+                pub unsafe fn as_raw_mut(&mut self) -> &mut $Raw {
+                    unsafe { &mut *(self as *mut $Name as *mut $Raw ) }
+                }
+            }
+        }
+
+        $(
+            static_assert!($Name::$Variant.into_raw() < $Name::RAW_RANGE.end);
+            static_assert!($Name::$Variant.into_raw() >= $Name::RAW_RANGE.start);
+        )*
+
+        static_assert! {
+            [$($Name::$Variant),*].len() == ($Name::RAW_RANGE.end - $Name::RAW_RANGE.start) as usize,
+            "fmod_enum! is missing some variant(s)",
+        }
+    };
+}
+
+macro_rules! fmod_typedef {
     {
         $(#[$meta:meta])*
         $vis:vis enum $Name:ident: $Raw:ty {$(
@@ -487,7 +667,7 @@ macro_rules! enum_struct {
 
         impl $Name {
             $(
-                enum_struct! {@stripdefault
+                fmod_typedef! {@stripdefault
                     $(#[$($vmeta)*])*
                     #[allow(non_upper_case_globals)]
                     pub const $Variant: Self = Self::from_raw($value);
@@ -543,7 +723,7 @@ macro_rules! enum_struct {
             }
         }
 
-        enum_struct! {@default $Name {$(
+        fmod_typedef! {@default $Name {$(
             $(#[$($vmeta)*])*
             $Variant = $value,
         )*}}
@@ -566,7 +746,7 @@ macro_rules! enum_struct {
                 $Name::$Variant
             }
         }
-        enum_struct! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+        fmod_typedef! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
     };
 
     {@default $Name:ident {
@@ -577,7 +757,7 @@ macro_rules! enum_struct {
             $VVariant:ident = $vvalue:expr,
         )*
     }} => {
-        enum_struct! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
+        fmod_typedef! { @default $Name { $($(#[$($vmeta)*])* $VVariant = $vvalue,)* } }
     };
 
     {@stripdefault #[default] $($tt:tt)*} => { $($tt)* };

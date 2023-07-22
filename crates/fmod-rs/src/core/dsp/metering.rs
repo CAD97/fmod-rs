@@ -1,4 +1,4 @@
-use fmod::{raw::*, *};
+use fmod::*;
 
 /// # Metering.
 impl Dsp {

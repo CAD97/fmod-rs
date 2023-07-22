@@ -11,7 +11,7 @@ pub mod common {
     pub use self::general::*;
 }
 
-opaque! {
+fmod_class! {
     /// Management object from which all resources are created and played.
     ///
     /// Create with [`System::new`].
@@ -21,7 +21,7 @@ opaque! {
     runtime, recording, geometry, general;
 }
 
-opaque! {
+fmod_class! {
     /// Container for [sample data](https://fmod.com/docs/2.02/api/glossary.html#sample-data) that can be played on a [Channel].
     ///
     /// Create with [`System::create_sound`] or [System::create_stream].
@@ -30,14 +30,14 @@ opaque! {
     mod format, default, relationship, data, music, synchronization, general;
 }
 
-opaque! {
+fmod_class! {
     /// The shared APIs between [`Channel`] and [`ChannelGroup`].
     weak class ChannelControl = FMOD_CHANNELCONTROL;
 
     mod playback, volume, spatialization, panning, filtering, dsp, scheduling, general;
 }
 
-opaque! {
+fmod_class! {
     /// A source of audio signal that connects to the [`ChannelGroup`] mixing hierarchy.
     ///
     /// Create with [System::play_sound] or [System::play_dsp].
@@ -46,7 +46,7 @@ opaque! {
     mod playback, information, general;
 }
 
-opaque! {
+fmod_class! {
     /// A submix in the mixing hierarchy akin to a bus that can contain both [`Channel`] and [`ChannelGroup`] objects.
     ///
     /// Create with [`System::create_channel_group`].
@@ -55,14 +55,14 @@ opaque! {
     mod channel, group, general;
 }
 
-opaque! {
+fmod_class! {
     /// An interface that manages groups of [`Sound`]s.
     class SoundGroup = FMOD_SOUNDGROUP;
 
     mod group, sound, general;
 }
 
-opaque! {
+fmod_class! {
     /// The Digital Signal Processor is one node within a graph that transforms input audio signals to an output stream.
     ///
     /// Create with [`System::create_dsp`], [`System::create_dsp_by_type`] or [`System::create_dsp_by_plugin`].
@@ -71,7 +71,7 @@ opaque! {
     mod connections, parameters, channel, metering, processing, general;
 }
 
-opaque! {
+fmod_class! {
     /// An interface that manages Digital Signal Processor (DSP) Connections.
     ///
     /// # Safety
@@ -87,14 +87,14 @@ opaque! {
     mod mix, general;
 }
 
-opaque! {
+fmod_class! {
     /// An interface that allows the setup and modification of geometry for occlusion.
     class Geometry = FMOD_GEOMETRY;
 
     mod;
 }
 
-opaque! {
+fmod_class! {
     /// An interface that manages virtual 3D reverb spheres.
     ///
     /// See the 3D Reverb guide for more information.

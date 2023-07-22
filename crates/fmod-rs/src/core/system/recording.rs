@@ -30,7 +30,7 @@ impl System {
         let mut system_rate = 0;
         let mut speaker_mode = SpeakerMode::default();
         let mut speaker_mode_channels = 0;
-        let mut state = DriverState::default();
+        let mut state = DriverState::zeroed();
 
         ffi!(FMOD_System_GetRecordDriverInfo(
             self.as_raw(),
@@ -151,12 +151,11 @@ impl System {
     }
 }
 
-enum_struct! {
+fmod_flags! {
     /// Flags that provide additional information about a particular driver.
-    pub enum DriverState: FMOD_DRIVER_STATE {
+    pub struct DriverState: FMOD_DRIVER_STATE {
         /// Device is currently plugged in.
         Connected = FMOD_DRIVER_STATE_CONNECTED,
-        #[default]
         /// Device is the users preferred choice.
         Default   = FMOD_DRIVER_STATE_DEFAULT,
     }

@@ -192,7 +192,7 @@ impl System {
     */
 }
 
-enum_struct! {
+fmod_enum! {
     /// Types of plugin used to extend functionality.
     pub enum PluginType: FMOD_PLUGINTYPE {
         /// Audio output interface plugin represented with [OutputDescription].

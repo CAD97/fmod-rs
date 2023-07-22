@@ -257,7 +257,7 @@ fmod_struct! {
     }
 }
 
-flags! {
+fmod_flags! {
     /// Output type specific index for when there are multiple instances of a port type.
     pub struct PortIndex: FMOD_PORT_INDEX {
         /// Use when a port index is not required
@@ -267,7 +267,7 @@ flags! {
     }
 }
 
-enum_struct! {
+fmod_enum! {
     /// Port types available for routing audio.
     pub enum PortType: FMOD_PORT_TYPE {
         Music          = FMOD_PORT_TYPE_MUSIC,

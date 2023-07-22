@@ -283,7 +283,7 @@ impl System {
     }
 }
 
-flags! {
+fmod_flags! {
     /// Configuration flags used when initializing the System object.
     pub struct InitFlags: FMOD_INITFLAGS {
         #[default]
