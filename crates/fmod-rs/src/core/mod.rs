@@ -92,7 +92,7 @@ fmod_class! {
     /// An interface that allows the setup and modification of geometry for occlusion.
     class Geometry = FMOD_GEOMETRY;
 
-    mod;
+    mod polygons, spatialization, general;
 }
 
 fmod_class! {

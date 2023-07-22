@@ -132,8 +132,7 @@ fn main() -> anyhow::Result<()> {
                     fmod::ListenerAttributes3d {
                         pos: listenerpos,
                         vel,
-                        forward,
-                        up,
+                        orientation: fmod::Orientation3d { forward, up },
                     },
                 )?;
 

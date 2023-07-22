@@ -17,11 +17,20 @@ fmod_struct! {
         ///
         /// **Units**: Distance units per second
         pub velocity: Vector,
-        /// Forwards orientation, must be of unit length (1.0) and perpendicular to `up`.
-        pub forward: Vector,
-        /// Upwards orientation, must be of unit length (1.0) and perpendicular to `forward`.
-        pub up: Vector,
+        /// Orientation, must be orthonormal.
+        pub orientation: Orientation3d,
     }
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, SmartDefault)]
+pub struct Orientation3d {
+    /// Forwards orientation, must be of unit length (1.0) and perpendicular to `up`.
+    #[default(Vector::Z)]
+    pub forward: Vector,
+    /// Upwards orientation, must be of unit length (1.0) and perpendicular to `forward`.
+    #[default(Vector::Y)]
+    pub up: Vector,
 }
 
 fmod_struct! {
@@ -66,9 +75,19 @@ fmod_struct! {
 
 impl Vector {
     /// Create a new vector.
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
+    pub const fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
     }
+
+    /// The unit X vector (right) in 3D space.
+    pub const X: Vector = Vector::new(1.0, 0.0, 0.0);
+    /// The unit Y vector (up) in 3D space.
+    pub const Y: Vector = Vector::new(0.0, 1.0, 0.0);
+    /// The unit Z vector in 3D space.
+    ///
+    /// FMOD uses a left handed coordinate system by default, meaning
+    /// that the Z axis points forwards, away from the listener.
+    pub const Z: Vector = Vector::new(0.0, 0.0, 1.0);
 }
 
 impl From<[f32; 3]> for Vector {

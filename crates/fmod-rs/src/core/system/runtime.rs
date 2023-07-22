@@ -45,8 +45,8 @@ impl System {
             listener,
             attributes.pos.as_raw(),
             attributes.vel.as_raw(),
-            attributes.forward.as_raw(),
-            attributes.up.as_raw(),
+            attributes.orientation.forward.as_raw(),
+            attributes.orientation.up.as_raw(),
         ))?;
         Ok(())
     }
@@ -62,8 +62,8 @@ impl System {
             listener,
             attributes.pos.as_raw_mut(),
             attributes.vel.as_raw_mut(),
-            attributes.forward.as_raw_mut(),
-            attributes.up.as_raw_mut(),
+            attributes.orientation.forward.as_raw_mut(),
+            attributes.orientation.up.as_raw_mut(),
         ))?;
         Ok(attributes)
     }
@@ -358,8 +358,6 @@ pub struct ListenerAttributes3d {
     pub pos: Vector,
     /// Velocity in 3D space used for doppler.
     pub vel: Vector,
-    /// Forwards orientation.
-    pub forward: Vector,
-    /// Upwards orientation.
-    pub up: Vector,
+    /// Orientation.
+    pub orientation: Orientation3d,
 }
