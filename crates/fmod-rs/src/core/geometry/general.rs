@@ -19,13 +19,13 @@ impl Geometry {
     /// Vertices of an object are in object space, not world space, and so are
     /// relative to the position, or center of the object. See
     /// [`Geometry::set_position`].
-    pub fn add_polygon(&self, attrs: PolygonAttributes, vertices: &[Vector]) -> Result<i32> {
+    pub fn add_polygon(&self, attributes: PolygonAttributes, vertices: &[Vector]) -> Result<i32> {
         let mut index = 0;
         ffi!(FMOD_Geometry_AddPolygon(
             self.as_raw(),
-            attrs.occlusion.direct,
-            attrs.occlusion.reverb,
-            attrs.double_sided as FMOD_BOOL,
+            attributes.occlusion.direct,
+            attributes.occlusion.reverb,
+            attributes.double_sided as FMOD_BOOL,
             vertices.len() as i32,
             vertices.as_ptr() as _,
             &mut index,

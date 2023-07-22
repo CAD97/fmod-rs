@@ -3,13 +3,13 @@ use fmod::{raw::*, *};
 /// # Polygons.
 impl Geometry {
     /// Sets individual attributes for a polygon inside a geometry object.
-    pub fn set_polygon_attributes(&self, index: i32, attrs: PolygonAttributes) -> Result {
+    pub fn set_polygon_attributes(&self, index: i32, attributes: PolygonAttributes) -> Result {
         ffi!(FMOD_Geometry_SetPolygonAttributes(
             self.as_raw(),
             index,
-            attrs.occlusion.direct,
-            attrs.occlusion.reverb,
-            attrs.double_sided as FMOD_BOOL,
+            attributes.occlusion.direct,
+            attributes.occlusion.reverb,
+            attributes.double_sided as FMOD_BOOL,
         ))?;
         Ok(())
     }

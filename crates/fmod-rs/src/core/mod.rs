@@ -98,10 +98,12 @@ fmod_class! {
 fmod_class! {
     /// An interface that manages virtual 3D reverb spheres.
     ///
-    /// See the 3D Reverb guide for more information.
+    /// See the [3D Reverb] guide for more information.
+    ///
+    /// [3D Reverb]: https://fmod.com/docs/2.02/api/white-papers-3d-reverb.html
     class Reverb3d = FMOD_REVERB3D;
 
-    mod;
+    mod general;
 }
 
 mod effect;
