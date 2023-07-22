@@ -62,6 +62,7 @@ impl MixMatrix {
     }
 
     pub(crate) fn new_ref(matrix: &[f32], in_channels: usize, out_channels: usize) -> &Self {
+        let _ = &matrix[..in_channels * out_channels];
         unsafe { &*Self::new(matrix.as_ptr().cast_mut(), in_channels, out_channels) }
     }
 
@@ -70,6 +71,7 @@ impl MixMatrix {
         in_channels: usize,
         out_channels: usize,
     ) -> &mut Self {
+        let _ = &matrix[..in_channels * out_channels];
         unsafe { &mut *Self::new(matrix.as_mut_ptr(), in_channels, out_channels) }
     }
 
