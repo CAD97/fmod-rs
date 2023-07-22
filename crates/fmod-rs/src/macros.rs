@@ -24,6 +24,8 @@ macro_rules! ix {
     };
 }
 
+macro_rules! group_syntax { ($($tt:tt)*) => ($($tt)*) }
+
 macro_rules! whoops {
     {
         panic: $($args:tt)*
@@ -466,14 +468,16 @@ macro_rules! flags {
     {@stripdefault $($tt:tt)*} => { $($tt)* };
 }
 
+// TODO: validate each that each enum_struct! has a _MAX and make from unsafe
+// TODO: if so, consider making enum_struct! into a Rust enum with #[repr]
 macro_rules! enum_struct {
-    {$(
+    {
         $(#[$meta:meta])*
         $vis:vis enum $Name:ident: $Raw:ty {$(
             $(#[$($vmeta:tt)*])*
             $Variant:ident = $value:expr,
         )*}
-    )*} => {$(
+    } => {
         $(#[$meta])*
         #[repr(transparent)]
         #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -543,7 +547,7 @@ macro_rules! enum_struct {
             $(#[$($vmeta)*])*
             $Variant = $value,
         )*}}
-    )*};
+    };
 
     {@default $Name:ident {}} => {};
 
@@ -581,12 +585,12 @@ macro_rules! enum_struct {
 }
 
 macro_rules! fmod_struct {
-    {$(
+    {
         $(#[$meta:meta])*
         $vis:vis struct $Name:ident$(<$lt:lifetime>)? = $Raw:ident {
             $($body:tt)*
         }
-    )*} => {$(
+    } => {
         fmod_struct! {
             #![fmod_no_default]
             $(#[$meta])*
@@ -595,7 +599,7 @@ macro_rules! fmod_struct {
                 $($body)*
             }
         }
-    )*};
+    };
     {
         #![fmod_no_default]
         $(#[$meta:meta])*

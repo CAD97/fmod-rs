@@ -38,22 +38,25 @@ impl ChannelControl {
 }
 
 #[cfg(not(feature = "unstable"))]
-/// Callback for Channel and ChannelGroup notifications.
-///
-/// Callbacks are called from the game thread when set from the Core API or
-/// Studio API in synchronous mode, and from the Studio Update Thread when in
-/// default / async mode.
-pub trait ChannelControlCallback: ChannelCallback + ChannelGroupCallback {}
-#[cfg(not(feature = "unstable"))]
-impl<C: ChannelCallback + ChannelGroupCallback> ChannelControlCallback for C {}
+group_syntax! {
+    /// Callback for Channel and ChannelGroup notifications.
+    ///
+    /// Callbacks are called from the game thread when set from the Core API or
+    /// Studio API in synchronous mode, and from the Studio Update Thread when in
+    /// default / async mode.
+    pub trait ChannelControlCallback: ChannelCallback + ChannelGroupCallback {}
+    impl<C: ChannelCallback + ChannelGroupCallback> ChannelControlCallback for C {}
+}
 
 #[cfg(feature = "unstable")]
-/// Callback for Channel and ChannelGroup notifications.
-///
-/// Callbacks are called from the game thread when set from the Core API or
-/// Studio API in synchronous mode, and from the Studio Update Thread when in
-/// default / async mode.
-pub trait ChannelControlCallback = ChannelCallback + ChannelGroupCallback;
+group_syntax! {
+    /// Callback for Channel and ChannelGroup notifications.
+    ///
+    /// Callbacks are called from the game thread when set from the Core API or
+    /// Studio API in synchronous mode, and from the Studio Update Thread when in
+    /// default / async mode.
+    pub trait ChannelControlCallback = ChannelCallback + ChannelGroupCallback;
+}
 
 pub(crate) unsafe extern "system" fn channel_control_callback<C: ChannelControlCallback>(
     channelcontrol: *mut FMOD_CHANNELCONTROL,

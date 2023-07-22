@@ -73,6 +73,15 @@ opaque! {
 
 opaque! {
     /// An interface that manages Digital Signal Processor (DSP) Connections.
+    ///
+    /// # Safety
+    ///
+    /// Unlike most other handles in the FMOD API, DSP connections' lifetime is
+    /// dynamically tied to the actual connection state of the DSPs, and it is
+    /// UB to use a connection after it gets disconnected. Because of this, all
+    /// APIs which return `DspConnection` return it by pointer, and it is up to
+    /// you as the developer to ensure that the connection has not been removed
+    /// when using it.
     weak class DspConnection = FMOD_DSPCONNECTION;
 
     mod mix, general;

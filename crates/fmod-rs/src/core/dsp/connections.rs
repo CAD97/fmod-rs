@@ -1,6 +1,6 @@
 use {
     fmod::{raw::*, *},
-    std::ptr,
+    std::ptr::{self, NonNull},
 };
 
 /// # Connections.
@@ -10,9 +10,13 @@ impl Dsp {
     /// When a DSP has multiple inputs the signals are automatically mixed
     /// together, sent to the unit's output(s).
     ///
-    /// The returned connection will remain valid until the units are
+    /// The returned DSP connection will remain valid until the units are
     /// disconnected.
-    pub fn add_input(&self, input: &Dsp, kind: DspConnectionType) -> Result<&DspConnection> {
+    pub fn add_input(
+        &self,
+        input: &Dsp,
+        kind: DspConnectionType,
+    ) -> Result<NonNull<DspConnection>> {
         let mut connection = ptr::null_mut();
         ffi!(FMOD_DSP_AddInput(
             self.as_raw(),
@@ -20,7 +24,7 @@ impl Dsp {
             &mut connection,
             kind.into_raw(),
         ))?;
-        Ok(unsafe { DspConnection::from_raw(connection) })
+        Ok(unsafe { DspConnection::from_raw(connection) }.into())
     }
 
     /// Retrieves the DSP unit at the specified index in the input list.
@@ -28,9 +32,9 @@ impl Dsp {
     /// This will flush the DSP queue (which blocks against the mixer) to ensure
     /// the input list is correct, avoid this during time sensitive operations.
     ///
-    /// The returned connection will remain valid until the units are
+    /// The returned DSP connection will remain valid until the units are
     /// disconnected.
-    pub fn get_input(&self, index: i32) -> Result<(&Dsp, &DspConnection)> {
+    pub fn get_input(&self, index: i32) -> Result<(&Dsp, NonNull<DspConnection>)> {
         let mut dsp = ptr::null_mut();
         let mut connection = ptr::null_mut();
         ffi!(FMOD_DSP_GetInput(
@@ -39,7 +43,10 @@ impl Dsp {
             &mut dsp,
             &mut connection,
         ))?;
-        Ok(unsafe { (Dsp::from_raw(dsp), DspConnection::from_raw(connection)) })
+        Ok((
+            unsafe { Dsp::from_raw(dsp) },
+            unsafe { DspConnection::from_raw(connection) }.into(),
+        ))
     }
 
     /// Retrieves the DSP unit at the specified index in the output list.
@@ -47,9 +54,9 @@ impl Dsp {
     /// This will flush the DSP queue (which blocks against the mixer) to ensure
     /// the output list is correct, avoid this during time sensitive operations.
     ///
-    /// The returned connection will remain valid until the units are
+    /// The returned DSP connection will remain valid until the units are
     /// disconnected.
-    pub fn get_output(&self, index: i32) -> Result<(&Dsp, &DspConnection)> {
+    pub fn get_output(&self, index: i32) -> Result<(&Dsp, NonNull<DspConnection>)> {
         let mut dsp = ptr::null_mut();
         let mut connection = ptr::null_mut();
         ffi!(FMOD_DSP_GetOutput(
@@ -58,7 +65,10 @@ impl Dsp {
             &mut dsp,
             &mut connection,
         ))?;
-        Ok(unsafe { (Dsp::from_raw(dsp), DspConnection::from_raw(connection)) })
+        Ok((
+            unsafe { Dsp::from_raw(dsp) },
+            unsafe { DspConnection::from_raw(connection) }.into(),
+        ))
     }
 
     /// Retrieves the number of DSP units in the input list.

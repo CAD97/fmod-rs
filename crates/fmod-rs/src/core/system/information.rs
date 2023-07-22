@@ -78,7 +78,7 @@ impl System {
         })
     }
 
-    /// TODO: figure out mix matrix API
+    // TODO: figure out mix matrix API
     // get_default_mix_matrix
 
     /// Retrieves the channel count for a given speaker mode.

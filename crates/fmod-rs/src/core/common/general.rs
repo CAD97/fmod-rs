@@ -351,7 +351,9 @@ enum_struct! {
         /// The top back right speaker
         TopBackRight  = FMOD_SPEAKER_TOP_BACK_RIGHT,
     }
+}
 
+enum_struct! {
     /// Speaker mode types.
     ///
     /// Note below the phrase 'sound channels' is used. These are the subchannels inside a sound, they are not related and have nothing to do with the FMOD class "Channel".
@@ -423,7 +425,9 @@ enum_struct! {
         /// 12 speaker setup (7.1.4) front left, front right, center, low frequency, surround left, surround right, back left, back right, top front left, top front right, top back left, top back right.
         Surround714 = FMOD_SPEAKERMODE_7POINT1POINT4,
     }
+}
 
+enum_struct! {
     /// Time types used for position or length.
     pub enum TimeUnit: FMOD_TIMEUNIT {
         /// Milliseconds.

@@ -13,6 +13,13 @@ fn main() -> anyhow::Result<()> {
         let channel = system.play_sound(&sound, None, false)?;
 
         // test whatever functionality here
+        dbg!(system.get_speaker_mode_channels(fmod::SpeakerMode::Mono)?);
+        dbg!(system.get_speaker_mode_channels(fmod::SpeakerMode::Stereo)?);
+        dbg!(system.get_speaker_mode_channels(fmod::SpeakerMode::Quad)?);
+        dbg!(system.get_speaker_mode_channels(fmod::SpeakerMode::Surround)?);
+        dbg!(system.get_speaker_mode_channels(fmod::SpeakerMode::Surround51)?);
+        dbg!(system.get_speaker_mode_channels(fmod::SpeakerMode::Surround71)?);
+        dbg!(system.get_speaker_mode_channels(fmod::SpeakerMode::Surround714)?);
 
         while !example.btn_press(Buttons::Quit) {
             example.update()?;

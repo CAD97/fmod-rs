@@ -1,10 +1,43 @@
-use fmod::{raw::*, *};
-
-// TODO: connections are invalidated when units are disconnected.
-//       it is extremely unclear how to model this in Rust.
+use {
+    fmod::{raw::*, *},
+    std::ptr,
+};
 
 /// # General.
-impl DspConnection {}
+impl DspConnection {
+    /// Retrieves the connection's input DSP unit.
+    ///
+    /// If [`Dsp::add_input`] was just called, the connection might not be ready
+    /// because the DSP system is still queued to be connected, and may need to
+    /// wait several milliseconds for the next mix to occur. If so the function
+    /// will return [`Error::NotReady`].
+    pub fn get_input(&self) -> Result<&Dsp> {
+        let mut dsp = ptr::null_mut();
+        ffi!(FMOD_DSPConnection_GetInput(self.as_raw(), &mut dsp))?;
+        Ok(unsafe { Dsp::from_raw(dsp) })
+    }
+
+    /// Retrieves the connection's output DSP unit.
+    ///
+    /// If [`Dsp::add_input`] was just called, the connection might not be ready
+    /// because the DSP system is still queued to be connected, and may need to
+    /// wait several milliseconds for the next mix to occur. If so the function
+    /// will return [`Error::NotReady`].
+    pub fn get_output(&self) -> Result<&Dsp> {
+        let mut dsp = ptr::null_mut();
+        ffi!(FMOD_DSPConnection_GetOutput(self.as_raw(), &mut dsp))?;
+        Ok(unsafe { Dsp::from_raw(dsp) })
+    }
+
+    /// Retrieves the type of the connection between 2 DSP units.
+    pub fn get_type(&self) -> Result<DspConnectionType> {
+        let mut kind = DspConnectionType::zeroed();
+        ffi!(FMOD_DSPConnection_GetType(self.as_raw(), kind.as_raw_mut()))?;
+        Ok(kind)
+    }
+
+    // set_user_data, get_user_data
+}
 
 enum_struct! {
     /// List of connection types between 2 DSP nodes.

@@ -209,7 +209,9 @@ enum_struct! {
         /// information, [Effect reference - Multiband Equalizer] for overview.
         MultibandEq       = FMOD_DSP_TYPE_MULTIBAND_EQ,
     }
+}
 
+enum_struct! {
     /// Channel Mix DSP parameter types.
     ///
     /// For [DspChannelMix::OutputGrouping], this value will set the output

@@ -290,7 +290,9 @@ enum_struct! {
         /// Opus bit-stream supported by FSB (.fsb) container format. Platform provided decoder, available only on Xbox Series X|S.
         Opus            = FMOD_SOUND_TYPE_OPUS,
     }
+}
 
+enum_struct! {
     /// These definitions describe the native format of the hardware or software buffer that will be used.
     pub enum SoundFormat: FMOD_SOUND_FORMAT {
         #[default]
@@ -309,7 +311,9 @@ enum_struct! {
         /// Sound data is in its native compressed format. See [Mode::CreateCompressedSample]
         Bitstream = FMOD_SOUND_FORMAT_BITSTREAM,
     }
+}
 
+enum_struct! {
     /// List of tag data / metadata types that could be stored within a sound. These include id3 tags, metadata from netstreams and vorbis/asf data.
     pub enum TagType: FMOD_TAGTYPE {
         /// Tag type that is not recognized by FMOD
