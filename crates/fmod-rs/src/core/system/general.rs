@@ -87,6 +87,7 @@ fmod_struct! {
 }
 
 impl ErrorInfo<'_> {
+    /// The error which occurred.
     pub fn error(&self) -> Error {
         self.result.expect_err("error should have errored")
     }
@@ -361,6 +362,7 @@ raw! {
 
 /// An instance of some FMOD object. Passed to error callbacks.
 #[non_exhaustive]
+#[allow(missing_docs)]
 #[derive(Copy, Clone)]
 pub enum Instance<'a> {
     #[doc(hidden)]
@@ -392,6 +394,9 @@ pub enum Instance<'a> {
 }
 
 impl Instance<'_> {
+    /// Get the address of this instance reference.
+    ///
+    /// This is the only usable information for an instance of an unknown type.
     pub fn addr(self) -> usize {
         match self {
             Instance::Unknown(p) => p as *const _ as _,
@@ -511,8 +516,10 @@ impl Drop for DspLock<'_> {
 }
 
 #[cfg(all(not(doc), windows))]
+/// A raw OS thread handle.
 pub type SystemThreadHandle = std::os::windows::io::RawHandle;
 #[cfg(all(not(doc), unix))]
+/// A raw OS thread handle.
 pub type SystemThreadHandle = std::os::unix::thread::RawPthread;
 
 /// A raw OS thread handle.

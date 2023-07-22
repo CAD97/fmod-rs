@@ -160,6 +160,11 @@ fmod_flags! {
 
 impl ThreadAffinity {
     #[allow(non_snake_case)]
+    /// Assign to a specific core.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given core is greater than 61. (nice CPU btw)
     pub const fn Core(n: u8) -> ThreadAffinity {
         if n <= 61 {
             ThreadAffinity::from_raw(1 << n)
@@ -232,14 +237,9 @@ fmod_typedef! {
 
 impl ThreadPriority {
     #[allow(non_snake_case)]
-    pub const fn Platform(n: i32) -> ThreadPriority {
-        if ThreadPriority::PlatformMin.into_raw() <= n
-            && n <= ThreadPriority::PlatformMax.into_raw()
-        {
-            ThreadPriority::from_raw(n)
-        } else {
-            panic!("thread priority outside of platform specific range given")
-        }
+    /// Platform specific priority.
+    pub const fn Platform(n: i8) -> ThreadPriority {
+        ThreadPriority::from_raw(n as i32)
     }
 }
 
@@ -282,6 +282,7 @@ fmod_typedef! {
 
 impl ThreadStackSize {
     #[allow(non_snake_case)]
+    /// Explicitly specified stack size.
     pub const fn Explicit(n: u32) -> ThreadStackSize {
         ThreadStackSize::from_raw(n)
     }

@@ -103,6 +103,11 @@ impl<'a> FileBuffer<'a> {
     }
 
     /// Advance the cursor by asserting that `n` additional bytes have been filled.
+    ///
+    /// # Safety
+    ///
+    /// At least the first `n` in the unfilled portion of the buffer must have
+    /// been properly initialized and filled.
     pub unsafe fn advance(&mut self, n: usize) {
         *self.written += n as u32;
     }
@@ -209,6 +214,13 @@ impl<File> AsyncReadInfo<File> {
         }
     }
 
+    /// Gets the unique address identifier for this async request.
+    ///
+    /// Note that addresses may be reused after the request is completed.
+    pub fn addr(self) -> usize {
+        self.raw as usize
+    }
+
     /// File handle that was provided by [`FileSystem::open`].
     ///
     /// # Safety
@@ -290,7 +302,9 @@ impl<File> AsyncReadInfo<File> {
 /// Data returned from [`FileSystem::open`].
 #[derive(Debug)]
 pub struct FileOpenInfo<File> {
+    /// The file handle.
     pub handle: Pin<Box<File>>,
+    /// The size of the file in bytes.
     pub file_size: usize,
 }
 
@@ -298,6 +312,7 @@ pub struct FileOpenInfo<File> {
 /// method.
 #[allow(clippy::missing_safety_doc)]
 pub trait FileSystem {
+    /// The file handle used by this file system.
     type File: Send + Sync;
 
     /// Callback for opening a file.
@@ -512,12 +527,21 @@ pub(crate) unsafe extern "system" fn userseek_listen<FS: ListenFileSystem>(
 
 /// 'Piggyback' on FMOD file reading routines to capture data as it's read.
 pub trait AsyncListenFileSystem: ListenFileSystem {
+    #[allow(clippy::missing_safety_doc)]
     /// Callback for after an async read operation.
+    ///
+    /// # Safety
+    ///
+    /// The `AsyncReadInfo` must be valid for at least the duration of this callback.
     unsafe fn async_read(info: AsyncReadInfo<()>) {
         let _ = info;
     }
 
     /// Callback for after an async cancel operation.
+    ///
+    /// # Safety
+    ///
+    /// The `AsyncReadInfo` must be valid for at least the duration of this callback.
     unsafe fn async_cancel(info: AsyncReadInfo<()>) {
         let _ = info;
     }

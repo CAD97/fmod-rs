@@ -420,6 +420,7 @@ macro_rules! fmod_flags {
                 }
             }
 
+            /// Check whether *all* flags of the argument are set.
             pub fn is_set(self, variant: Self) -> bool {
                 self & variant == variant
             }

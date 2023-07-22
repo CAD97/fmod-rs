@@ -197,14 +197,20 @@ impl Tag<'_> {
     }
 }
 
+/// Tag data.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TagData<'a> {
+    /// Raw binary data.
     Binary(&'a [u8]),
+    /// Integer data.
     Int(i64),
+    /// Floating point data.
     Float(f64),
+    /// String data.
     Str(Cow<'a, str>),
 }
 
+#[allow(missing_docs)]
 impl<'a> TagData<'a> {
     pub fn as_binary(&self) -> Option<&[u8]> {
         match self {

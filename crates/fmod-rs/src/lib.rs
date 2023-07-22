@@ -3,8 +3,9 @@
     feature(doc_auto_cfg, doc_cfg, read_buf, extern_types, trait_alias)
 )]
 #![allow(rustdoc::broken_intra_doc_links)] // TODO: remove once more items exist
-#![allow(clippy::unit_arg)]
-#![allow(clippy::missing_safety_doc)] // TODO: allow on individual items
+#![allow(clippy::unit_arg)] // for use as Ok(callback()), where it's desirable
+#![allow(clippy::unnecessary_operation)] // for phantom slice indexing checks
+#![warn(missing_docs)]
 
 //! # FMOD.rs
 //!

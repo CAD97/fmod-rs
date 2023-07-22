@@ -1,7 +1,7 @@
 //! Platform Details
 
 #[cfg(doc)]
-use fmod::*;
+use fmod::{raw::*, thread::ThreadPriority, *};
 
 #[doc = include_str!("Windows.md")]
 pub mod windows {}

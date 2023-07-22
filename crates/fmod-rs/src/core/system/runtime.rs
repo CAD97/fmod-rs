@@ -1,6 +1,6 @@
 use {
     fmod::{raw::*, *},
-    std::ptr,
+    std::{num::NonZeroU64, ptr},
 };
 
 /// # Runtime control.
@@ -113,16 +113,16 @@ impl System {
     pub fn attach_channel_group_to_port(
         &self,
         port_type: PortType,
-        port_index: PortIndex,
+        port_index: Option<PortIndex>,
         group: &ChannelGroup,
         pass_thru: bool,
     ) -> Result {
         ffi!(FMOD_System_AttachChannelGroupToPort(
             self.as_raw(),
             port_type.into_raw(),
-            port_index.into_raw(),
+            port_index.map(PortIndex::into_raw).unwrap_or(0),
             group.as_raw(),
-            pass_thru as _,
+            pass_thru as FMOD_BOOL,
         ))?;
         Ok(())
     }
@@ -257,25 +257,90 @@ fmod_struct! {
     }
 }
 
-fmod_flags! {
-    /// Output type specific index for when there are multiple instances of a port type.
-    pub struct PortIndex: FMOD_PORT_INDEX {
-        /// Use when a port index is not required
-        None = FMOD_PORT_INDEX_NONE as _,
-        /// Use as a flag to indicate the intended controller is associated with a VR headset
-        VrController = FMOD_PORT_INDEX_FLAG_VR_CONTROLLER as _,
+/// Output type specific index for when there are multiple instances of a port type.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PortIndex(NonZeroU64);
+
+impl PortIndex {
+    /// Flag to indicate the intended controller is associated with a VR headset.
+    pub const VR_CONTROLLER_MASK: u64 = FMOD_PORT_INDEX_FLAG_VR_CONTROLLER;
+
+    /// Creates a new port index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is zero or has any flag bits set (the top 4 bits).
+    pub const fn new(index: u64) -> Self {
+        assert!(0 < index && index < Self::VR_CONTROLLER_MASK);
+        Self(unsafe { NonZeroU64::new_unchecked(index) })
+    }
+
+    /// Creates a new port index, flagged for association with a VR headset.
+    pub const fn new_vr(mut index: u64) -> Self {
+        let _ = Self::new(index);
+        index |= Self::VR_CONTROLLER_MASK;
+        Self(unsafe { NonZeroU64::new_unchecked(index) })
+    }
+
+    /// Retrieves if this port is associated with a VR headset.
+    pub const fn is_vr(self) -> bool {
+        (self.0.get() & Self::VR_CONTROLLER_MASK) != 0
+    }
+
+    /// Retrieves the untagged index value.
+    pub const fn get(self) -> u64 {
+        self.0.get() & (Self::VR_CONTROLLER_MASK - 1)
+    }
+}
+
+impl PortIndex {
+    raw! {
+        pub const fn from_raw(raw: FMOD_PORT_INDEX) -> Option<PortIndex> {
+            unsafe { ::std::mem::transmute(raw) }
+        }
+    }
+    raw! {
+        pub const fn from_raw_ref(raw: &FMOD_PORT_INDEX) -> &Option<PortIndex> {
+            unsafe { &*(raw as *const FMOD_PORT_INDEX as *const Option<PortIndex> ) }
+        }
+    }
+    raw! {
+        pub fn from_raw_mut(raw: &mut FMOD_PORT_INDEX) -> &mut Option<PortIndex> {
+            unsafe { &mut *(raw as *mut FMOD_PORT_INDEX as *mut Option<PortIndex> ) }
+        }
+    }
+    raw! {
+        pub const fn into_raw(self) -> FMOD_PORT_INDEX {
+            unsafe { ::std::mem::transmute(self) }
+        }
+    }
+    raw! {
+        pub const fn as_raw(&self) -> &FMOD_PORT_INDEX {
+            unsafe { &*(self as *const PortIndex as *const FMOD_PORT_INDEX ) }
+        }
     }
 }
 
 fmod_enum! {
     /// Port types available for routing audio.
+    ///
+    /// Not all platforms support all port types. See platform specific guides
+    /// for a list of supported port types on each platform.
     pub enum PortType: FMOD_PORT_TYPE {
+        /// Background music. Use `None` as the port index.
         Music          = FMOD_PORT_TYPE_MUSIC,
+        /// Copyright background music. Use `None` as the port index.
         CopyrightMusic = FMOD_PORT_TYPE_COPYRIGHT_MUSIC,
+        /// Voice chat. Use platform specific user ID of desired user as port index.
         Voice          = FMOD_PORT_TYPE_VOICE,
+        /// Controller speaker. Use platform specific user ID of desired user as port index.
         Controller     = FMOD_PORT_TYPE_CONTROLLER,
+        /// Personal audio device. Use platform specific user ID of desired user as port index.
         Personal       = FMOD_PORT_TYPE_PERSONAL,
+        /// Controller vibration. Use platform specific user ID of desired user as port index.
         Vibration      = FMOD_PORT_TYPE_VIBRATION,
+        /// Auxiliary output port. Use `None` as the port index.
         Aux            = FMOD_PORT_TYPE_AUX,
     }
 }
@@ -324,6 +389,7 @@ macro_rules! reverb {
 /// 
 /// To simplify usage, and avoid manually selecting reverb parameters,
 /// a table of common presets is supplied for ease of use.
+#[allow(missing_docs)]
 impl ReverbProperties {
     pub const OFF: Self =               reverb! {  1000.0,    7.0,  11.0, 5000.0, 100.0, 100.0, 100.0, 250.0, 0.0,    20.0,  96.0, -80.0 };
     pub const GENERIC: Self =           reverb! {  1500.0,    7.0,  11.0, 5000.0,  83.0, 100.0, 100.0, 250.0, 0.0, 14500.0,  96.0,  -8.0 };

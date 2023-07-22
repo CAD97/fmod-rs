@@ -18,20 +18,24 @@ pub(crate) static GLOBAL_SYSTEM_STATE: RwLock<usize> = const_rwlock(0);
 pub unsafe trait Resource: fmt::Debug + Sealed {
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
+    #[allow(missing_docs)]
     type Raw;
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
+    #[allow(missing_docs)]
     fn as_raw(&self) -> *mut Self::Raw {
         self as *const Self as *const Self::Raw as *mut Self::Raw
     }
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
+    #[allow(missing_docs)]
     unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self;
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
+    #[allow(missing_docs)]
     unsafe fn from_raw_opt<'a>(this: *mut Self::Raw) -> Option<&'a Self> {
         if this.is_null() {
             None
@@ -42,6 +46,7 @@ pub unsafe trait Resource: fmt::Debug + Sealed {
 
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(all(feature = "raw", feature = "unstable"), doc(cfg(raw)))]
+    #[allow(missing_docs)]
     unsafe fn release(this: *mut Self::Raw) -> fmod::Result;
 }
 

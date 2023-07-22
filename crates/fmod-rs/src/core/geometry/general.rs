@@ -72,6 +72,7 @@ impl Geometry {
         Ok(max_vertices)
     }
 
+    /// Retrieves the number of polygons in this object.
     pub fn get_num_polygons(&self) -> Result<i32> {
         let mut num_polygons = 0;
         ffi!(FMOD_Geometry_GetNumPolygons(

@@ -22,6 +22,10 @@ fmod_struct! {
     }
 }
 
+/// Orthonormal basis vectors that indicate a 3D orientation.
+///
+/// Defaults to a unit orientation for the default left-handed coordinate system.
+/// The default is a reverse orientation if interpreted as right-handed.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, SmartDefault)]
 pub struct Orientation3d {
@@ -246,6 +250,7 @@ pub struct Version {
 }
 
 impl Version {
+    /// Creates a new version tuple.
     pub const fn new(product: u8, major: u8, minor: u8) -> Version {
         Version {
             product,
@@ -474,6 +479,7 @@ fmod_typedef! {
 }
 
 /// Time used for position or length.
+#[allow(missing_docs)]
 #[derive(Debug, Clone, Copy, SmartDefault)]
 pub struct Time {
     pub value: u32,

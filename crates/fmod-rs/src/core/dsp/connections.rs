@@ -108,7 +108,7 @@ impl Dsp {
     ///
     /// This is a convenience function that is faster than disconnecting all
     /// inputs individually.
-    pub unsafe fn disconnect_all_inputs(&self) -> Result {
+    pub fn disconnect_all_inputs(&self) -> Result {
         ffi!(FMOD_DSP_DisconnectAll(
             self.as_raw(),
             /* inputs */ true as FMOD_BOOL,
@@ -121,7 +121,7 @@ impl Dsp {
     ///
     /// This is a convenience function that is faster than disconnecting all
     /// outputs individually.
-    pub unsafe fn disconnect_all_outputs(&self) -> Result {
+    pub fn disconnect_all_outputs(&self) -> Result {
         ffi!(FMOD_DSP_DisconnectAll(
             self.as_raw(),
             /* inputs */ false as FMOD_BOOL,

@@ -28,7 +28,7 @@ fmod_class! {
     /// Create with [`System::create_sound`] or [System::create_stream].
     class Sound = FMOD_SOUND;
 
-    mod format, default, relationship, data, music, synchronization, general;
+    mod format, default, relationship, data, music, synchronization, general, ios;
 }
 
 fmod_class! {
@@ -69,7 +69,7 @@ fmod_class! {
     /// Create with [`System::create_dsp`], [`System::create_dsp_by_type`] or [`System::create_dsp_by_plugin`].
     class Dsp = FMOD_DSP;
 
-    mod connections, parameters, channel, metering, processing, general;
+    mod connections, parameters, channel, metering, processing, general, effect;
 }
 
 fmod_class! {
@@ -106,7 +106,4 @@ fmod_class! {
     mod general;
 }
 
-mod effect;
-mod ios;
-
-pub use self::{common::*, effect::*, ios::*};
+pub use self::common::*;

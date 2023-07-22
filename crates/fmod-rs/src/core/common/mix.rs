@@ -9,7 +9,9 @@ use {
 
 /// Types which can be viewed as a mix matrix.
 pub trait AsMixMatrix {
+    /// View this type as a mix matrix.
     fn as_mix_matrix(&self) -> &MixMatrix;
+    /// View this type mutably as a mix matrix.
     fn as_mix_matrix_mut(&mut self) -> &mut MixMatrix;
 }
 
@@ -49,6 +51,10 @@ pub type SurroundMixMatrix = [[f32; 12]; 12];
 /// Indexed as `matrix[(in_channel, out_channel)]`, either with channel indices
 /// or with the [`Speaker`] enum. Indexing with [`Speaker`] assumes that the
 /// matrix mixes typical [`SpeakerMode`]s and will panic if not sized for such.
+///
+/// Permits striding a smaller valid region inside a larger matrix, i.e. that
+/// offsetting from one output channel (row) to the next is a larger step than
+/// just the data actually used for that output channel.
 #[repr(transparent)]
 pub struct MixMatrix([()]);
 
@@ -87,34 +93,43 @@ impl MixMatrix {
         unsafe { slice::from_raw_parts_mut(data, len) }
     }
 
+    /// The number of output channels (rows) in the matrix.
     pub fn out_channels(&self) -> usize {
         self.0.len() & 0xFF
     }
 
+    /// The number of input channels (columns) in the matrix.
     pub fn in_channels(&self) -> usize {
         (self.0.len() >> 8) & 0xFF
     }
 
+    /// The full number of output channels (rows) accessible in the matrix,
+    /// including those sliced off.
     pub(crate) fn out_channel_hop(&self) -> usize {
         (self.0.len() >> 16) & 0xFF
     }
 
+    /// The full number of input channels (columns) accessible in the matrix,
+    /// including those strode over.
     pub(crate) fn in_channel_hop(&self) -> usize {
         (self.0.len() >> 24) & 0xFF
     }
 
+    /// A ZST slice to index for output channel index bounds checking.
     fn out_channel_phantom(&self) -> &[()] {
         let len = self.out_channels();
         let data = NonNull::dangling().as_ptr();
         unsafe { slice::from_raw_parts(data, len) }
     }
 
+    /// A ZST slice to index for input channel index bounds checking.
     fn in_channel_phantom(&self) -> &[()] {
         let len = self.in_channels();
         let data = NonNull::dangling().as_ptr();
         unsafe { slice::from_raw_parts(data, len) }
     }
 
+    /// Slice this matrix to a smaller valid region within the larger matrix.
     pub fn slice(&self, in_channels: usize, out_channels: usize) -> &Self {
         let _ = &self.in_channel_phantom()[..in_channels];
         let _ = &self.out_channel_phantom()[..out_channels];
@@ -123,6 +138,7 @@ impl MixMatrix {
         unsafe { &*(ptr::slice_from_raw_parts(data, len) as *const Self) }
     }
 
+    /// Slice this matrix to a smaller valid region within the larger matrix.
     pub fn slice_mut(&mut self, in_channels: usize, out_channels: usize) -> &mut Self {
         let _ = &self.in_channel_phantom()[..in_channels];
         let _ = &self.out_channel_phantom()[..out_channels];

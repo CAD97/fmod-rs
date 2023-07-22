@@ -69,11 +69,13 @@ impl Dsp {
 
     // TODO: set_user_data, get_user_data
 
+    /// Sets the callback for DSP notifications.
     pub fn set_callback<C: DspCallback>(&self) -> Result {
         ffi!(FMOD_DSP_SetCallback(self.as_raw(), Some(dsp_callback::<C>)))?;
         Ok(())
     }
 
+    /// Retrieves the parent System object.
     pub fn get_system_object(&self) -> Result<&System> {
         let mut system = ptr::null_mut();
         ffi!(FMOD_DSP_GetSystemObject(self.as_raw(), &mut system))?;
@@ -81,9 +83,12 @@ impl Dsp {
     }
 }
 
+/// Thread CPU usage statistics for a DSP unit.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CpuDurations {
+    /// CPU time spent processing just this unit during the last mixer update.
     pub exclusive: Duration,
+    /// CPU time spent processing this unit and all of its input during the last mixer update.
     pub inclusive: Duration,
 }
 
@@ -92,10 +97,16 @@ pub struct CpuDurations {
 /// Callbacks are called from the game thread when set from the Core API or
 /// Studio API in synchronous mode, and from the Studio Update Thread when in
 /// default / async mode.
-pub unsafe trait DspCallback {
+pub trait DspCallback {
     /// Called when a DSP's data parameter can be released.
     ///
     /// The callback should free the data pointer if it is no longer required.
+    ///
+    /// # Safety
+    ///
+    /// The data pointer has the same provenance as when it was initially set.
+    //
+    // TODO: does this mean that setting DSP data parameters is by-ref?
     unsafe fn data_parameter_release(dsp: &Dsp, data: *mut [u8], index: i32) -> Result {
         let _ = (dsp, data, index);
         Ok(())

@@ -37,6 +37,8 @@ impl Dsp {
         Ok((num_channels, source_speaker_mode))
     }
 
+    /// Retrieves the output format this DSP will produce when processing
+    /// based on the input specified.
     pub fn get_output_channel_format(
         &self,
         in_channels: i32,
