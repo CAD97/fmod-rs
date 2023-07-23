@@ -2,7 +2,7 @@
 # Thankfully, the blocklisted items are a simple prefix of the emitted file.
 (bindgen fmod_studio.h
   --no-prepend-enum-name
-  --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2022. */"
+  --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2023. */"
   --blocklist-file fmod.h
   --blocklist-file fmod_codec.h
   --blocklist-file fmod_common.h

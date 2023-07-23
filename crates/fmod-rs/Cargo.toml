@@ -51,8 +51,8 @@ link-search = ["fmod-core-sys/link-search", "fmod-studio-sys?/link-search"]
 unstable = []
 
 [dependencies]
-fmod-core-sys = { version = "2.14", path = "../fmod-core-sys" }
-fmod-studio-sys = { version = "2.14", path = "../fmod-studio-sys", optional = true }
+fmod-core-sys = { version = "2.16.0", path = "../fmod-core-sys" }
+fmod-studio-sys = { version = "2.16.0", path = "../fmod-studio-sys", optional = true }
 
 cstr8 = "0.1.1"
 cool_asserts = "2.0.3"
