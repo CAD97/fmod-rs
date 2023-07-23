@@ -97,6 +97,10 @@ raw! {
         pub use fmod_core_sys::*;
 
         #[doc(inline)]
+        #[cfg(feature = "fsbank")]
+        pub use fmod_fsbank_sys::*;
+
+        #[doc(inline)]
         #[cfg(feature = "studio")]
         pub use fmod_studio_sys::*;
     }

@@ -7,18 +7,13 @@ fn main() {
     if cfg!(feature = "link-search") {
         link_search();
     }
-
-    println!("cargo:version=2.02.16");
 }
 
 fn link_lib() {
-    let dev = build::profile() == "debug";
     let windows = build::cargo_cfg_target_os() == "windows";
-    let lib = match (dev, windows) {
-        (true, true) => "fmodL_vc",
-        (true, false) => "fmodL",
-        (false, true) => "fmod_vc",
-        (false, false) => "fmod",
+    let lib = match windows {
+        true => "fsbank_vc",
+        false => "fsbank",
     };
 
     build::rustc_link_lib(lib);
@@ -51,7 +46,7 @@ fn link_search_windows() {
     };
 
     let link_dir = format!(
-        "{program_files}\\FMOD SoundSystem\\FMOD Studio API {fmod_os}\\api\\core\\lib\\{lib_dir}"
+        "{program_files}\\FMOD SoundSystem\\FMOD Studio API {fmod_os}\\api\\fsbank\\lib\\{lib_dir}"
     );
     build::rerun_if_changed(&*link_dir);
     build::rustc_link_search(&*link_dir);

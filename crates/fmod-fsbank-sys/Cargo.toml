@@ -1,0 +1,27 @@
+[package]
+name = "fmod-fsbank-sys"
+version = "2.16.0+2.02.16-135072"
+edition = "2021"
+rust-version = "1.70"
+license-file = "LICENSE.txt"
+links = "fsbank"
+
+description = "FMOD FSBank bindings"
+repository = "https://github.com/CAD97/fmod-rs"
+keywords = ["gamedev", "audio", "sound", "fmod", "adaptive audio"]
+categories = ["external-ffi-bindings", "game-development", "multimedia::audio"]
+
+include = [
+    "/inc/bindings.rs",
+    "/src/lib.rs",
+    "/build.rs",
+    "/Cargo.toml",
+    "/LICENSE.txt",
+    "/README.md",
+]
+
+[build-dependencies]
+build-rs = "0.1.2"
+
+[features]
+link-search = []

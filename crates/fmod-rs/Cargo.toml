@@ -15,15 +15,18 @@ categories = ["api-bindings", "game-development", "multimedia::audio"]
 name = "fmod"
 
 [features]
-default = ["log"]
+default = ["core", "log"]
 
 #! ## Feature flags
 
+## Enable the FMOD Core API.
+core = ["dep:fmod-core-sys"]
+
 ## Enable the FMOD Studio API.
-studio = ["dep:fmod-studio-sys"]
+studio = ["dep:fmod-studio-sys", "core"]
 
 ## Enable the FMOD FSBank API.
-fsbank = []
+fsbank = ["dep:fmod-fsbank-sys"]
 
 ## Enable recording FMOD debug logs using the log crate.
 log = ["dep:log"]
@@ -37,7 +40,11 @@ raw = []
 ## Automatically attempt to guess the FMOD Studio API installation path. Will
 ## panic the build if the conventional path is not known for this host+target
 ## and the link configuration is not manually specified for `fmod`/`fmodstudio`.
-link-search = ["fmod-core-sys/link-search", "fmod-studio-sys?/link-search"]
+link-search = [
+    "fmod-core-sys?/link-search",
+    "fmod-fsbank-sys?/link-search",
+    "fmod-studio-sys?/link-search",
+]
 
 #! ### Experimental feature flags
 #!
@@ -51,7 +58,8 @@ link-search = ["fmod-core-sys/link-search", "fmod-studio-sys?/link-search"]
 unstable = []
 
 [dependencies]
-fmod-core-sys = { version = "2.16.0", path = "../fmod-core-sys" }
+fmod-core-sys = { version = "2.16.0", path = "../fmod-core-sys", optional = true }
+fmod-fsbank-sys = { version = "2.16.0", path = "../fmod-fsbank-sys", optional = true }
 fmod-studio-sys = { version = "2.16.0", path = "../fmod-studio-sys", optional = true }
 
 cstr8 = "0.1.1"
