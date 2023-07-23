@@ -6,6 +6,8 @@ fn main() {
     link_lib();
     #[cfg(feature = "link-search")]
     link_search();
+
+    println!("cargo:version=2.02.14");
 }
 
 fn link_lib() {

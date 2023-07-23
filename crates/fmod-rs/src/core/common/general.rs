@@ -1,5 +1,5 @@
 use {
-    crate::utils::decode_sbcd_u8,
+    crate::utils::{decode_sbcd_u16, decode_sbcd_u8},
     fmod::{raw::*, *},
     smart_default::SmartDefault,
 };
@@ -227,22 +227,15 @@ pub const MAX_LISTENERS: usize = FMOD_MAX_LISTENERS as usize;
 /// Maximum number of System objects allowed.
 pub const MAX_SYSTEMS: usize = FMOD_MAX_SYSTEMS as usize;
 
-/// Current FMOD version number. (2.02.14)
-///
-/// ```rust
-/// assert_eq!(fmod::VERSION.product, 2);
-/// assert_eq!(fmod::VERSION.major, 2);
-/// assert_eq!(fmod::VERSION.minor, 14);
-/// ```
+/// Current FMOD version number.
+#[doc = concat!("(", env!("FMOD_VERSION"), ")")]
 pub const VERSION: Version = Version::from_raw(raw::FMOD_VERSION);
-
-static_assert!(matches!(Version::new(2, 2, 14), VERSION));
 
 /// FMOD version number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Version {
     /// Product version.
-    pub product: u8,
+    pub product: u16,
     /// Major version.
     pub major: u8,
     /// Minor version.
@@ -251,7 +244,7 @@ pub struct Version {
 
 impl Version {
     /// Creates a new version tuple.
-    pub const fn new(product: u8, major: u8, minor: u8) -> Version {
+    pub const fn new(product: u16, major: u8, minor: u8) -> Version {
         Version {
             product,
             major,
@@ -263,7 +256,7 @@ impl Version {
         #[allow(clippy::identity_op)]
         pub const fn from_raw(raw: u32) -> Version {
             Version {
-                product: decode_sbcd_u8(((raw & 0x00FF0000) >> 16) as u8),
+                product: decode_sbcd_u16(((raw & 0xFFFF0000) >> 16) as u16),
                 major: decode_sbcd_u8(((raw & 0x0000FF00) >> 8) as u8),
                 minor: decode_sbcd_u8(((raw & 0x000000FF) >> 0) as u8),
             }
