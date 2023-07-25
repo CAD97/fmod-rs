@@ -5,22 +5,21 @@ use {
 
 /// # ChannelGroup management.
 impl ChannelGroup {
-    // TODO: allow setting propagated_dsp_clock = false somehow
     /// Adds a ChannelGroup as an input to this group.
     ///
     /// Recursively propagates this object's DSP clock to the added group.
     ///
     /// The returned DSP connection will remain valid until the groups are
     /// disconnected.
-    pub fn add_group(&self, group: &ChannelGroup) -> Result<NonNull<DspConnection>> {
+    pub fn add_group(&self, group: &ChannelGroup) -> Result<Option<NonNull<DspConnection>>> {
         let mut connection = ptr::null_mut();
         ffi!(FMOD_ChannelGroup_AddGroup(
             self.as_raw(),
             group.as_raw(),
-            /* propagated_dsp_clock */ true as _,
+            /* propagate_dsp_clock */ true as _,
             &mut connection,
         ))?;
-        Ok(unsafe { DspConnection::from_raw(connection) }.into())
+        Ok(unsafe { DspConnection::from_raw_opt(connection) }.map(Into::into))
     }
 
     /// Adds a ChannelGroup as an input to this group.
@@ -31,15 +30,18 @@ impl ChannelGroup {
     ///
     /// The returned DSP connection will remain valid until the groups are
     /// disconnected.
-    pub fn add_group_unsynchronized(&self, group: &ChannelGroup) -> Result<NonNull<DspConnection>> {
+    pub fn add_group_unsynchronized(
+        &self,
+        group: &ChannelGroup,
+    ) -> Result<Option<NonNull<DspConnection>>> {
         let mut connection = ptr::null_mut();
         ffi!(FMOD_ChannelGroup_AddGroup(
             self.as_raw(),
             group.as_raw(),
-            /* propagated_dsp_clock */ false as _,
+            /* propagate_dsp_clock */ false as _,
             &mut connection,
         ))?;
-        Ok(unsafe { DspConnection::from_raw(connection) }.into())
+        Ok(unsafe { DspConnection::from_raw_opt(connection) }.map(Into::into))
     }
 
     /// Retrieves the number of ChannelGroups that feed into this group.
