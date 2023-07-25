@@ -20,8 +20,14 @@ include = [
     "/README.md",
 ]
 
+[dependencies]
+fmod-core-sys = { version = "=2.16.0", path = "../fmod-core-sys", optional = true }
+
 [build-dependencies]
 build-rs = "0.1.2"
 
 [features]
 link-search = []
+
+# NOT PUBLIC API
+__fmod-core-sys = ["dep:fmod-core-sys"]

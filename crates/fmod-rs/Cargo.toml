@@ -6,7 +6,7 @@ rust-version = "1.70"
 license = "MIT OR Apache-2.0"
 
 publish = false
-description = "Bindings to the FMOD adaptive audio solution"
+description = "Bindings to the FMOD adaptive audio engine"
 repository = "https://github.com/CAD97/fmod-rs"
 keywords = ["gamedev", "audio", "sound", "fmod", "adaptive audio"]
 categories = ["api-bindings", "game-development", "multimedia::audio"]
@@ -20,7 +20,7 @@ default = ["core", "log"]
 #! ## Feature flags
 
 ## Enable the FMOD Core API.
-core = ["dep:fmod-core-sys"]
+core = ["dep:fmod-core-sys", "fmod-fsbank-sys?/__fmod-core-sys"]
 
 ## Enable the FMOD Studio API.
 studio = ["dep:fmod-studio-sys", "core"]

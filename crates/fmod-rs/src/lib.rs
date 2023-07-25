@@ -9,7 +9,7 @@
 
 //! # FMOD.rs
 //!
-//! FMOD.rs provides Rust bindings to the [FMOD adaptive audio solution][FMOD].
+//! FMOD.rs provides Rust bindings to the [FMOD adaptive audio engine][FMOD].
 //!
 //! [FMOD]: https://fmod.com/
 //!
