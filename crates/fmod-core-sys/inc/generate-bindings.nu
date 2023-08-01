@@ -1,5 +1,5 @@
 (bindgen fmod.h
-  # --no-layout-tests
+  --no-layout-tests
   # --ctypes-prefix ::std::ffi
   # --no-convert-floats
   --no-prepend-enum-name

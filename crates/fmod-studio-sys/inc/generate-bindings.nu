@@ -1,5 +1,5 @@
 (bindgen fmod_studio.h
-  # --no-layout-tests
+  --no-layout-tests
   --no-recursive-allowlist
   # --ctypes-prefix ::std::ffi
   # --no-convert-floats
