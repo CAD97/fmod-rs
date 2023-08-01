@@ -1,17 +1,23 @@
-# NB: rust-lang/rust-bindgen#2187 means that blocklisting is failing, so it has to be done by hand.
-# Thankfully, the blocklisted items are a simple prefix of the emitted file.
 (bindgen fmod_studio.h
+  # --no-layout-tests
+  --no-recursive-allowlist
+  # --ctypes-prefix ::std::ffi
+  # --no-convert-floats
   --no-prepend-enum-name
   --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2023. */"
-  --blocklist-file fmod.h
-  --blocklist-file fmod_codec.h
-  --blocklist-file fmod_common.h
-  --blocklist-file fmod_dsp.h
-  --blocklist-file fmod_dsp_effects.h
-  --blocklist-file fmod_errors.h
-  --blocklist-file fmod_output.h
+  --allowlist-file fmod_studio.h
+  --allowlist-file ./fmod_studio_common.h
+  # in a union, so needs to be allowlisted
+  --allowlist-type FMOD_BOOL
+  # re-add derives skipped due to blocklisting
+  --with-derive-custom FMOD_STUDIO_BANK_INFO=Debug,Copy,Clone
+  --with-derive-custom FMOD_STUDIO_PARAMETER_DESCRIPTION=Debug,Copy,Clone
+  --with-derive-custom FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES=Debug,Copy,Clone
+  --with-derive-custom FMOD_STUDIO_SOUND_INFO=Debug,Copy,Clone
+  # --sort-semantically
+| str replace -am '^.*type FMOD_BOOL.*$\n' ''
 | str replace -as 'extern "C"' 'extern "system"'
 | str replace -as 'type_' 'r#type'
 | str replace -as '__bindgen_anon_1' 'payload'
 | str replace -as '__bindgen_ty_1' '_PAYLOAD'
-| save --raw bindings.rs -f)
+| save bindings.rs -f)
