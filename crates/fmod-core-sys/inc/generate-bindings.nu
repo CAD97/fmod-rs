@@ -1,7 +1,7 @@
 (bindgen fmod.h
   --no-layout-tests
-  # --ctypes-prefix ::std::ffi
-  # --no-convert-floats
+  --ctypes-prefix ::std::ffi
+  --no-convert-floats
   --no-prepend-enum-name
   --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2023. */"
 | str replace -as 'extern "C"' 'extern "system"'

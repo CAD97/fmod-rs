@@ -1,8 +1,8 @@
 (bindgen fmod_studio.h
   --no-layout-tests
   --no-recursive-allowlist
-  # --ctypes-prefix ::std::ffi
-  # --no-convert-floats
+  --ctypes-prefix ::std::ffi
+  --no-convert-floats
   --no-prepend-enum-name
   --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2023. */"
   --allowlist-file fmod_studio.h
