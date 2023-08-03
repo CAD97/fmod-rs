@@ -2130,61 +2130,39 @@ extern "system" {
         userfree: FMOD_MEMORY_FREE_CALLBACK,
         memtypeflags: FMOD_MEMORY_TYPE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Memory_GetStats(
         currentalloced: *mut ::std::ffi::c_int,
         maxalloced: *mut ::std::ffi::c_int,
         blocking: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Debug_Initialize(
         flags: FMOD_DEBUG_FLAGS,
         mode: FMOD_DEBUG_MODE,
         callback: FMOD_DEBUG_CALLBACK,
         filename: *const ::std::ffi::c_char,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_File_SetDiskBusy(busy: ::std::ffi::c_int) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_File_GetDiskBusy(busy: *mut ::std::ffi::c_int) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Thread_SetAttributes(
         r#type: FMOD_THREAD_TYPE,
         affinity: FMOD_THREAD_AFFINITY,
         priority: FMOD_THREAD_PRIORITY,
         stacksize: FMOD_THREAD_STACK_SIZE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Create(
         system: *mut *mut FMOD_SYSTEM,
         headerversion: ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Release(system: *mut FMOD_SYSTEM) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetOutput(system: *mut FMOD_SYSTEM, output: FMOD_OUTPUTTYPE) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetOutput(
         system: *mut FMOD_SYSTEM,
         output: *mut FMOD_OUTPUTTYPE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetNumDrivers(
         system: *mut FMOD_SYSTEM,
         numdrivers: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetDriverInfo(
         system: *mut FMOD_SYSTEM,
         id: ::std::ffi::c_int,
@@ -2195,62 +2173,44 @@ extern "system" {
         speakermode: *mut FMOD_SPEAKERMODE,
         speakermodechannels: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetDriver(
         system: *mut FMOD_SYSTEM,
         driver: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetDriver(
         system: *mut FMOD_SYSTEM,
         driver: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetSoftwareChannels(
         system: *mut FMOD_SYSTEM,
         numsoftwarechannels: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetSoftwareChannels(
         system: *mut FMOD_SYSTEM,
         numsoftwarechannels: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetSoftwareFormat(
         system: *mut FMOD_SYSTEM,
         samplerate: ::std::ffi::c_int,
         speakermode: FMOD_SPEAKERMODE,
         numrawspeakers: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetSoftwareFormat(
         system: *mut FMOD_SYSTEM,
         samplerate: *mut ::std::ffi::c_int,
         speakermode: *mut FMOD_SPEAKERMODE,
         numrawspeakers: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetDSPBufferSize(
         system: *mut FMOD_SYSTEM,
         bufferlength: ::std::ffi::c_uint,
         numbuffers: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetDSPBufferSize(
         system: *mut FMOD_SYSTEM,
         bufferlength: *mut ::std::ffi::c_uint,
         numbuffers: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetFileSystem(
         system: *mut FMOD_SYSTEM,
         useropen: FMOD_FILE_OPEN_CALLBACK,
@@ -2261,8 +2221,6 @@ extern "system" {
         userasynccancel: FMOD_FILE_ASYNCCANCEL_CALLBACK,
         blockalign: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_AttachFileSystem(
         system: *mut FMOD_SYSTEM,
         useropen: FMOD_FILE_OPEN_CALLBACK,
@@ -2270,77 +2228,55 @@ extern "system" {
         userread: FMOD_FILE_READ_CALLBACK,
         userseek: FMOD_FILE_SEEK_CALLBACK,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetAdvancedSettings(
         system: *mut FMOD_SYSTEM,
         settings: *mut FMOD_ADVANCEDSETTINGS,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetAdvancedSettings(
         system: *mut FMOD_SYSTEM,
         settings: *mut FMOD_ADVANCEDSETTINGS,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetCallback(
         system: *mut FMOD_SYSTEM,
         callback: FMOD_SYSTEM_CALLBACK,
         callbackmask: FMOD_SYSTEM_CALLBACK_TYPE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetPluginPath(
         system: *mut FMOD_SYSTEM,
         path: *const ::std::ffi::c_char,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_LoadPlugin(
         system: *mut FMOD_SYSTEM,
         filename: *const ::std::ffi::c_char,
         handle: *mut ::std::ffi::c_uint,
         priority: ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_UnloadPlugin(
         system: *mut FMOD_SYSTEM,
         handle: ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetNumNestedPlugins(
         system: *mut FMOD_SYSTEM,
         handle: ::std::ffi::c_uint,
         count: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetNestedPlugin(
         system: *mut FMOD_SYSTEM,
         handle: ::std::ffi::c_uint,
         index: ::std::ffi::c_int,
         nestedhandle: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetNumPlugins(
         system: *mut FMOD_SYSTEM,
         plugintype: FMOD_PLUGINTYPE,
         numplugins: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetPluginHandle(
         system: *mut FMOD_SYSTEM,
         plugintype: FMOD_PLUGINTYPE,
         index: ::std::ffi::c_int,
         handle: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetPluginInfo(
         system: *mut FMOD_SYSTEM,
         handle: ::std::ffi::c_uint,
@@ -2349,70 +2285,48 @@ extern "system" {
         namelen: ::std::ffi::c_int,
         version: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetOutputByPlugin(
         system: *mut FMOD_SYSTEM,
         handle: ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetOutputByPlugin(
         system: *mut FMOD_SYSTEM,
         handle: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_CreateDSPByPlugin(
         system: *mut FMOD_SYSTEM,
         handle: ::std::ffi::c_uint,
         dsp: *mut *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetDSPInfoByPlugin(
         system: *mut FMOD_SYSTEM,
         handle: ::std::ffi::c_uint,
         description: *mut *const FMOD_DSP_DESCRIPTION,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_RegisterCodec(
         system: *mut FMOD_SYSTEM,
         description: *mut FMOD_CODEC_DESCRIPTION,
         handle: *mut ::std::ffi::c_uint,
         priority: ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_RegisterDSP(
         system: *mut FMOD_SYSTEM,
         description: *const FMOD_DSP_DESCRIPTION,
         handle: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_RegisterOutput(
         system: *mut FMOD_SYSTEM,
         description: *const FMOD_OUTPUT_DESCRIPTION,
         handle: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Init(
         system: *mut FMOD_SYSTEM,
         maxchannels: ::std::ffi::c_int,
         flags: FMOD_INITFLAGS,
         extradriverdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Close(system: *mut FMOD_SYSTEM) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Update(system: *mut FMOD_SYSTEM) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetSpeakerPosition(
         system: *mut FMOD_SYSTEM,
         speaker: FMOD_SPEAKER,
@@ -2420,8 +2334,6 @@ extern "system" {
         y: ::std::ffi::c_float,
         active: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetSpeakerPosition(
         system: *mut FMOD_SYSTEM,
         speaker: FMOD_SPEAKER,
@@ -2429,50 +2341,36 @@ extern "system" {
         y: *mut ::std::ffi::c_float,
         active: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetStreamBufferSize(
         system: *mut FMOD_SYSTEM,
         filebuffersize: ::std::ffi::c_uint,
         filebuffersizetype: FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetStreamBufferSize(
         system: *mut FMOD_SYSTEM,
         filebuffersize: *mut ::std::ffi::c_uint,
         filebuffersizetype: *mut FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Set3DSettings(
         system: *mut FMOD_SYSTEM,
         dopplerscale: ::std::ffi::c_float,
         distancefactor: ::std::ffi::c_float,
         rolloffscale: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Get3DSettings(
         system: *mut FMOD_SYSTEM,
         dopplerscale: *mut ::std::ffi::c_float,
         distancefactor: *mut ::std::ffi::c_float,
         rolloffscale: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Set3DNumListeners(
         system: *mut FMOD_SYSTEM,
         numlisteners: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Get3DNumListeners(
         system: *mut FMOD_SYSTEM,
         numlisteners: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Set3DListenerAttributes(
         system: *mut FMOD_SYSTEM,
         listener: ::std::ffi::c_int,
@@ -2481,8 +2379,6 @@ extern "system" {
         forward: *const FMOD_VECTOR,
         up: *const FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Get3DListenerAttributes(
         system: *mut FMOD_SYSTEM,
         listener: ::std::ffi::c_int,
@@ -2491,20 +2387,12 @@ extern "system" {
         forward: *mut FMOD_VECTOR,
         up: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_Set3DRolloffCallback(
         system: *mut FMOD_SYSTEM,
         callback: FMOD_3D_ROLLOFF_CALLBACK,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_MixerSuspend(system: *mut FMOD_SYSTEM) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_MixerResume(system: *mut FMOD_SYSTEM) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetDefaultMixMatrix(
         system: *mut FMOD_SYSTEM,
         sourcespeakermode: FMOD_SPEAKERMODE,
@@ -2512,48 +2400,34 @@ extern "system" {
         matrix: *mut ::std::ffi::c_float,
         matrixhop: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetSpeakerModeChannels(
         system: *mut FMOD_SYSTEM,
         mode: FMOD_SPEAKERMODE,
         channels: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetVersion(
         system: *mut FMOD_SYSTEM,
         version: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetOutputHandle(
         system: *mut FMOD_SYSTEM,
         handle: *mut *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetChannelsPlaying(
         system: *mut FMOD_SYSTEM,
         channels: *mut ::std::ffi::c_int,
         realchannels: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetCPUUsage(
         system: *mut FMOD_SYSTEM,
         usage: *mut FMOD_CPU_USAGE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetFileUsage(
         system: *mut FMOD_SYSTEM,
         sampleBytesRead: *mut ::std::ffi::c_longlong,
         streamBytesRead: *mut ::std::ffi::c_longlong,
         otherBytesRead: *mut ::std::ffi::c_longlong,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_CreateSound(
         system: *mut FMOD_SYSTEM,
         name_or_data: *const ::std::ffi::c_char,
@@ -2561,8 +2435,6 @@ extern "system" {
         exinfo: *mut FMOD_CREATESOUNDEXINFO,
         sound: *mut *mut FMOD_SOUND,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_CreateStream(
         system: *mut FMOD_SYSTEM,
         name_or_data: *const ::std::ffi::c_char,
@@ -2570,42 +2442,30 @@ extern "system" {
         exinfo: *mut FMOD_CREATESOUNDEXINFO,
         sound: *mut *mut FMOD_SOUND,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_CreateDSP(
         system: *mut FMOD_SYSTEM,
         description: *const FMOD_DSP_DESCRIPTION,
         dsp: *mut *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_CreateDSPByType(
         system: *mut FMOD_SYSTEM,
         r#type: FMOD_DSP_TYPE,
         dsp: *mut *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_CreateChannelGroup(
         system: *mut FMOD_SYSTEM,
         name: *const ::std::ffi::c_char,
         channelgroup: *mut *mut FMOD_CHANNELGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_CreateSoundGroup(
         system: *mut FMOD_SYSTEM,
         name: *const ::std::ffi::c_char,
         soundgroup: *mut *mut FMOD_SOUNDGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_CreateReverb3D(
         system: *mut FMOD_SYSTEM,
         reverb: *mut *mut FMOD_REVERB3D,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_PlaySound(
         system: *mut FMOD_SYSTEM,
         sound: *mut FMOD_SOUND,
@@ -2613,8 +2473,6 @@ extern "system" {
         paused: FMOD_BOOL,
         channel: *mut *mut FMOD_CHANNEL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_PlayDSP(
         system: *mut FMOD_SYSTEM,
         dsp: *mut FMOD_DSP,
@@ -2622,34 +2480,24 @@ extern "system" {
         paused: FMOD_BOOL,
         channel: *mut *mut FMOD_CHANNEL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetChannel(
         system: *mut FMOD_SYSTEM,
         channelid: ::std::ffi::c_int,
         channel: *mut *mut FMOD_CHANNEL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetDSPInfoByType(
         system: *mut FMOD_SYSTEM,
         r#type: FMOD_DSP_TYPE,
         description: *mut *const FMOD_DSP_DESCRIPTION,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetMasterChannelGroup(
         system: *mut FMOD_SYSTEM,
         channelgroup: *mut *mut FMOD_CHANNELGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetMasterSoundGroup(
         system: *mut FMOD_SYSTEM,
         soundgroup: *mut *mut FMOD_SOUNDGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_AttachChannelGroupToPort(
         system: *mut FMOD_SYSTEM,
         portType: FMOD_PORT_TYPE,
@@ -2657,41 +2505,27 @@ extern "system" {
         channelgroup: *mut FMOD_CHANNELGROUP,
         passThru: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_DetachChannelGroupFromPort(
         system: *mut FMOD_SYSTEM,
         channelgroup: *mut FMOD_CHANNELGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetReverbProperties(
         system: *mut FMOD_SYSTEM,
         instance: ::std::ffi::c_int,
         prop: *const FMOD_REVERB_PROPERTIES,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetReverbProperties(
         system: *mut FMOD_SYSTEM,
         instance: ::std::ffi::c_int,
         prop: *mut FMOD_REVERB_PROPERTIES,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_LockDSP(system: *mut FMOD_SYSTEM) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_UnlockDSP(system: *mut FMOD_SYSTEM) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetRecordNumDrivers(
         system: *mut FMOD_SYSTEM,
         numdrivers: *mut ::std::ffi::c_int,
         numconnected: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetRecordDriverInfo(
         system: *mut FMOD_SYSTEM,
         id: ::std::ffi::c_int,
@@ -2703,61 +2537,43 @@ extern "system" {
         speakermodechannels: *mut ::std::ffi::c_int,
         state: *mut FMOD_DRIVER_STATE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetRecordPosition(
         system: *mut FMOD_SYSTEM,
         id: ::std::ffi::c_int,
         position: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_RecordStart(
         system: *mut FMOD_SYSTEM,
         id: ::std::ffi::c_int,
         sound: *mut FMOD_SOUND,
         loop_: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_RecordStop(system: *mut FMOD_SYSTEM, id: ::std::ffi::c_int) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_IsRecording(
         system: *mut FMOD_SYSTEM,
         id: ::std::ffi::c_int,
         recording: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_CreateGeometry(
         system: *mut FMOD_SYSTEM,
         maxpolygons: ::std::ffi::c_int,
         maxvertices: ::std::ffi::c_int,
         geometry: *mut *mut FMOD_GEOMETRY,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetGeometrySettings(
         system: *mut FMOD_SYSTEM,
         maxworldsize: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetGeometrySettings(
         system: *mut FMOD_SYSTEM,
         maxworldsize: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_LoadGeometry(
         system: *mut FMOD_SYSTEM,
         data: *const ::std::ffi::c_void,
         datasize: ::std::ffi::c_int,
         geometry: *mut *mut FMOD_GEOMETRY,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetGeometryOcclusion(
         system: *mut FMOD_SYSTEM,
         listener: *const FMOD_VECTOR,
@@ -2765,54 +2581,36 @@ extern "system" {
         direct: *mut ::std::ffi::c_float,
         reverb: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetNetworkProxy(
         system: *mut FMOD_SYSTEM,
         proxy: *const ::std::ffi::c_char,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetNetworkProxy(
         system: *mut FMOD_SYSTEM,
         proxy: *mut ::std::ffi::c_char,
         proxylen: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetNetworkTimeout(
         system: *mut FMOD_SYSTEM,
         timeout: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetNetworkTimeout(
         system: *mut FMOD_SYSTEM,
         timeout: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_SetUserData(
         system: *mut FMOD_SYSTEM,
         userdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_System_GetUserData(
         system: *mut FMOD_SYSTEM,
         userdata: *mut *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_Release(sound: *mut FMOD_SOUND) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetSystemObject(
         sound: *mut FMOD_SOUND,
         system: *mut *mut FMOD_SYSTEM,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_Lock(
         sound: *mut FMOD_SOUND,
         offset: ::std::ffi::c_uint,
@@ -2822,8 +2620,6 @@ extern "system" {
         len1: *mut ::std::ffi::c_uint,
         len2: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_Unlock(
         sound: *mut FMOD_SOUND,
         ptr1: *mut ::std::ffi::c_void,
@@ -2831,93 +2627,67 @@ extern "system" {
         len1: ::std::ffi::c_uint,
         len2: ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_SetDefaults(
         sound: *mut FMOD_SOUND,
         frequency: ::std::ffi::c_float,
         priority: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetDefaults(
         sound: *mut FMOD_SOUND,
         frequency: *mut ::std::ffi::c_float,
         priority: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_Set3DMinMaxDistance(
         sound: *mut FMOD_SOUND,
         min: ::std::ffi::c_float,
         max: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_Get3DMinMaxDistance(
         sound: *mut FMOD_SOUND,
         min: *mut ::std::ffi::c_float,
         max: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_Set3DConeSettings(
         sound: *mut FMOD_SOUND,
         insideconeangle: ::std::ffi::c_float,
         outsideconeangle: ::std::ffi::c_float,
         outsidevolume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_Get3DConeSettings(
         sound: *mut FMOD_SOUND,
         insideconeangle: *mut ::std::ffi::c_float,
         outsideconeangle: *mut ::std::ffi::c_float,
         outsidevolume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_Set3DCustomRolloff(
         sound: *mut FMOD_SOUND,
         points: *mut FMOD_VECTOR,
         numpoints: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_Get3DCustomRolloff(
         sound: *mut FMOD_SOUND,
         points: *mut *mut FMOD_VECTOR,
         numpoints: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetSubSound(
         sound: *mut FMOD_SOUND,
         index: ::std::ffi::c_int,
         subsound: *mut *mut FMOD_SOUND,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetSubSoundParent(
         sound: *mut FMOD_SOUND,
         parentsound: *mut *mut FMOD_SOUND,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetName(
         sound: *mut FMOD_SOUND,
         name: *mut ::std::ffi::c_char,
         namelen: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetLength(
         sound: *mut FMOD_SOUND,
         length: *mut ::std::ffi::c_uint,
         lengthtype: FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetFormat(
         sound: *mut FMOD_SOUND,
         r#type: *mut FMOD_SOUND_TYPE,
@@ -2925,29 +2695,21 @@ extern "system" {
         channels: *mut ::std::ffi::c_int,
         bits: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetNumSubSounds(
         sound: *mut FMOD_SOUND,
         numsubsounds: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetNumTags(
         sound: *mut FMOD_SOUND,
         numtags: *mut ::std::ffi::c_int,
         numtagsupdated: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetTag(
         sound: *mut FMOD_SOUND,
         name: *const ::std::ffi::c_char,
         index: ::std::ffi::c_int,
         tag: *mut FMOD_TAG,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetOpenState(
         sound: *mut FMOD_SOUND,
         openstate: *mut FMOD_OPENSTATE,
@@ -2955,44 +2717,30 @@ extern "system" {
         starving: *mut FMOD_BOOL,
         diskbusy: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_ReadData(
         sound: *mut FMOD_SOUND,
         buffer: *mut ::std::ffi::c_void,
         length: ::std::ffi::c_uint,
         read: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_SeekData(sound: *mut FMOD_SOUND, pcm: ::std::ffi::c_uint) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_SetSoundGroup(
         sound: *mut FMOD_SOUND,
         soundgroup: *mut FMOD_SOUNDGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetSoundGroup(
         sound: *mut FMOD_SOUND,
         soundgroup: *mut *mut FMOD_SOUNDGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetNumSyncPoints(
         sound: *mut FMOD_SOUND,
         numsyncpoints: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetSyncPoint(
         sound: *mut FMOD_SOUND,
         index: ::std::ffi::c_int,
         point: *mut *mut FMOD_SYNCPOINT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetSyncPointInfo(
         sound: *mut FMOD_SOUND,
         point: *mut FMOD_SYNCPOINT,
@@ -3001,8 +2749,6 @@ extern "system" {
         offset: *mut ::std::ffi::c_uint,
         offsettype: FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_AddSyncPoint(
         sound: *mut FMOD_SOUND,
         offset: ::std::ffi::c_uint,
@@ -3010,32 +2756,20 @@ extern "system" {
         name: *const ::std::ffi::c_char,
         point: *mut *mut FMOD_SYNCPOINT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_DeleteSyncPoint(
         sound: *mut FMOD_SOUND,
         point: *mut FMOD_SYNCPOINT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_SetMode(sound: *mut FMOD_SOUND, mode: FMOD_MODE) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetMode(sound: *mut FMOD_SOUND, mode: *mut FMOD_MODE) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_SetLoopCount(
         sound: *mut FMOD_SOUND,
         loopcount: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetLoopCount(
         sound: *mut FMOD_SOUND,
         loopcount: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_SetLoopPoints(
         sound: *mut FMOD_SOUND,
         loopstart: ::std::ffi::c_uint,
@@ -3043,8 +2777,6 @@ extern "system" {
         loopend: ::std::ffi::c_uint,
         loopendtype: FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetLoopPoints(
         sound: *mut FMOD_SOUND,
         loopstart: *mut ::std::ffi::c_uint,
@@ -3052,163 +2784,103 @@ extern "system" {
         loopend: *mut ::std::ffi::c_uint,
         loopendtype: FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetMusicNumChannels(
         sound: *mut FMOD_SOUND,
         numchannels: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_SetMusicChannelVolume(
         sound: *mut FMOD_SOUND,
         channel: ::std::ffi::c_int,
         volume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetMusicChannelVolume(
         sound: *mut FMOD_SOUND,
         channel: ::std::ffi::c_int,
         volume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_SetMusicSpeed(
         sound: *mut FMOD_SOUND,
         speed: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetMusicSpeed(
         sound: *mut FMOD_SOUND,
         speed: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_SetUserData(
         sound: *mut FMOD_SOUND,
         userdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Sound_GetUserData(
         sound: *mut FMOD_SOUND,
         userdata: *mut *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetSystemObject(
         channel: *mut FMOD_CHANNEL,
         system: *mut *mut FMOD_SYSTEM,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Stop(channel: *mut FMOD_CHANNEL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetPaused(channel: *mut FMOD_CHANNEL, paused: FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetPaused(
         channel: *mut FMOD_CHANNEL,
         paused: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetVolume(
         channel: *mut FMOD_CHANNEL,
         volume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetVolume(
         channel: *mut FMOD_CHANNEL,
         volume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetVolumeRamp(channel: *mut FMOD_CHANNEL, ramp: FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetVolumeRamp(
         channel: *mut FMOD_CHANNEL,
         ramp: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetAudibility(
         channel: *mut FMOD_CHANNEL,
         audibility: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetPitch(
         channel: *mut FMOD_CHANNEL,
         pitch: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetPitch(
         channel: *mut FMOD_CHANNEL,
         pitch: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetMute(channel: *mut FMOD_CHANNEL, mute: FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetMute(channel: *mut FMOD_CHANNEL, mute: *mut FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetReverbProperties(
         channel: *mut FMOD_CHANNEL,
         instance: ::std::ffi::c_int,
         wet: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetReverbProperties(
         channel: *mut FMOD_CHANNEL,
         instance: ::std::ffi::c_int,
         wet: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetLowPassGain(
         channel: *mut FMOD_CHANNEL,
         gain: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetLowPassGain(
         channel: *mut FMOD_CHANNEL,
         gain: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetMode(channel: *mut FMOD_CHANNEL, mode: FMOD_MODE) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetMode(channel: *mut FMOD_CHANNEL, mode: *mut FMOD_MODE) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetCallback(
         channel: *mut FMOD_CHANNEL,
         callback: FMOD_CHANNELCONTROL_CALLBACK,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_IsPlaying(
         channel: *mut FMOD_CHANNEL,
         isplaying: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetPan(channel: *mut FMOD_CHANNEL, pan: ::std::ffi::c_float)
         -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetMixLevelsOutput(
         channel: *mut FMOD_CHANNEL,
         frontleft: ::std::ffi::c_float,
@@ -3220,15 +2892,11 @@ extern "system" {
         backleft: ::std::ffi::c_float,
         backright: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetMixLevelsInput(
         channel: *mut FMOD_CHANNEL,
         levels: *mut ::std::ffi::c_float,
         numlevels: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetMixMatrix(
         channel: *mut FMOD_CHANNEL,
         matrix: *mut ::std::ffi::c_float,
@@ -3236,8 +2904,6 @@ extern "system" {
         inchannels: ::std::ffi::c_int,
         inchannel_hop: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetMixMatrix(
         channel: *mut FMOD_CHANNEL,
         matrix: *mut ::std::ffi::c_float,
@@ -3245,307 +2911,215 @@ extern "system" {
         inchannels: *mut ::std::ffi::c_int,
         inchannel_hop: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetDSPClock(
         channel: *mut FMOD_CHANNEL,
         dspclock: *mut ::std::ffi::c_ulonglong,
         parentclock: *mut ::std::ffi::c_ulonglong,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetDelay(
         channel: *mut FMOD_CHANNEL,
         dspclock_start: ::std::ffi::c_ulonglong,
         dspclock_end: ::std::ffi::c_ulonglong,
         stopchannels: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetDelay(
         channel: *mut FMOD_CHANNEL,
         dspclock_start: *mut ::std::ffi::c_ulonglong,
         dspclock_end: *mut ::std::ffi::c_ulonglong,
         stopchannels: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_AddFadePoint(
         channel: *mut FMOD_CHANNEL,
         dspclock: ::std::ffi::c_ulonglong,
         volume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetFadePointRamp(
         channel: *mut FMOD_CHANNEL,
         dspclock: ::std::ffi::c_ulonglong,
         volume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_RemoveFadePoints(
         channel: *mut FMOD_CHANNEL,
         dspclock_start: ::std::ffi::c_ulonglong,
         dspclock_end: ::std::ffi::c_ulonglong,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetFadePoints(
         channel: *mut FMOD_CHANNEL,
         numpoints: *mut ::std::ffi::c_uint,
         point_dspclock: *mut ::std::ffi::c_ulonglong,
         point_volume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetDSP(
         channel: *mut FMOD_CHANNEL,
         index: ::std::ffi::c_int,
         dsp: *mut *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_AddDSP(
         channel: *mut FMOD_CHANNEL,
         index: ::std::ffi::c_int,
         dsp: *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_RemoveDSP(channel: *mut FMOD_CHANNEL, dsp: *mut FMOD_DSP) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetNumDSPs(
         channel: *mut FMOD_CHANNEL,
         numdsps: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetDSPIndex(
         channel: *mut FMOD_CHANNEL,
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetDSPIndex(
         channel: *mut FMOD_CHANNEL,
         dsp: *mut FMOD_DSP,
         index: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DAttributes(
         channel: *mut FMOD_CHANNEL,
         pos: *const FMOD_VECTOR,
         vel: *const FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DAttributes(
         channel: *mut FMOD_CHANNEL,
         pos: *mut FMOD_VECTOR,
         vel: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DMinMaxDistance(
         channel: *mut FMOD_CHANNEL,
         mindistance: ::std::ffi::c_float,
         maxdistance: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DMinMaxDistance(
         channel: *mut FMOD_CHANNEL,
         mindistance: *mut ::std::ffi::c_float,
         maxdistance: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DConeSettings(
         channel: *mut FMOD_CHANNEL,
         insideconeangle: ::std::ffi::c_float,
         outsideconeangle: ::std::ffi::c_float,
         outsidevolume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DConeSettings(
         channel: *mut FMOD_CHANNEL,
         insideconeangle: *mut ::std::ffi::c_float,
         outsideconeangle: *mut ::std::ffi::c_float,
         outsidevolume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DConeOrientation(
         channel: *mut FMOD_CHANNEL,
         orientation: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DConeOrientation(
         channel: *mut FMOD_CHANNEL,
         orientation: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DCustomRolloff(
         channel: *mut FMOD_CHANNEL,
         points: *mut FMOD_VECTOR,
         numpoints: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DCustomRolloff(
         channel: *mut FMOD_CHANNEL,
         points: *mut *mut FMOD_VECTOR,
         numpoints: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DOcclusion(
         channel: *mut FMOD_CHANNEL,
         directocclusion: ::std::ffi::c_float,
         reverbocclusion: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DOcclusion(
         channel: *mut FMOD_CHANNEL,
         directocclusion: *mut ::std::ffi::c_float,
         reverbocclusion: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DSpread(
         channel: *mut FMOD_CHANNEL,
         angle: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DSpread(
         channel: *mut FMOD_CHANNEL,
         angle: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DLevel(
         channel: *mut FMOD_CHANNEL,
         level: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DLevel(
         channel: *mut FMOD_CHANNEL,
         level: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DDopplerLevel(
         channel: *mut FMOD_CHANNEL,
         level: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DDopplerLevel(
         channel: *mut FMOD_CHANNEL,
         level: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Set3DDistanceFilter(
         channel: *mut FMOD_CHANNEL,
         custom: FMOD_BOOL,
         customLevel: ::std::ffi::c_float,
         centerFreq: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_Get3DDistanceFilter(
         channel: *mut FMOD_CHANNEL,
         custom: *mut FMOD_BOOL,
         customLevel: *mut ::std::ffi::c_float,
         centerFreq: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetUserData(
         channel: *mut FMOD_CHANNEL,
         userdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetUserData(
         channel: *mut FMOD_CHANNEL,
         userdata: *mut *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetFrequency(
         channel: *mut FMOD_CHANNEL,
         frequency: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetFrequency(
         channel: *mut FMOD_CHANNEL,
         frequency: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetPriority(
         channel: *mut FMOD_CHANNEL,
         priority: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetPriority(
         channel: *mut FMOD_CHANNEL,
         priority: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetPosition(
         channel: *mut FMOD_CHANNEL,
         position: ::std::ffi::c_uint,
         postype: FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetPosition(
         channel: *mut FMOD_CHANNEL,
         position: *mut ::std::ffi::c_uint,
         postype: FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetChannelGroup(
         channel: *mut FMOD_CHANNEL,
         channelgroup: *mut FMOD_CHANNELGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetChannelGroup(
         channel: *mut FMOD_CHANNEL,
         channelgroup: *mut *mut FMOD_CHANNELGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetLoopCount(
         channel: *mut FMOD_CHANNEL,
         loopcount: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetLoopCount(
         channel: *mut FMOD_CHANNEL,
         loopcount: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_SetLoopPoints(
         channel: *mut FMOD_CHANNEL,
         loopstart: ::std::ffi::c_uint,
@@ -3553,8 +3127,6 @@ extern "system" {
         loopend: ::std::ffi::c_uint,
         loopendtype: FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetLoopPoints(
         channel: *mut FMOD_CHANNEL,
         loopstart: *mut ::std::ffi::c_uint,
@@ -3562,157 +3134,105 @@ extern "system" {
         loopend: *mut ::std::ffi::c_uint,
         loopendtype: FMOD_TIMEUNIT,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_IsVirtual(
         channel: *mut FMOD_CHANNEL,
         isvirtual: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetCurrentSound(
         channel: *mut FMOD_CHANNEL,
         sound: *mut *mut FMOD_SOUND,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Channel_GetIndex(
         channel: *mut FMOD_CHANNEL,
         index: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetSystemObject(
         channelgroup: *mut FMOD_CHANNELGROUP,
         system: *mut *mut FMOD_SYSTEM,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Stop(channelgroup: *mut FMOD_CHANNELGROUP) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetPaused(
         channelgroup: *mut FMOD_CHANNELGROUP,
         paused: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetPaused(
         channelgroup: *mut FMOD_CHANNELGROUP,
         paused: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetVolume(
         channelgroup: *mut FMOD_CHANNELGROUP,
         volume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetVolume(
         channelgroup: *mut FMOD_CHANNELGROUP,
         volume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetVolumeRamp(
         channelgroup: *mut FMOD_CHANNELGROUP,
         ramp: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetVolumeRamp(
         channelgroup: *mut FMOD_CHANNELGROUP,
         ramp: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetAudibility(
         channelgroup: *mut FMOD_CHANNELGROUP,
         audibility: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetPitch(
         channelgroup: *mut FMOD_CHANNELGROUP,
         pitch: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetPitch(
         channelgroup: *mut FMOD_CHANNELGROUP,
         pitch: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetMute(
         channelgroup: *mut FMOD_CHANNELGROUP,
         mute: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetMute(
         channelgroup: *mut FMOD_CHANNELGROUP,
         mute: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetReverbProperties(
         channelgroup: *mut FMOD_CHANNELGROUP,
         instance: ::std::ffi::c_int,
         wet: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetReverbProperties(
         channelgroup: *mut FMOD_CHANNELGROUP,
         instance: ::std::ffi::c_int,
         wet: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetLowPassGain(
         channelgroup: *mut FMOD_CHANNELGROUP,
         gain: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetLowPassGain(
         channelgroup: *mut FMOD_CHANNELGROUP,
         gain: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetMode(
         channelgroup: *mut FMOD_CHANNELGROUP,
         mode: FMOD_MODE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetMode(
         channelgroup: *mut FMOD_CHANNELGROUP,
         mode: *mut FMOD_MODE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetCallback(
         channelgroup: *mut FMOD_CHANNELGROUP,
         callback: FMOD_CHANNELCONTROL_CALLBACK,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_IsPlaying(
         channelgroup: *mut FMOD_CHANNELGROUP,
         isplaying: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetPan(
         channelgroup: *mut FMOD_CHANNELGROUP,
         pan: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetMixLevelsOutput(
         channelgroup: *mut FMOD_CHANNELGROUP,
         frontleft: ::std::ffi::c_float,
@@ -3724,15 +3244,11 @@ extern "system" {
         backleft: ::std::ffi::c_float,
         backright: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetMixLevelsInput(
         channelgroup: *mut FMOD_CHANNELGROUP,
         levels: *mut ::std::ffi::c_float,
         numlevels: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetMixMatrix(
         channelgroup: *mut FMOD_CHANNELGROUP,
         matrix: *mut ::std::ffi::c_float,
@@ -3740,8 +3256,6 @@ extern "system" {
         inchannels: ::std::ffi::c_int,
         inchannel_hop: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetMixMatrix(
         channelgroup: *mut FMOD_CHANNELGROUP,
         matrix: *mut ::std::ffi::c_float,
@@ -3749,499 +3263,343 @@ extern "system" {
         inchannels: *mut ::std::ffi::c_int,
         inchannel_hop: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetDSPClock(
         channelgroup: *mut FMOD_CHANNELGROUP,
         dspclock: *mut ::std::ffi::c_ulonglong,
         parentclock: *mut ::std::ffi::c_ulonglong,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetDelay(
         channelgroup: *mut FMOD_CHANNELGROUP,
         dspclock_start: ::std::ffi::c_ulonglong,
         dspclock_end: ::std::ffi::c_ulonglong,
         stopchannels: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetDelay(
         channelgroup: *mut FMOD_CHANNELGROUP,
         dspclock_start: *mut ::std::ffi::c_ulonglong,
         dspclock_end: *mut ::std::ffi::c_ulonglong,
         stopchannels: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_AddFadePoint(
         channelgroup: *mut FMOD_CHANNELGROUP,
         dspclock: ::std::ffi::c_ulonglong,
         volume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetFadePointRamp(
         channelgroup: *mut FMOD_CHANNELGROUP,
         dspclock: ::std::ffi::c_ulonglong,
         volume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_RemoveFadePoints(
         channelgroup: *mut FMOD_CHANNELGROUP,
         dspclock_start: ::std::ffi::c_ulonglong,
         dspclock_end: ::std::ffi::c_ulonglong,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetFadePoints(
         channelgroup: *mut FMOD_CHANNELGROUP,
         numpoints: *mut ::std::ffi::c_uint,
         point_dspclock: *mut ::std::ffi::c_ulonglong,
         point_volume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetDSP(
         channelgroup: *mut FMOD_CHANNELGROUP,
         index: ::std::ffi::c_int,
         dsp: *mut *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_AddDSP(
         channelgroup: *mut FMOD_CHANNELGROUP,
         index: ::std::ffi::c_int,
         dsp: *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_RemoveDSP(
         channelgroup: *mut FMOD_CHANNELGROUP,
         dsp: *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetNumDSPs(
         channelgroup: *mut FMOD_CHANNELGROUP,
         numdsps: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetDSPIndex(
         channelgroup: *mut FMOD_CHANNELGROUP,
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetDSPIndex(
         channelgroup: *mut FMOD_CHANNELGROUP,
         dsp: *mut FMOD_DSP,
         index: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DAttributes(
         channelgroup: *mut FMOD_CHANNELGROUP,
         pos: *const FMOD_VECTOR,
         vel: *const FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DAttributes(
         channelgroup: *mut FMOD_CHANNELGROUP,
         pos: *mut FMOD_VECTOR,
         vel: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DMinMaxDistance(
         channelgroup: *mut FMOD_CHANNELGROUP,
         mindistance: ::std::ffi::c_float,
         maxdistance: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DMinMaxDistance(
         channelgroup: *mut FMOD_CHANNELGROUP,
         mindistance: *mut ::std::ffi::c_float,
         maxdistance: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DConeSettings(
         channelgroup: *mut FMOD_CHANNELGROUP,
         insideconeangle: ::std::ffi::c_float,
         outsideconeangle: ::std::ffi::c_float,
         outsidevolume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DConeSettings(
         channelgroup: *mut FMOD_CHANNELGROUP,
         insideconeangle: *mut ::std::ffi::c_float,
         outsideconeangle: *mut ::std::ffi::c_float,
         outsidevolume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DConeOrientation(
         channelgroup: *mut FMOD_CHANNELGROUP,
         orientation: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DConeOrientation(
         channelgroup: *mut FMOD_CHANNELGROUP,
         orientation: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DCustomRolloff(
         channelgroup: *mut FMOD_CHANNELGROUP,
         points: *mut FMOD_VECTOR,
         numpoints: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DCustomRolloff(
         channelgroup: *mut FMOD_CHANNELGROUP,
         points: *mut *mut FMOD_VECTOR,
         numpoints: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DOcclusion(
         channelgroup: *mut FMOD_CHANNELGROUP,
         directocclusion: ::std::ffi::c_float,
         reverbocclusion: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DOcclusion(
         channelgroup: *mut FMOD_CHANNELGROUP,
         directocclusion: *mut ::std::ffi::c_float,
         reverbocclusion: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DSpread(
         channelgroup: *mut FMOD_CHANNELGROUP,
         angle: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DSpread(
         channelgroup: *mut FMOD_CHANNELGROUP,
         angle: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DLevel(
         channelgroup: *mut FMOD_CHANNELGROUP,
         level: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DLevel(
         channelgroup: *mut FMOD_CHANNELGROUP,
         level: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DDopplerLevel(
         channelgroup: *mut FMOD_CHANNELGROUP,
         level: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DDopplerLevel(
         channelgroup: *mut FMOD_CHANNELGROUP,
         level: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Set3DDistanceFilter(
         channelgroup: *mut FMOD_CHANNELGROUP,
         custom: FMOD_BOOL,
         customLevel: ::std::ffi::c_float,
         centerFreq: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Get3DDistanceFilter(
         channelgroup: *mut FMOD_CHANNELGROUP,
         custom: *mut FMOD_BOOL,
         customLevel: *mut ::std::ffi::c_float,
         centerFreq: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_SetUserData(
         channelgroup: *mut FMOD_CHANNELGROUP,
         userdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetUserData(
         channelgroup: *mut FMOD_CHANNELGROUP,
         userdata: *mut *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_Release(channelgroup: *mut FMOD_CHANNELGROUP) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_AddGroup(
         channelgroup: *mut FMOD_CHANNELGROUP,
         group: *mut FMOD_CHANNELGROUP,
         propagatedspclock: FMOD_BOOL,
         connection: *mut *mut FMOD_DSPCONNECTION,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetNumGroups(
         channelgroup: *mut FMOD_CHANNELGROUP,
         numgroups: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetGroup(
         channelgroup: *mut FMOD_CHANNELGROUP,
         index: ::std::ffi::c_int,
         group: *mut *mut FMOD_CHANNELGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetParentGroup(
         channelgroup: *mut FMOD_CHANNELGROUP,
         group: *mut *mut FMOD_CHANNELGROUP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetName(
         channelgroup: *mut FMOD_CHANNELGROUP,
         name: *mut ::std::ffi::c_char,
         namelen: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetNumChannels(
         channelgroup: *mut FMOD_CHANNELGROUP,
         numchannels: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_ChannelGroup_GetChannel(
         channelgroup: *mut FMOD_CHANNELGROUP,
         index: ::std::ffi::c_int,
         channel: *mut *mut FMOD_CHANNEL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_Release(soundgroup: *mut FMOD_SOUNDGROUP) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetSystemObject(
         soundgroup: *mut FMOD_SOUNDGROUP,
         system: *mut *mut FMOD_SYSTEM,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_SetMaxAudible(
         soundgroup: *mut FMOD_SOUNDGROUP,
         maxaudible: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetMaxAudible(
         soundgroup: *mut FMOD_SOUNDGROUP,
         maxaudible: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_SetMaxAudibleBehavior(
         soundgroup: *mut FMOD_SOUNDGROUP,
         behavior: FMOD_SOUNDGROUP_BEHAVIOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetMaxAudibleBehavior(
         soundgroup: *mut FMOD_SOUNDGROUP,
         behavior: *mut FMOD_SOUNDGROUP_BEHAVIOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_SetMuteFadeSpeed(
         soundgroup: *mut FMOD_SOUNDGROUP,
         speed: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetMuteFadeSpeed(
         soundgroup: *mut FMOD_SOUNDGROUP,
         speed: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_SetVolume(
         soundgroup: *mut FMOD_SOUNDGROUP,
         volume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetVolume(
         soundgroup: *mut FMOD_SOUNDGROUP,
         volume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_Stop(soundgroup: *mut FMOD_SOUNDGROUP) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetName(
         soundgroup: *mut FMOD_SOUNDGROUP,
         name: *mut ::std::ffi::c_char,
         namelen: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetNumSounds(
         soundgroup: *mut FMOD_SOUNDGROUP,
         numsounds: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetSound(
         soundgroup: *mut FMOD_SOUNDGROUP,
         index: ::std::ffi::c_int,
         sound: *mut *mut FMOD_SOUND,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetNumPlaying(
         soundgroup: *mut FMOD_SOUNDGROUP,
         numplaying: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_SetUserData(
         soundgroup: *mut FMOD_SOUNDGROUP,
         userdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_SoundGroup_GetUserData(
         soundgroup: *mut FMOD_SOUNDGROUP,
         userdata: *mut *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_Release(dsp: *mut FMOD_DSP) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetSystemObject(
         dsp: *mut FMOD_DSP,
         system: *mut *mut FMOD_SYSTEM,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_AddInput(
         dsp: *mut FMOD_DSP,
         input: *mut FMOD_DSP,
         connection: *mut *mut FMOD_DSPCONNECTION,
         r#type: FMOD_DSPCONNECTION_TYPE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_DisconnectFrom(
         dsp: *mut FMOD_DSP,
         target: *mut FMOD_DSP,
         connection: *mut FMOD_DSPCONNECTION,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_DisconnectAll(
         dsp: *mut FMOD_DSP,
         inputs: FMOD_BOOL,
         outputs: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetNumInputs(
         dsp: *mut FMOD_DSP,
         numinputs: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetNumOutputs(
         dsp: *mut FMOD_DSP,
         numoutputs: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetInput(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
         input: *mut *mut FMOD_DSP,
         inputconnection: *mut *mut FMOD_DSPCONNECTION,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetOutput(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
         output: *mut *mut FMOD_DSP,
         outputconnection: *mut *mut FMOD_DSPCONNECTION,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetActive(dsp: *mut FMOD_DSP, active: FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetActive(dsp: *mut FMOD_DSP, active: *mut FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetBypass(dsp: *mut FMOD_DSP, bypass: FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetBypass(dsp: *mut FMOD_DSP, bypass: *mut FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetWetDryMix(
         dsp: *mut FMOD_DSP,
         prewet: ::std::ffi::c_float,
         postwet: ::std::ffi::c_float,
         dry: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetWetDryMix(
         dsp: *mut FMOD_DSP,
         prewet: *mut ::std::ffi::c_float,
         postwet: *mut ::std::ffi::c_float,
         dry: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetChannelFormat(
         dsp: *mut FMOD_DSP,
         channelmask: FMOD_CHANNELMASK,
         numchannels: ::std::ffi::c_int,
         source_speakermode: FMOD_SPEAKERMODE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetChannelFormat(
         dsp: *mut FMOD_DSP,
         channelmask: *mut FMOD_CHANNELMASK,
         numchannels: *mut ::std::ffi::c_int,
         source_speakermode: *mut FMOD_SPEAKERMODE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetOutputChannelFormat(
         dsp: *mut FMOD_DSP,
         inmask: FMOD_CHANNELMASK,
@@ -4251,43 +3609,29 @@ extern "system" {
         outchannels: *mut ::std::ffi::c_int,
         outspeakermode: *mut FMOD_SPEAKERMODE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_Reset(dsp: *mut FMOD_DSP) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetCallback(dsp: *mut FMOD_DSP, callback: FMOD_DSP_CALLBACK) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetParameterFloat(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
         value: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetParameterInt(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
         value: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetParameterBool(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
         value: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetParameterData(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
         data: *mut ::std::ffi::c_void,
         length: ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetParameterFloat(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
@@ -4295,8 +3639,6 @@ extern "system" {
         valuestr: *mut ::std::ffi::c_char,
         valuestrlen: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetParameterInt(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
@@ -4304,8 +3646,6 @@ extern "system" {
         valuestr: *mut ::std::ffi::c_char,
         valuestrlen: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetParameterBool(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
@@ -4313,8 +3653,6 @@ extern "system" {
         valuestr: *mut ::std::ffi::c_char,
         valuestrlen: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetParameterData(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
@@ -4323,35 +3661,25 @@ extern "system" {
         valuestr: *mut ::std::ffi::c_char,
         valuestrlen: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetNumParameters(
         dsp: *mut FMOD_DSP,
         numparams: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetParameterInfo(
         dsp: *mut FMOD_DSP,
         index: ::std::ffi::c_int,
         desc: *mut *mut FMOD_DSP_PARAMETER_DESC,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetDataParameterIndex(
         dsp: *mut FMOD_DSP,
         datatype: ::std::ffi::c_int,
         index: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_ShowConfigDialog(
         dsp: *mut FMOD_DSP,
         hwnd: *mut ::std::ffi::c_void,
         show: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetInfo(
         dsp: *mut FMOD_DSP,
         name: *mut ::std::ffi::c_char,
@@ -4360,78 +3688,52 @@ extern "system" {
         configwidth: *mut ::std::ffi::c_int,
         configheight: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetType(dsp: *mut FMOD_DSP, r#type: *mut FMOD_DSP_TYPE) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetIdle(dsp: *mut FMOD_DSP, idle: *mut FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetUserData(
         dsp: *mut FMOD_DSP,
         userdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetUserData(
         dsp: *mut FMOD_DSP,
         userdata: *mut *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_SetMeteringEnabled(
         dsp: *mut FMOD_DSP,
         inputEnabled: FMOD_BOOL,
         outputEnabled: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetMeteringEnabled(
         dsp: *mut FMOD_DSP,
         inputEnabled: *mut FMOD_BOOL,
         outputEnabled: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetMeteringInfo(
         dsp: *mut FMOD_DSP,
         inputInfo: *mut FMOD_DSP_METERING_INFO,
         outputInfo: *mut FMOD_DSP_METERING_INFO,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSP_GetCPUUsage(
         dsp: *mut FMOD_DSP,
         exclusive: *mut ::std::ffi::c_uint,
         inclusive: *mut ::std::ffi::c_uint,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSPConnection_GetInput(
         dspconnection: *mut FMOD_DSPCONNECTION,
         input: *mut *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSPConnection_GetOutput(
         dspconnection: *mut FMOD_DSPCONNECTION,
         output: *mut *mut FMOD_DSP,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSPConnection_SetMix(
         dspconnection: *mut FMOD_DSPCONNECTION,
         volume: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSPConnection_GetMix(
         dspconnection: *mut FMOD_DSPCONNECTION,
         volume: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSPConnection_SetMixMatrix(
         dspconnection: *mut FMOD_DSPCONNECTION,
         matrix: *mut ::std::ffi::c_float,
@@ -4439,8 +3741,6 @@ extern "system" {
         inchannels: ::std::ffi::c_int,
         inchannel_hop: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSPConnection_GetMixMatrix(
         dspconnection: *mut FMOD_DSPCONNECTION,
         matrix: *mut ::std::ffi::c_float,
@@ -4448,29 +3748,19 @@ extern "system" {
         inchannels: *mut ::std::ffi::c_int,
         inchannel_hop: ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSPConnection_GetType(
         dspconnection: *mut FMOD_DSPCONNECTION,
         r#type: *mut FMOD_DSPCONNECTION_TYPE,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSPConnection_SetUserData(
         dspconnection: *mut FMOD_DSPCONNECTION,
         userdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_DSPConnection_GetUserData(
         dspconnection: *mut FMOD_DSPCONNECTION,
         userdata: *mut *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_Release(geometry: *mut FMOD_GEOMETRY) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_AddPolygon(
         geometry: *mut FMOD_GEOMETRY,
         directocclusion: ::std::ffi::c_float,
@@ -4480,44 +3770,32 @@ extern "system" {
         vertices: *const FMOD_VECTOR,
         polygonindex: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetNumPolygons(
         geometry: *mut FMOD_GEOMETRY,
         numpolygons: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetMaxPolygons(
         geometry: *mut FMOD_GEOMETRY,
         maxpolygons: *mut ::std::ffi::c_int,
         maxvertices: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetPolygonNumVertices(
         geometry: *mut FMOD_GEOMETRY,
         index: ::std::ffi::c_int,
         numvertices: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_SetPolygonVertex(
         geometry: *mut FMOD_GEOMETRY,
         index: ::std::ffi::c_int,
         vertexindex: ::std::ffi::c_int,
         vertex: *const FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetPolygonVertex(
         geometry: *mut FMOD_GEOMETRY,
         index: ::std::ffi::c_int,
         vertexindex: ::std::ffi::c_int,
         vertex: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_SetPolygonAttributes(
         geometry: *mut FMOD_GEOMETRY,
         index: ::std::ffi::c_int,
@@ -4525,8 +3803,6 @@ extern "system" {
         reverbocclusion: ::std::ffi::c_float,
         doublesided: FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetPolygonAttributes(
         geometry: *mut FMOD_GEOMETRY,
         index: ::std::ffi::c_int,
@@ -4534,120 +3810,80 @@ extern "system" {
         reverbocclusion: *mut ::std::ffi::c_float,
         doublesided: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_SetActive(geometry: *mut FMOD_GEOMETRY, active: FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetActive(
         geometry: *mut FMOD_GEOMETRY,
         active: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_SetRotation(
         geometry: *mut FMOD_GEOMETRY,
         forward: *const FMOD_VECTOR,
         up: *const FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetRotation(
         geometry: *mut FMOD_GEOMETRY,
         forward: *mut FMOD_VECTOR,
         up: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_SetPosition(
         geometry: *mut FMOD_GEOMETRY,
         position: *const FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetPosition(
         geometry: *mut FMOD_GEOMETRY,
         position: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_SetScale(
         geometry: *mut FMOD_GEOMETRY,
         scale: *const FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetScale(
         geometry: *mut FMOD_GEOMETRY,
         scale: *mut FMOD_VECTOR,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_Save(
         geometry: *mut FMOD_GEOMETRY,
         data: *mut ::std::ffi::c_void,
         datasize: *mut ::std::ffi::c_int,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_SetUserData(
         geometry: *mut FMOD_GEOMETRY,
         userdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Geometry_GetUserData(
         geometry: *mut FMOD_GEOMETRY,
         userdata: *mut *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Reverb3D_Release(reverb3d: *mut FMOD_REVERB3D) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Reverb3D_Set3DAttributes(
         reverb3d: *mut FMOD_REVERB3D,
         position: *const FMOD_VECTOR,
         mindistance: ::std::ffi::c_float,
         maxdistance: ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Reverb3D_Get3DAttributes(
         reverb3d: *mut FMOD_REVERB3D,
         position: *mut FMOD_VECTOR,
         mindistance: *mut ::std::ffi::c_float,
         maxdistance: *mut ::std::ffi::c_float,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Reverb3D_SetProperties(
         reverb3d: *mut FMOD_REVERB3D,
         properties: *const FMOD_REVERB_PROPERTIES,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Reverb3D_GetProperties(
         reverb3d: *mut FMOD_REVERB3D,
         properties: *mut FMOD_REVERB_PROPERTIES,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Reverb3D_SetActive(reverb3d: *mut FMOD_REVERB3D, active: FMOD_BOOL) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Reverb3D_GetActive(
         reverb3d: *mut FMOD_REVERB3D,
         active: *mut FMOD_BOOL,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Reverb3D_SetUserData(
         reverb3d: *mut FMOD_REVERB3D,
         userdata: *mut ::std::ffi::c_void,
     ) -> FMOD_RESULT;
-}
-extern "system" {
     pub fn FMOD_Reverb3D_GetUserData(
         reverb3d: *mut FMOD_REVERB3D,
         userdata: *mut *mut ::std::ffi::c_void,

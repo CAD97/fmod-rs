@@ -5,16 +5,17 @@
   --no-convert-floats
   --no-prepend-enum-name
   --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2023. */"
+  # blocklist fmod-core-sys items
   --allowlist-file fmod_studio.h
   --allowlist-file ./fmod_studio_common.h
   # in a union, so needs to be allowlisted
   --allowlist-type FMOD_BOOL
+  --merge-extern-blocks
   # re-add derives skipped due to blocklisting
   --with-derive-custom FMOD_STUDIO_BANK_INFO=Debug,Copy,Clone
   --with-derive-custom FMOD_STUDIO_PARAMETER_DESCRIPTION=Debug,Copy,Clone
   --with-derive-custom FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES=Debug,Copy,Clone
   --with-derive-custom FMOD_STUDIO_SOUND_INFO=Debug,Copy,Clone
-  # --sort-semantically
 | str replace -am '^.*type FMOD_BOOL.*$\n' ''
 | str replace -as 'extern "C"' 'extern "system"'
 | str replace -as 'type_' 'r#type'

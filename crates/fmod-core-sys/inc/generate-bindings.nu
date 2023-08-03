@@ -4,6 +4,7 @@
   --no-convert-floats
   --no-prepend-enum-name
   --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2023. */"
+  --merge-extern-blocks
 | str replace -as 'extern "C"' 'extern "system"'
 | str replace -a  '(?s)extern "system" (fn\([^)]*\.\.\.[^)]*\))' 'extern "C" $1'
 | str replace -as 'type_' 'r#type'
