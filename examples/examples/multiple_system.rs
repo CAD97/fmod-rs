@@ -89,10 +89,10 @@ fn main() -> anyhow::Result<()> {
             !example.btn_press(Buttons::Quit)
         } {
             if example.btn_press(Buttons::Action1) {
-                system_a.play_sound(&sound_a, None, false)?;
+                system_a.play_sound(&sound_a, None)?;
             }
             if example.btn_press(Buttons::Action2) {
-                system_b.play_sound(&sound_b, None, false)?;
+                system_b.play_sound(&sound_b, None)?;
             }
 
             system_a.update()?;

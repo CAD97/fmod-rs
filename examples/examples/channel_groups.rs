@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
 
         // Start all the sounds.
         for (i, sound) in sounds.iter().enumerate() {
-            let channel = system.play_sound(sound, None, true)?;
+            let channel = system.create_channel(sound, None)?;
             channel.set_channel_group(if i < 3 { &group_a } else { &group_b })?;
             channel.set_paused(false)?;
         }

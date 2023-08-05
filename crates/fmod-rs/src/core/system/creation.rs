@@ -268,7 +268,7 @@ impl System {
         Ok(unsafe { Handle::new(reverb) })
     }
 
-    /// Plays a Sound on a Channel.
+    /// Creates a Channel to play a Sound. The channel starts paused.
     ///
     /// When a sound is played, it will use the sound's default frequency and
     /// priority. See [Sound::set_defaults].
@@ -291,11 +291,10 @@ impl System {
     ///
     /// [Channel handles]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-handle-system.html#core-api-channels
     /// [Virtual Voices]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-virtual-voices.html
-    pub fn play_sound(
+    pub fn create_channel(
         &self,
         sound: &Sound,
         channel_group: Option<&ChannelGroup>,
-        paused: bool,
     ) -> Result<&Channel> {
         let sound = Sound::as_raw(sound);
         let channelgroup = channel_group
@@ -306,7 +305,33 @@ impl System {
             self.as_raw(),
             sound,
             channelgroup,
-            paused as _,
+            true as FMOD_BOOL, // paused
+            &mut channel,
+        ))?;
+        Ok(unsafe { Channel::from_raw(channel) })
+    }
+
+    /// Plays a Sound on a Channel. The channel is created unpaused.
+    ///
+    /// See [`System::create_channel`] for more information. Use that method to
+    /// start a channel paused and allow altering attributes without the channel
+    /// being audible, then follow it up with a call to
+    /// [`ChannelControl::set_paused`] with `paused` = false.
+    pub fn play_sound(
+        &self,
+        sound: &Sound,
+        channel_group: Option<&ChannelGroup>,
+    ) -> Result<&Channel> {
+        let sound = Sound::as_raw(sound);
+        let channelgroup = channel_group
+            .map(ChannelGroup::as_raw)
+            .unwrap_or(ptr::null_mut());
+        let mut channel = ptr::null_mut();
+        ffi!(FMOD_System_PlaySound(
+            self.as_raw(),
+            sound,
+            channelgroup,
+            false as FMOD_BOOL, // paused
             &mut channel,
         ))?;
         Ok(unsafe { Channel::from_raw(channel) })

@@ -10,7 +10,7 @@ fn main() -> anyhow::Result<()> {
         system.init(32, fmod::InitFlags::Normal)?;
 
         let sound = system.create_sound(media!("drumloop.wav"), fmod::Mode::Default)?;
-        let channel = system.play_sound(&sound, None, false)?;
+        let channel = system.play_sound(&sound, None)?;
 
         // test whatever functionality here
 

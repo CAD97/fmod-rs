@@ -69,16 +69,10 @@ impl<T: ?Sized + Resource> fmt::Debug for Handle<'_, T> {
 
 impl<T: ?Sized + Resource> Drop for Handle<'_, T> {
     fn drop(&mut self) {
-        let raw = self.as_raw();
-
-        match unsafe { T::release(raw) } {
-            Ok(()) => {
-                #[cfg(feature = "log")]
-                log::trace!("Released {self:?}");
-            },
-            Err(error) => {
-                whoops!("Error releasing {self:?}: {error}");
-            },
+        let this = unsafe { Self::from_raw(self.as_raw()) };
+        match this.release() {
+            Ok(()) => {}, // all good
+            Err(error) => whoops!("Error releasing {self:?}: {error}"),
         }
     }
 }
@@ -104,6 +98,20 @@ impl<'a, T: ?Sized + Resource> Handle<'a, T> {
         log::trace!("Created {this:?}");
 
         this
+    }
+
+    /// Manually release this FMOD resource.
+    ///
+    /// This is only necessary if you want to handle potential errors yourself;
+    /// the resource handle is automatically released when dropped.
+    pub fn release(self) -> fmod::Result {
+        let this = ManuallyDrop::new(self);
+        let result = unsafe { T::release(this.as_raw()) };
+        if result.is_ok() {
+            #[cfg(feature = "log")]
+            log::trace!("Released {this:?}");
+        }
+        result
     }
 
     /// Forget to release this FMOD resource.
@@ -135,7 +143,7 @@ impl<'a, T: ?Sized + Resource> Handle<'a, T> {
 //     claims that nobody else even has a pointer to the value (that is used).
 //     C++ has no such rules, and FMOD doesn't even provide `const` annotation
 //     to tell us what can change things; these are truly fully opaque handles.
-// Both of these issues are dismissable for the same core reason:
+// Both of these issues are dismissible for the same core reason:
 //     FFI is hard, especially between languages with different memory models.
 // In this case, we never actually alias the memory managed on the C++ side
 // (our pointee types are ZSTs, as previously mentioned), so Rust doesn't claim

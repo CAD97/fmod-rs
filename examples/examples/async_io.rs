@@ -160,8 +160,7 @@ fn process_queue() {
 
                 // Process the seek and read request with EOF handling
                 let mut file = info.handle().get_ref();
-                let Ok(_) = file.seek(SeekFrom::Start(info.offset() as u64))
-                else {
+                let Ok(_) = file.seek(SeekFrom::Start(info.offset() as u64)) else {
                     info.done(Err(fmod::Error::FileCouldNotSeek));
                     continue 'main;
                 };
@@ -208,7 +207,7 @@ fn main() -> anyhow::Result<()> {
             fmod::Mode::LoopNormal | fmod::Mode::D2 | fmod::Mode::IgnoreTags,
         )?;
 
-        let channel = system.play_sound(&sound, None, false)?;
+        let channel = system.play_sound(&sound, None)?;
 
         let mut sound = Some(sound);
 

@@ -1,4 +1,4 @@
-/*==============================================================================
+/*============================================================================*/
 //! 3D Example
 //! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
 //!
@@ -6,16 +6,14 @@
 //!
 //! For information on using FMOD example code in your own programs, visit
 //! https://www.fmod.com/legal
-==============================================================================*/
-
-#![allow(clippy::try_err)]
+/*============================================================================*/
 
 use fmod_examples::{media, sleep_ms, Buttons, Example};
 
 /// 50ms update for interface
 const INTERFACE_UPTIME: u64 = 50;
 
-/// Units per meter.  I.e feet would = 3.28.  centimeters would = 100.
+/// Units per meter. I.e feet would = 3.28. centimeters would = 100.
 const DISTANCE_FACTOR: f32 = 1.0;
 
 fn main() -> anyhow::Result<()> {
@@ -46,20 +44,20 @@ fn main() -> anyhow::Result<()> {
 
         // Play sounds at certain positions
         let channel1 = {
-            let pos = fmod::Vector::new(-10.0 * DISTANCE_FACTOR, 0.0, 0.0);
-            let vel = fmod::Vector::new(0.0, 0.0, 0.0);
+            let pos = fmod::Vector(-10.0 * DISTANCE_FACTOR, 0.0, 0.0);
+            let vel = fmod::Vector(0.0, 0.0, 0.0);
 
-            let channel = system.play_sound(&sound1, None, true)?;
+            let channel = system.create_channel(&sound1, None)?;
             channel.set_3d_attributes(&pos, &vel)?;
             channel.set_paused(false)?;
             channel
         };
 
         let channel2 = {
-            let pos = fmod::Vector::new(15.0 * DISTANCE_FACTOR, 0.0, 0.0);
-            let vel = fmod::Vector::new(0.0, 0.0, 0.0);
+            let pos = fmod::Vector(15.0 * DISTANCE_FACTOR, 0.0, 0.0);
+            let vel = fmod::Vector(0.0, 0.0, 0.0);
 
-            let channel = system.play_sound(&sound2, None, true)?;
+            let channel = system.create_channel(&sound2, None)?;
             channel.set_3d_attributes(&pos, &vel)?;
             channel.set_paused(false)?;
             channel
@@ -84,7 +82,7 @@ fn main() -> anyhow::Result<()> {
             }
 
             if example.btn_press(Buttons::Action3) {
-                system.play_sound(&sound3, None, false)?;
+                system.play_sound(&sound3, None)?;
             }
 
             if example.btn_press(Buttons::More) {
@@ -142,7 +140,6 @@ fn main() -> anyhow::Result<()> {
             system.update()?;
 
             // Create small visual display.
-
             let mut s = *b"|.............<1>......................<2>.......|";
             s[((listenerpos.x / DISTANCE_FACTOR) + 25.0) as usize] = b'L';
 

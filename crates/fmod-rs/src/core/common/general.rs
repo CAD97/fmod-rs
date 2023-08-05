@@ -77,8 +77,14 @@ fmod_struct! {
     }
 }
 
+#[allow(nonstandard_style)]
+/// Creates a new vector.
+pub fn Vector(x: f32, y: f32, z: f32) -> Vector {
+    Vector { x, y, z }
+}
+
 impl Vector {
-    /// Create a new vector.
+    /// Creates a new vector.
     pub const fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
     }

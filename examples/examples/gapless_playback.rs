@@ -86,7 +86,7 @@ fn main() -> anyhow::Result<()> {
             };
 
             // Play the sound on the channelgroup we want to use as the parent clock reference (for set_delay further down)
-            let channel = system.play_sound(s, Some(&channel_group), true)?;
+            let channel = system.create_channel(s, Some(&channel_group))?;
 
             if clock_start == 0 {
                 clock_start = channel.get_parent_dsp_clock()?;

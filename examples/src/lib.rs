@@ -11,6 +11,13 @@ use {
     std::{fmt, io::stdout, mem::ManuallyDrop, time::Duration},
 };
 
+#[macro_export]
+macro_rules! yeet {
+    ($e:expr) => {
+        return Err($e.into())
+    };
+}
+
 pub const NUM_COLUMNS: u16 = 50;
 pub const NUM_ROWS: u16 = 25;
 
