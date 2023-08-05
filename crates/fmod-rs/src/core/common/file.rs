@@ -358,7 +358,7 @@ pub(crate) unsafe extern "system" fn userclose<FS: FileSystem>(
 /// Callbacks to implement all file I/O instead of using the platform native
 /// method.
 #[allow(clippy::missing_safety_doc)]
-pub unsafe trait SyncFileSystem: FileSystem {
+pub trait SyncFileSystem: FileSystem {
     /// Callback for reading from a file.
     ///
     /// The entire buffer should be filled with contents from the file. If

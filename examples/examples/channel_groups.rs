@@ -1,4 +1,4 @@
-/*==============================================================================
+/*============================================================================*/
 //! Channel Groups Example
 //! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
 //!
@@ -7,7 +7,7 @@
 //!
 //! For information on using FMOD example code in your own programs, visit
 //! https://www.fmod.com/legal
-==============================================================================*/
+/*============================================================================*/
 
 use fmod_examples::{media, sleep_ms, Buttons, Example};
 
@@ -37,7 +37,7 @@ fn main() -> anyhow::Result<()> {
 
         // Start all the sounds.
         for (i, sound) in sounds.iter().enumerate() {
-            let channel = system.create_channel(sound, None)?;
+            let channel = system.create_sound_channel(sound, None)?;
             channel.set_channel_group(if i < 3 { &group_a } else { &group_b })?;
             channel.set_paused(false)?;
         }
@@ -110,6 +110,15 @@ fn main() -> anyhow::Result<()> {
 
             sleep_ms(10);
         }
+
+        // Shut down.
+        for sound in sounds {
+            sound.release()?;
+        }
+
+        group_a.release()?;
+        group_b.release()?;
+        system.release()?;
     }
 
     example.close()?;

@@ -1,15 +1,18 @@
+/*============================================================================*/
 //! Gapless Playback Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2021.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
 //!
 //! This example shows how to schedule channel playback into the future with
 //! sample accuracy. Use several scheduled channels to synchronize 2 or more
 //! sounds.
-
-#![allow(clippy::try_err)]
+//!
+//! For information on using FMOD example code in your own programs, visit
+//! https://www.fmod.com/legal
+/*============================================================================*/
 
 use {
     fmod::cstr8,
-    fmod_examples::{media, sleep_ms, Buttons, Example},
+    fmod_examples::{media, sleep_ms, yeet, Buttons, Example},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,19 +61,20 @@ fn main() -> anyhow::Result<()> {
     let mut example = Example::init()?;
 
     {
+        // Create a System object and initialize.
         let system = fmod::System::new()?;
         system.init(100, fmod::InitFlags::Normal)?;
 
-        // Get information needed later for scheduling.  The mixer block size, and the output rate of the mixer.
+        // Get information needed later for scheduling. The mixer block size, and the output rate of the mixer.
         let (dsp_block_len, _) = system.get_dsp_buffer_size()?;
         let fmod::SoftwareFormat { sample_rate, .. } = system.get_software_format()?;
 
-        // Load 3 sounds - these are just sine wave tones at different frequencies.  C, D and E on the musical scale.
+        // Load 3 sounds - these are just sine wave tones at different frequencies. C, D and E on the musical scale.
         let note_c = system.create_sound(media!("c.ogg"), fmod::Mode::Default)?;
         let note_d = system.create_sound(media!("d.ogg"), fmod::Mode::Default)?;
         let note_e = system.create_sound(media!("e.ogg"), fmod::Mode::Default)?;
 
-        // Create a channelgroup that the channels will play on.  We can use this channelgroup as our clock reference.
+        // Create a channelgroup that the channels will play on. We can use this channelgroup as our clock reference.
         // It also means we can pause and pitch bend the channelgroup, without affecting the offsets of the delays, because the channelgroup clock
         // which the channels feed off, will be pausing and speeding up/slowing down and still keeping the children in sync.
         let channel_group = system.create_channel_group(cstr8!("Parent"))?;
@@ -86,7 +90,7 @@ fn main() -> anyhow::Result<()> {
             };
 
             // Play the sound on the channelgroup we want to use as the parent clock reference (for set_delay further down)
-            let channel = system.create_channel(s, Some(&channel_group))?;
+            let channel = system.create_sound_channel(s, Some(&channel_group))?;
 
             if clock_start == 0 {
                 clock_start = channel.get_parent_dsp_clock()?;
@@ -151,18 +155,18 @@ fn main() -> anyhow::Result<()> {
             let playing = match channel_group.is_playing() {
                 Ok(x) => x,
                 Err(fmod::Error::InvalidHandle) => false,
-                Err(e) => return Err(e)?,
+                Err(e) => yeet!(e),
             };
             let paused = match channel_group.get_paused() {
                 Ok(x) => x,
                 Err(fmod::Error::InvalidHandle) => false,
-                Err(e) => return Err(e)?,
+                Err(e) => yeet!(e),
             };
             let chans_playing = system.get_channels_playing()?.all;
 
             example.draw("==================================================");
             example.draw("Gapless Playback example.");
-            example.draw("Copyright (c) Firelight Technologies 2004-2022.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2023.");
             example.draw("==================================================");
             example.draw("");
             example.draw(format_args!(
@@ -189,9 +193,16 @@ fn main() -> anyhow::Result<()> {
                     "Stopped"
                 }
             ));
+
+            sleep_ms(50);
         }
 
-        sleep_ms(50);
+        // Shut down
+        note_c.release()?;
+        note_d.release()?;
+        note_e.release()?;
+        channel_group.release()?;
+        system.release()?;
     }
 
     example.close()?;

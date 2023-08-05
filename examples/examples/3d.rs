@@ -47,7 +47,7 @@ fn main() -> anyhow::Result<()> {
             let pos = fmod::Vector(-10.0 * DISTANCE_FACTOR, 0.0, 0.0);
             let vel = fmod::Vector(0.0, 0.0, 0.0);
 
-            let channel = system.create_channel(&sound1, None)?;
+            let channel = system.create_sound_channel(&sound1, None)?;
             channel.set_3d_attributes(&pos, &vel)?;
             channel.set_paused(false)?;
             channel
@@ -57,7 +57,7 @@ fn main() -> anyhow::Result<()> {
             let pos = fmod::Vector(15.0 * DISTANCE_FACTOR, 0.0, 0.0);
             let vel = fmod::Vector(0.0, 0.0, 0.0);
 
-            let channel = system.create_channel(&sound2, None)?;
+            let channel = system.create_sound_channel(&sound2, None)?;
             channel.set_3d_attributes(&pos, &vel)?;
             channel.set_paused(false)?;
             channel
@@ -175,6 +175,12 @@ fn main() -> anyhow::Result<()> {
 
             sleep_ms(INTERFACE_UPTIME - 1);
         }
+
+        // Shut down
+        sound1.release()?;
+        sound2.release()?;
+        sound3.release()?;
+        system.release()?;
     }
 
     example.close()?;

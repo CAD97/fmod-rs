@@ -1,11 +1,11 @@
-/*==============================================================================
+/*============================================================================*/
 //! Async IO Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2022.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
 //!
 //! This example shows how to play a stream and use a custom file handler that
 //! defers reads for the streaming part. FMOD will allow the user to return
 //! straight away from a file read request and supply the data at a later time.
-==============================================================================*/
+/*============================================================================*/
 
 use {
     fmod_examples::{media, sleep_ms, Buttons, Example, NUM_COLUMNS, NUM_ROWS},
@@ -82,7 +82,7 @@ impl fmod::file::FileSystem for MyFileSystem {
     }
 }
 
-unsafe impl fmod::file::SyncFileSystem for MyFileSystem {
+impl fmod::file::SyncFileSystem for MyFileSystem {
     fn read(file: Pin<&mut File>, mut buffer: fmod::file::FileBuffer<'_>) -> fmod::Result {
         buffer
             .fill_from(file.get_mut())
@@ -91,14 +91,9 @@ unsafe impl fmod::file::SyncFileSystem for MyFileSystem {
 
     fn seek(mut file: Pin<&mut File>, pos: u32) -> fmod::Result {
         let pos = pos as u64;
-        let sought = file
-            .seek(SeekFrom::Start(pos))
-            .map_err(|_| fmod::Error::FileCouldNotSeek)?;
-        if sought == pos {
-            Ok(())
-        } else {
-            Err(fmod::Error::FileBad)
-        }
+        file.seek(SeekFrom::Start(pos))
+            .map(drop)
+            .map_err(|_| fmod::Error::FileCouldNotSeek)
     }
 }
 
@@ -208,7 +203,6 @@ fn main() -> anyhow::Result<()> {
         )?;
 
         let channel = system.play_sound(&sound, None)?;
-
         let mut sound = Some(sound);
 
         // Main loop.
@@ -232,7 +226,7 @@ fn main() -> anyhow::Result<()> {
 
             example.draw("==================================================");
             example.draw("Async IO Example.");
-            example.draw("Copyright (c) Firelight Technologies 2004-2022.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2023.");
             example.draw("==================================================");
             example.draw("");
             example.draw(format_args!(
@@ -243,12 +237,13 @@ fn main() -> anyhow::Result<()> {
             example.draw("");
             draw_lines(&mut example);
 
-            sleep_ms(15);
+            sleep_ms(50);
         }
-    }
 
-    THREAD_QUIT.store(true, SeqCst);
-    worker.join().unwrap();
+        // Shut down
+        THREAD_QUIT.store(true, SeqCst);
+        worker.join().unwrap();
+    }
 
     example.close()?;
 

@@ -291,7 +291,7 @@ impl System {
     ///
     /// [Channel handles]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-handle-system.html#core-api-channels
     /// [Virtual Voices]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-virtual-voices.html
-    pub fn create_channel(
+    pub fn create_sound_channel(
         &self,
         sound: &Sound,
         channel_group: Option<&ChannelGroup>,
@@ -313,9 +313,9 @@ impl System {
 
     /// Plays a Sound on a Channel. The channel is created unpaused.
     ///
-    /// See [`System::create_channel`] for more information. Use that method to
-    /// start a channel paused and allow altering attributes without the channel
-    /// being audible, then follow it up with a call to
+    /// See [`System::create_sound_channel`] for more information. Use that
+    /// method to start a channel paused and allow altering attributes without
+    /// the channel being audible, then follow it up with a call to
     /// [`ChannelControl::set_paused`] with `paused` = false.
     pub fn play_sound(
         &self,
@@ -337,7 +337,8 @@ impl System {
         Ok(unsafe { Channel::from_raw(channel) })
     }
 
-    /// Plays a DSP along with any of its inputs on a Channel.
+    /// Creates a channel to plays a DSP along with any of its inputs. The
+    /// channel starts paused.
     ///
     /// Specifying a `channel_group` as part of play_dsp is more efficient
     /// than using `Channel::set_channel_group` after play_dsp, and could avoid
@@ -352,11 +353,10 @@ impl System {
     ///
     /// [Channel handles]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-handle-system.html#core-api-channels
     /// [Virtual Voices]: https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-virtual-voices.html
-    pub fn play_dsp(
+    pub fn create_dsp_channel(
         &self,
         dsp: &Dsp,
         channel_group: Option<&ChannelGroup>,
-        paused: bool,
     ) -> Result<&Channel> {
         let dsp = Dsp::as_raw(dsp);
         let channelgroup = channel_group
@@ -367,7 +367,30 @@ impl System {
             self.as_raw(),
             dsp,
             channelgroup,
-            paused as _,
+            true as FMOD_BOOL, // paused
+            &mut channel,
+        ))?;
+        Ok(unsafe { Channel::from_raw(channel) })
+    }
+
+    /// Plays a DSP along with any of its inputs on a Channel. The channel is
+    /// created unpaused.
+    ///
+    /// See [`System::create_dsp_channel`] for more information. Use that method
+    /// to start a channel paused and allow altering attributes without the
+    /// channel being audible, then follow it up with a call to
+    /// [`ChannelControl::set_paused`] with `paused` = false.
+    pub fn play_dsp(&self, dsp: &Dsp, channel_group: Option<&ChannelGroup>) -> Result<&Channel> {
+        let dsp = Dsp::as_raw(dsp);
+        let channelgroup = channel_group
+            .map(ChannelGroup::as_raw)
+            .unwrap_or(ptr::null_mut());
+        let mut channel = ptr::null_mut();
+        ffi!(FMOD_System_PlayDSP(
+            self.as_raw(),
+            dsp,
+            channelgroup,
+            false as FMOD_BOOL, // paused
             &mut channel,
         ))?;
         Ok(unsafe { Channel::from_raw(channel) })

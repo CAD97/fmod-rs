@@ -1,13 +1,18 @@
+/*============================================================================*/
 //! Multiple System Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2022.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
 //!
 //! This example shows how to play sounds on two different output devices from
-//! the same application. It creates two FMOD::System objects, selects a
+//! the same application. It creates two fmod::System objects, selects a
 //! different sound device for each, then allows the user to play one sound on
 //! each device.
 //!
 //! Note that sounds created on device A cannot be played on device B and vice
 //! versa.
+//!
+//! For information on using FMOD example code in your own programs, visit
+//! https://www.fmod.com/legal
+/*============================================================================*/
 
 #![allow(clippy::try_err)]
 
@@ -21,11 +26,11 @@ fn fetch_driver(example: &mut Example, system: &fmod::System) -> anyhow::Result<
         system.set_output(fmod::OutputType::NoSound)?;
     }
 
+    example.update()?;
     let mut name = String::new();
-    while {
+    while !example.btn_press(Buttons::Action1) && !example.btn_press(Buttons::Quit) {
         example.update()?;
-        !example.btn_press(Buttons::Action1) && !example.btn_press(Buttons::Quit)
-    } {
+
         if example.btn_press(Buttons::Up) && selected_index != 0 {
             selected_index -= 1;
         }
@@ -35,7 +40,7 @@ fn fetch_driver(example: &mut Example, system: &fmod::System) -> anyhow::Result<
 
         example.draw("==================================================");
         example.draw("Multiple System Example.");
-        example.draw("Copyright (c) Firelight Technologies 2004-2022.");
+        example.draw("Copyright (c) Firelight Technologies 2004-2023.");
         example.draw("==================================================");
         example.draw("");
         example.draw(format_args!("Choose a device for system: {:p}", system));
@@ -84,13 +89,14 @@ fn main() -> anyhow::Result<()> {
         let sound_a = system_a.create_sound(media!("drumloop.wav"), fmod::Mode::LoopOff)?;
         let sound_b = system_b.create_sound(media!("jaguar.wav"), fmod::Mode::Default)?;
 
-        while {
+        // Main loop
+        while !example.btn_press(Buttons::Quit) {
             example.update()?;
-            !example.btn_press(Buttons::Quit)
-        } {
+
             if example.btn_press(Buttons::Action1) {
                 system_a.play_sound(&sound_a, None)?;
             }
+
             if example.btn_press(Buttons::Action2) {
                 system_b.play_sound(&sound_b, None)?;
             }
@@ -103,7 +109,7 @@ fn main() -> anyhow::Result<()> {
 
             example.draw("==================================================");
             example.draw("Multiple System Example.");
-            example.draw("Copyright (c) Firelight Technologies 2004-2022.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2023.");
             example.draw("==================================================");
             example.draw("");
             example.draw(format_args!(
@@ -121,6 +127,13 @@ fn main() -> anyhow::Result<()> {
 
             sleep_ms(50);
         }
+
+        // Shut down
+        sound_a.release()?;
+        system_a.release()?; // thread-unsafe
+
+        sound_b.release()?;
+        system_b.release()?;
     }
 
     example.close()?;
