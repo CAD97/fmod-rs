@@ -1,6 +1,6 @@
 #![cfg_attr(
     feature = "unstable",
-    feature(doc_auto_cfg, doc_cfg, read_buf, extern_types, trait_alias)
+    feature(doc_auto_cfg, doc_cfg, extern_types, read_buf, trait_alias)
 )]
 #![allow(rustdoc::broken_intra_doc_links)] // TODO: remove once more items exist
 #![allow(clippy::unit_arg)] // for use as Ok(callback()), where it's desirable
@@ -51,6 +51,7 @@ pub(crate) mod macros;
 
 extern crate self as fmod;
 
+#[cfg(feature = "core")]
 pub mod core;
 #[cfg(feature = "fsbank")]
 pub mod fsbank;
@@ -83,7 +84,7 @@ mod _glob_prevention {
 
 #[doc(no_inline)]
 pub use {
-    self::core::*,
+    crate::core::*,
     cstr8::{cstr8, CStr8},
 };
 
@@ -94,6 +95,7 @@ raw! {
     /// Raw API Bindings
     pub mod raw {
         #[doc(inline)]
+        #[cfg(feature = "core")]
         pub use fmod_core_sys::*;
 
         #[doc(inline)]

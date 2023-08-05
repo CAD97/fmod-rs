@@ -35,16 +35,12 @@ impl System {
     ///
     /// Users of the Studio API should call
     /// [studio::System::set_listener_attributes] instead of this function.
-    pub fn set_3d_listener_attributes(
-        &self,
-        listener: i32,
-        attributes: ListenerAttributes3d,
-    ) -> Result {
+    pub fn set_3d_listener_attributes(&self, listener: i32, attributes: Attributes3d) -> Result {
         ffi!(FMOD_System_Set3DListenerAttributes(
             self.as_raw(),
             listener,
-            attributes.pos.as_raw(),
-            attributes.vel.as_raw(),
+            attributes.position.as_raw(),
+            attributes.velocity.as_raw(),
             attributes.orientation.forward.as_raw(),
             attributes.orientation.up.as_raw(),
         ))?;
@@ -55,13 +51,13 @@ impl System {
     ///
     /// Users of the Studio API should call
     /// [studio::System::get_listener_attributes] instead of this function.
-    pub fn get_3d_listener_attributes(&self, listener: i32) -> Result<ListenerAttributes3d> {
-        let mut attributes = ListenerAttributes3d::default();
+    pub fn get_3d_listener_attributes(&self, listener: i32) -> Result<Attributes3d> {
+        let mut attributes = Attributes3d::default();
         ffi!(FMOD_System_Get3DListenerAttributes(
             self.as_raw(),
             listener,
-            attributes.pos.as_raw_mut(),
-            attributes.vel.as_raw_mut(),
+            attributes.position.as_raw_mut(),
+            attributes.velocity.as_raw_mut(),
             attributes.orientation.forward.as_raw_mut(),
             attributes.orientation.up.as_raw_mut(),
         ))?;
@@ -415,15 +411,4 @@ impl ReverbProperties {
     pub const PARKING_LOT: Self =       reverb! {  1700.0,    8.0,  12.0, 5000.0, 100.0, 100.0, 100.0, 250.0, 0.0, 20000.0,  56.0, -19.5 };
     pub const SEWER_PIPE: Self =        reverb! {  2800.0,   14.0,  21.0, 5000.0,  14.0,  80.0,  60.0, 250.0, 0.0,  3400.0,  66.0,   1.2 };
     pub const UNDERWATER: Self =        reverb! {  1500.0,    7.0,  11.0, 5000.0,  10.0, 100.0, 100.0, 250.0, 0.0,   500.0,  92.0,   7.0 };
-}
-
-/// Position, velocity, and orientation of a 3D sound listener.
-#[derive(Debug, Copy, Clone, Default, PartialEq)]
-pub struct ListenerAttributes3d {
-    /// Position in 3D space used for panning and attenuation.
-    pub pos: Vector,
-    /// Velocity in 3D space used for doppler.
-    pub vel: Vector,
-    /// Orientation.
-    pub orientation: Orientation3d,
 }

@@ -127,9 +127,9 @@ fn main() -> anyhow::Result<()> {
 
                 system.set_3d_listener_attributes(
                     0,
-                    fmod::ListenerAttributes3d {
-                        pos: listenerpos,
-                        vel,
+                    fmod::Attributes3d {
+                        position: listenerpos,
+                        velocity: vel,
                         orientation: fmod::Orientation3d { forward, up },
                     },
                 )?;
