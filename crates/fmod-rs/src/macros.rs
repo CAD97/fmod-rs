@@ -829,7 +829,7 @@ macro_rules! fmod_typedef {
 macro_rules! fmod_struct {
     {
         $(#[$meta:meta])*
-        $vis:vis struct $Name:ident$(<$lt:lifetime>)? = $Raw:ident {
+        $vis:vis struct $Name:ident = $Raw:ident {
             $($body:tt)*
         }
     } => {
@@ -837,7 +837,7 @@ macro_rules! fmod_struct {
             #![fmod_no_default]
             $(#[$meta])*
             #[derive(::smart_default::SmartDefault)]
-            $vis struct $Name$(<$lt>)? = $Raw {
+            $vis struct $Name = $Raw {
                 $($body)*
             }
         }
@@ -845,7 +845,7 @@ macro_rules! fmod_struct {
     {
         #![fmod_no_default]
         $(#[$meta:meta])*
-        $vis:vis struct $Name:ident$(<$lt:lifetime>)? = $Raw:ident {
+        $vis:vis struct $Name:ident = $Raw:ident {
             $($body:tt)*
         }
     } => {
@@ -853,25 +853,23 @@ macro_rules! fmod_struct {
             #![fmod_no_pod, fmod_no_default]
             $(#[$meta])*
             #[derive(::bytemuck::Pod, ::bytemuck::Zeroable)]
-            $vis struct $Name$(<$lt>)? = $Raw {
+            $vis struct $Name = $Raw {
                 $($body)*
             }
         }
 
-        impl$(<$lt>)? ::fmod::effect::DspParamType for $Name$(<$lt>)? {
+        impl ::fmod::effect::DspParamType for $Name {
             fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
-                _ = (dsp, index, value);
-                todo!()
+                <[u8; ::std::mem::size_of::<Self>()]>::set_dsp_parameter(dsp, index, ::bytemuck::cast_ref(value))
             }
 
             fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-                _ = (dsp, index);
-                todo!()
+                let value = <[u8; ::std::mem::size_of::<Self>()]>::get_dsp_parameter(dsp, index)?;
+                Ok(::bytemuck::cast(value))
             }
 
             fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
-                _ = (dsp, index, bytes);
-                todo!()
+                <[u8; ::std::mem::size_of::<Self>()]>::get_dsp_parameter_string(dsp, index, bytes)
             }
         }
     };
