@@ -574,6 +574,29 @@ macro_rules! fmod_enum {
             }
         }
     };
+    {
+        $(#[$meta:meta])*
+        $vis:vis enum $Name:ident: $Raw:ty
+        where
+            const { self <= $MAX:expr },
+            const { self >= $MIN:expr },
+        {$(
+            $(#[$($vmeta:tt)*])*
+            $Variant:ident = $value:expr,
+        )*}
+    } => {
+        fmod_enum! {
+            $(#[$meta])*
+            $vis enum $Name: $Raw
+            where
+                const { self < $MAX + 1 },
+                const { self >= $MIN },
+            {$(
+                $(#[$($vmeta)*])*
+                $Variant = $value,
+            )*}
+        }
+    };
 
     {
         $(#[$meta:meta])*
@@ -658,6 +681,21 @@ macro_rules! fmod_enum {
         static_assert! {
             [$($Name::$Variant),*].len() == ($Name::RAW_RANGE.end - $Name::RAW_RANGE.start) as usize,
             "fmod_enum! is missing some variant(s)",
+        }
+
+        impl fmod::effect::DspParamType for $Name {
+            fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
+                dsp.set_parameter::<$Raw>(index, value.into_raw())
+            }
+
+            fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
+                let value = dsp.get_parameter::<$Raw>(index)?;
+                Self::try_from_raw(value)
+            }
+
+            fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<fmod::ArrayString<32>> {
+                dsp.get_parameter_string::<$Raw>(index)
+            }
         }
     };
 }

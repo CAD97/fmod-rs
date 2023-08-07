@@ -1,5 +1,3 @@
-#![allow(unused)] // has TODOs
-
 /*============================================================================*/
 //! Generate Tone Example
 //! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
@@ -11,7 +9,7 @@
 //! https://www.fmod.com/legal
 /*============================================================================*/
 
-use fmod_examples::{media, sleep_ms, Buttons, Example};
+use fmod_examples::{sleep_ms, Buttons, Example};
 
 fn main() -> anyhow::Result<()> {
     let mut example = Example::init()?;
@@ -23,9 +21,7 @@ fn main() -> anyhow::Result<()> {
 
         // Create an oscillator DSP units for the tone.
         let dsp = system.create_dsp_by_type(fmod::DspType::Oscillator)?;
-        todo!(stringify!(
-            dsp.set_parameter_float(fmod::DspOscillator::Rate, 440.0)?; // Musical note 'A'
-        ));
+        dsp.set_parameter(fmod::effect::Oscillator::Rate, 440.0)?; // Musical note 'A'
 
         // Main loop
         let mut channel = None::<&fmod::Channel>;
@@ -41,9 +37,10 @@ fn main() -> anyhow::Result<()> {
                 let chan = system.create_dsp_channel(&dsp, None)?;
                 channel = Some(chan);
                 chan.set_volume(0.5)?;
-                todo!(stringify!(
-                    chan.set_parameter_int(fmod::DspOscillator::Type, 0)?;
-                ));
+                dsp.set_parameter(
+                    fmod::effect::Oscillator::Type,
+                    fmod::effect::Oscillator::Waveform::Sine,
+                )?;
                 chan.set_paused(false)?;
             }
 
@@ -55,9 +52,10 @@ fn main() -> anyhow::Result<()> {
                 let chan = system.create_dsp_channel(&dsp, None)?;
                 channel = Some(chan);
                 chan.set_volume(0.5)?;
-                todo!(stringify!(
-                    chan.set_parameter_int(fmod::DspOscillator::Type, 1)?;
-                ));
+                dsp.set_parameter(
+                    fmod::effect::Oscillator::Type,
+                    fmod::effect::Oscillator::Waveform::Square,
+                )?;
                 chan.set_paused(false)?;
             }
 
@@ -69,9 +67,10 @@ fn main() -> anyhow::Result<()> {
                 let chan = system.create_dsp_channel(&dsp, None)?;
                 channel = Some(chan);
                 chan.set_volume(0.5)?;
-                todo!(stringify!(
-                    chan.set_parameter_int(fmod::DspOscillator::Type, 2)?;
-                ));
+                dsp.set_parameter(
+                    fmod::effect::Oscillator::Type,
+                    fmod::effect::Oscillator::Waveform::SawUp,
+                )?;
                 chan.set_paused(false)?;
             }
 
@@ -83,9 +82,10 @@ fn main() -> anyhow::Result<()> {
                 let chan = system.create_dsp_channel(&dsp, None)?;
                 channel = Some(chan);
                 chan.set_volume(0.5)?;
-                todo!(stringify!(
-                    chan.set_parameter_int(fmod::DspOscillator::Type, 4)?;
-                ));
+                dsp.set_parameter(
+                    fmod::effect::Oscillator::Type,
+                    fmod::effect::Oscillator::Waveform::Triangle,
+                )?;
                 chan.set_paused(false)?;
             }
 

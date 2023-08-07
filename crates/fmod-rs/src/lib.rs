@@ -69,6 +69,8 @@ pub(crate) mod utils;
 #[allow(ambiguous_glob_reexports, unused)]
 use _glob_prevention::*;
 mod _glob_prevention {
+    pub mod common {}
+    // pub mod effect {}
     pub mod system {}
     pub mod sound {}
     pub mod channel_control {}
@@ -79,12 +81,12 @@ mod _glob_prevention {
     pub mod dsp_connection {}
     pub mod geometry {}
     pub mod reverb3d {}
-    pub mod common {}
 }
 
 #[doc(no_inline)]
 pub use {
     crate::core::*,
+    arrayvec::ArrayString,
     cstr8::{cstr8, CStr8},
 };
 

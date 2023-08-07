@@ -44,7 +44,8 @@ impl Reverb3d {
     ///
     /// [3D Reverb]: https://fmod.com/docs/2.02/api/white-papers-3d-reverb.html
     ///
-    /// Reverb presets are available, such as [`ReverbProperties::GENERIC`].
+    /// Reverb presets are available as associated constants to
+    /// [ReverbProperties](ReverbProperties#impl-ReverbProperties-1).
     pub fn set_properties(&self, properties: &ReverbProperties) -> Result {
         ffi!(FMOD_Reverb3D_SetProperties(
             self.as_raw(),

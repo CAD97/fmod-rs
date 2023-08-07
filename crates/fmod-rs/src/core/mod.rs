@@ -12,6 +12,8 @@ pub mod common {
     pub use self::{general::*, mix::*};
 }
 
+pub mod effect;
+
 fmod_class! {
     /// Management object from which all resources are created and played.
     ///

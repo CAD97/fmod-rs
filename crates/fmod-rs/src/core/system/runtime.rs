@@ -67,7 +67,8 @@ impl System {
     /// Sets parameters for the global reverb environment.
     ///
     /// To assist in defining reverb properties there are several presets
-    /// available, see [ReverbProperties]' associated constants.
+    /// available as associated constants on
+    /// [ReverbProperties](ReverbProperties#impl-ReverbProperties-1).
     ///
     /// When using each instance for the first time, FMOD will create a physical
     /// SFX reverb DSP unit that takes up several hundred kilobytes of memory
