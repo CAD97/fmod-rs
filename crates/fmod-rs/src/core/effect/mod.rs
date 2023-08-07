@@ -266,13 +266,13 @@ pub mod ChannelMix {
             /// Output channel count = 4. Mapping: Repeating pattern of Front Left, Front Right, Surround Left, Surround Right.
             AllQuad = FMOD_DSP_CHANNELMIX_OUTPUT_ALLQUAD,
             /// Output channel count = 6. Mapping: Repeating pattern of Front Left, Front Right, Center, LFE, Surround Left, Surround Right.
-            All5Point1 = FMOD_DSP_CHANNELMIX_OUTPUT_ALL5POINT1,
+            AllSurround51 = FMOD_DSP_CHANNELMIX_OUTPUT_ALL5POINT1,
             /// Output channel count = 8. Mapping: Repeating pattern of Front Left, Front Right, Center, LFE, Surround Left, Surround Right, Back Left, Back Right.
-            All7Point1 = FMOD_DSP_CHANNELMIX_OUTPUT_ALL7POINT1,
+            AllSurround71 = FMOD_DSP_CHANNELMIX_OUTPUT_ALL7POINT1,
             /// Output channel count = 6. Mapping: Repeating pattern of LFE in a 5.1 output signal.
             AllLfe = FMOD_DSP_CHANNELMIX_OUTPUT_ALLLFE,
             /// Output channel count = 12. Mapping: Repeating pattern of Front Left, Front Right, Center, LFE, Surround Left, Surround Right, Back Left, Back Right, Top Front Left, Top Front Right, Top Back Left, Top Back Right.
-            All7Point1Point4 = FMOD_DSP_CHANNELMIX_OUTPUT_ALL7POINT1POINT4,
+            AllSurround714 = FMOD_DSP_CHANNELMIX_OUTPUT_ALL7POINT1POINT4,
         }
     }
 }
