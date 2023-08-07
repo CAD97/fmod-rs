@@ -21,23 +21,23 @@ use {
 };
 
 /// A parameter index for a DSP effect.
-pub trait DspParam<T: ?Sized + DspParamType>: Into<i32> {
+pub trait DspParam<T: DspParamType>: Into<i32> {
     /// The type of DSP this parameter is for. Mostly informational.
     const KIND: DspType;
 }
 
-impl<T: ?Sized + DspParamType> DspParam<T> for i32 {
+impl<T: DspParamType> DspParam<T> for i32 {
     const KIND: DspType = DspType::Unknown;
 }
 
 /// A type usable for DSP parameters.
-pub trait DspParamType: ToOwned {
+pub trait DspParamType: Sized {
     /// Sets a DSP parameter by index.
     fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result;
     /// Retrieves a DSP parameter by index.
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self::Owned>;
+    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self>;
     /// Retrieves the string representation of a DSP parameter by index.
-    fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>>;
+    fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str>;
 }
 
 impl DspParamType for bool {
@@ -51,50 +51,70 @@ impl DspParamType for bool {
     }
 
     fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<bool> {
-        let mut value = Default::default();
-        let value_str = ptr::null_mut();
+        let mut value = FMOD_BOOL::default();
         ffi!(FMOD_DSP_GetParameterBool(
             dsp.as_raw(),
             index,
             &mut value,
-            value_str,
+            ptr::null_mut(),
             0,
         ))?;
         Ok(value != 0)
     }
 
-    fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-        let value = ptr::null_mut();
-        let mut value_str = ArrayString::zero_filled();
+    fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
         ffi!(FMOD_DSP_GetParameterBool(
             dsp.as_raw(),
             index,
-            value,
-            value_str.as_mut_ptr().cast(),
-            32,
+            ptr::null_mut(),
+            bytes.as_mut_ptr().cast(),
+            bytes.len() as i32,
         ))?;
-        let strlen = CStr8::from_utf8_until_nul(value_str.as_bytes())
-            .map_err(|_| Error::InvalidString)?
-            .len();
-        unsafe { value_str.set_len(strlen) };
-        Ok(value_str)
+        Ok(CStr8::from_utf8_until_nul(bytes).map_err(|_| Error::InvalidString)?)
     }
 }
 
-impl DspParamType for [u8] {
-    fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
-        _ = (dsp, index, value);
-        todo!()
+impl<const N: usize> DspParamType for [u8; N] {
+    fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &[u8; N]) -> Result {
+        ffi!(FMOD_DSP_SetParameterData(
+            dsp.as_raw(),
+            index,
+            value.as_ptr().cast_mut().cast(),
+            value.len() as u32,
+        ))?;
+        Ok(())
     }
 
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Vec<u8>> {
-        _ = (dsp, index);
-        todo!()
+    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<[u8; N]> {
+        let mut value = ptr::null_mut();
+        let mut length = 0;
+        ffi!(FMOD_DSP_GetParameterData(
+            dsp.as_raw(),
+            index,
+            &mut value,
+            &mut length,
+            ptr::null_mut(),
+            0,
+        ))?;
+
+        if length as usize >= N {
+            yeet!(Error::InvalidParam);
+        }
+
+        // FIXME: copying out could possibly race a set, what do?
+        Ok(unsafe { *value.cast() })
     }
 
-    fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-        _ = (dsp, index);
-        todo!()
+    fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
+        ffi!(FMOD_DSP_GetParameterData(
+            dsp.as_raw(),
+            index,
+            ptr::null_mut(),
+            ptr::null_mut(),
+            bytes.as_mut_ptr().cast(),
+            bytes.len() as i32,
+        ))?;
+        Ok(CStr8::from_utf8_until_nul(bytes).map_err(|_| Error::InvalidString)?)
     }
 }
 
@@ -105,33 +125,26 @@ impl DspParamType for f32 {
     }
 
     fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<f32> {
-        let mut value = Self::default();
-        let value_str = ptr::null_mut();
+        let mut value = f32::default();
         ffi!(FMOD_DSP_GetParameterFloat(
             dsp.as_raw(),
             index,
             &mut value,
-            value_str,
+            ptr::null_mut(),
             0,
         ))?;
         Ok(value)
     }
 
-    fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-        let value = ptr::null_mut();
-        let mut value_str = ArrayString::zero_filled();
+    fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
         ffi!(FMOD_DSP_GetParameterFloat(
             dsp.as_raw(),
             index,
-            value,
-            value_str.as_mut_ptr().cast(),
-            32,
+            ptr::null_mut(),
+            bytes.as_mut_ptr().cast(),
+            bytes.len() as i32,
         ))?;
-        let strlen = CStr8::from_utf8_until_nul(value_str.as_bytes())
-            .map_err(|_| Error::InvalidString)?
-            .len();
-        unsafe { value_str.set_len(strlen) };
-        Ok(value_str)
+        Ok(CStr8::from_utf8_until_nul(bytes).map_err(|_| Error::InvalidString)?)
     }
 }
 
@@ -142,33 +155,26 @@ impl DspParamType for i32 {
     }
 
     fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<i32> {
-        let mut value = Self::default();
-        let value_str = &mut [];
+        let mut value = i32::default();
         ffi!(FMOD_DSP_GetParameterInt(
             dsp.as_raw(),
             index,
             &mut value,
-            value_str.as_mut_ptr(),
+            ptr::null_mut(),
             0,
         ))?;
         Ok(value)
     }
 
-    fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-        let value = ptr::null_mut();
-        let mut value_str = ArrayString::zero_filled();
+    fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
         ffi!(FMOD_DSP_GetParameterInt(
             dsp.as_raw(),
             index,
-            value,
-            value_str.as_mut_ptr().cast(),
-            32,
+            ptr::null_mut(),
+            bytes.as_mut_ptr().cast(),
+            bytes.len() as i32,
         ))?;
-        let strlen = CStr8::from_utf8_until_nul(value_str.as_bytes())
-            .map_err(|_| Error::InvalidString)?
-            .len();
-        unsafe { value_str.set_len(strlen) };
-        Ok(value_str)
+        Ok(CStr8::from_utf8_until_nul(bytes).map_err(|_| Error::InvalidString)?)
     }
 }
 
@@ -979,7 +985,7 @@ pub mod Oscillator {
             dsp.set_parameter::<i32>(index, *value as i32)
         }
 
-        fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self::Owned> {
+        fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
             match dsp.get_parameter::<i32>(index)? {
                 0 => Ok(Self::Sine),
                 1 => Ok(Self::Square),
@@ -991,8 +997,12 @@ pub mod Oscillator {
             }
         }
 
-        fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-            dsp.get_parameter_string::<i32>(index)
+        fn get_dsp_parameter_string<'a>(
+            dsp: &Dsp,
+            index: i32,
+            bytes: &'a mut [u8],
+        ) -> Result<&'a str> {
+            i32::get_dsp_parameter_string(dsp, index, bytes)
         }
     }
 }
@@ -1391,19 +1401,17 @@ impl DspParamType for Sidechain {
     fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
         static_assert!(size_of::<FMOD_DSP_PARAMETER_SIDECHAIN>() == size_of::<FMOD_BOOL>());
         let value = value.sidechainenable as FMOD_BOOL;
-        dsp.set_parameter::<[u8]>(index, value.to_ne_bytes())
+        dsp.set_parameter::<[u8; size_of::<FMOD_BOOL>()]>(index, value.to_ne_bytes())
     }
 
     fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-        // TODO: oh no my efficiency
-        let value = dsp.get_parameter::<[u8]>(index)?;
         Ok(Self {
-            sidechainenable: value.iter().any(|&b| b != 0),
+            sidechainenable: FMOD_BOOL::from_ne_bytes(dsp.get_parameter(index)?) != 0,
         })
     }
 
-    fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-        dsp.get_parameter_string::<[u8]>(index)
+    fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
+        <[u8; size_of::<FMOD_BOOL>()]>::get_dsp_parameter_string(dsp, index, bytes)
     }
 }
 

@@ -18,7 +18,7 @@ impl Dsp {
     }
 
     /// Sets a DSP parameter by index.
-    pub fn set_parameter<T: ?Sized + DspParamType>(
+    pub fn set_parameter<T: DspParamType>(
         &self,
         index: impl DspParam<T>,
         value: impl Borrow<T>,
@@ -27,19 +27,20 @@ impl Dsp {
     }
 
     /// Retrieves a DSP parameter by index.
-    pub fn get_parameter<T: ?Sized + DspParamType>(
-        &self,
-        index: impl DspParam<T>,
-    ) -> Result<T::Owned> {
+    pub fn get_parameter<T: DspParamType>(&self, index: impl DspParam<T>) -> Result<T> {
         T::get_dsp_parameter(self, index.into())
     }
 
     /// Retrieves the string representation of a DSP parameter by index.
-    pub fn get_parameter_string<T: ?Sized + DspParamType>(
+    pub fn get_parameter_string<T: DspParamType>(
         &self,
         index: impl DspParam<T>,
-    ) -> Result<ArrayString<32>> {
-        T::get_dsp_parameter_string(self, index.into())
+        string: &mut String,
+    ) -> Result {
+        string.clear();
+        let mut bytes = [0; FMOD_DSP_GETPARAM_VALUESTR_LENGTH as usize];
+        *string += T::get_dsp_parameter_string(self, index.into(), &mut bytes)?;
+        Ok(())
     }
 
     // set_data_parameter, get_data_parameter, get_data_parameter_string

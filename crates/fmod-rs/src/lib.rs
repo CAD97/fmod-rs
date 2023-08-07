@@ -86,7 +86,6 @@ mod _glob_prevention {
 #[doc(no_inline)]
 pub use {
     crate::core::*,
-    arrayvec::ArrayString,
     cstr8::{cstr8, CStr8},
 };
 

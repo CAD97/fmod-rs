@@ -62,7 +62,6 @@ fmod-core-sys = { version = "2.16.0", path = "../fmod-core-sys", optional = true
 fmod-fsbank-sys = { version = "2.16.0", path = "../fmod-fsbank-sys", optional = true }
 fmod-studio-sys = { version = "2.16.0", path = "../fmod-studio-sys", optional = true }
 
-arrayvec = "0.7.4"
 bytemuck = { version = "1.13.1", features = [
     "derive",
     "extern_crate_std",

@@ -687,8 +687,8 @@ macro_rules! fmod_enum {
                 Self::try_from_raw(value)
             }
 
-            fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<fmod::ArrayString<32>> {
-                dsp.get_parameter_string::<$Raw>(index)
+            fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
+                <$Raw>::get_dsp_parameter_string(dsp, index, bytes)
             }
         }
 
@@ -869,8 +869,8 @@ macro_rules! fmod_struct {
                 todo!()
             }
 
-            fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<::fmod::ArrayString<32>> {
-                _ = (dsp, index);
+            fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
+                _ = (dsp, index, bytes);
                 todo!()
             }
         }
