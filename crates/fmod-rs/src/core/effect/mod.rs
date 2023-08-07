@@ -707,28 +707,6 @@ pub mod LoudnessMeter {
         }
     }
 
-    impl DspParamType for WeightingType {
-        fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
-            let value = unsafe { &*(value as *const _ as *const [u8; size_of::<WeightingType>()]) };
-            dsp.set_parameter::<[u8]>(index, value.as_slice())
-        }
-
-        fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-            // TODO: oh no my efficiency
-            let value = dsp.get_parameter::<[u8]>(index)?;
-            if value.len() != size_of::<WeightingType>() {
-                yeet!(Error::InvalidParam);
-            }
-            let value =
-                unsafe { (value.as_slice() as *const _ as *const WeightingType).read_unaligned() };
-            Ok(value)
-        }
-
-        fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-            dsp.get_parameter_string::<[u8]>(index)
-        }
-    }
-
     fmod_struct! {
         /// Loudness meter information data structure.
         pub struct MeterInfoType = FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
@@ -750,28 +728,6 @@ pub mod LoudnessMeter {
             pub max_true_peak: f32,
             /// Highest momentary loudness value (400ms averages).
             pub max_momentary_loundness: f32,
-        }
-    }
-
-    impl DspParamType for MeterInfoType {
-        fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
-            let value = unsafe { &*(value as *const _ as *const [u8; size_of::<MeterInfoType>()]) };
-            dsp.set_parameter::<[u8]>(index, value.as_slice())
-        }
-
-        fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-            // TODO: oh no my efficiency
-            let value = dsp.get_parameter::<[u8]>(index)?;
-            if value.len() != size_of::<MeterInfoType>() {
-                yeet!(Error::InvalidParam);
-            }
-            let value =
-                unsafe { (value.as_slice() as *const _ as *const MeterInfoType).read_unaligned() };
-            Ok(value)
-        }
-
-        fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-            dsp.get_parameter_string::<[u8]>(index)
         }
     }
 }
@@ -1003,9 +959,11 @@ pub mod Oscillator {
         pub struct Rate(FMOD_DSP_OSCILLATOR_RATE): f32;
     }
 
+    #[repr(i32)]
     #[non_exhaustive]
     #[allow(missing_docs)]
     #[derive(Clone, Copy, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[derive(::bytemuck::Contiguous, ::bytemuck::NoUninit)]
     pub enum Waveform {
         #[default]
         Sine = 0,
@@ -1462,29 +1420,6 @@ fmod_struct! {
     }
 }
 
-impl DspParamType for OverallGain {
-    fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
-        static_assert!(size_of::<FMOD_DSP_PARAMETER_OVERALLGAIN>() == size_of::<OverallGain>());
-        let value = unsafe { &*(value as *const _ as *const [u8; size_of::<OverallGain>()]) };
-        dsp.set_parameter::<[u8]>(index, value.as_slice())
-    }
-
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self::Owned> {
-        // TODO: oh no my efficiency
-        let value = dsp.get_parameter::<[u8]>(index)?;
-        if value.len() != size_of::<OverallGain>() {
-            yeet!(Error::InvalidParam);
-        }
-        let value =
-            unsafe { (value.as_slice() as *const _ as *const OverallGain).read_unaligned() };
-        Ok(value)
-    }
-
-    fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-        dsp.get_parameter_string::<[u8]>(index)
-    }
-}
-
 fmod_struct! {
     /// 3D attributes data structure for multiple listeners.
     ///
@@ -1509,28 +1444,6 @@ fmod_struct! {
         pub weight: [f32; MAX_LISTENERS],
         /// Position of the sound in world coordinates.
         pub absolute: Attributes3d,
-    }
-}
-
-impl DspParamType for Attributes3dMulti {
-    fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
-        let value = unsafe { &*(value as *const _ as *const [u8; size_of::<Attributes3dMulti>()]) };
-        dsp.set_parameter::<[u8]>(index, value.as_slice())
-    }
-
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-        // TODO: oh no my efficiency
-        let value = dsp.get_parameter::<[u8]>(index)?;
-        if value.len() != size_of::<Attributes3dMulti>() {
-            yeet!(Error::InvalidParam);
-        }
-        let value =
-            unsafe { (value.as_slice() as *const _ as *const Attributes3dMulti).read_unaligned() };
-        Ok(value)
-    }
-
-    fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<ArrayString<32>> {
-        dsp.get_parameter_string::<[u8]>(index)
     }
 }
 

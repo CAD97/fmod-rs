@@ -28,6 +28,7 @@ fmod_struct! {
 /// The default is a reverse orientation if interpreted as right-handed.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, SmartDefault)]
+#[derive(::bytemuck::Pod, ::bytemuck::Zeroable)]
 pub struct Orientation3d {
     /// Forwards orientation, must be of unit length (1.0) and perpendicular to `up`.
     #[default(Vector::Z)]

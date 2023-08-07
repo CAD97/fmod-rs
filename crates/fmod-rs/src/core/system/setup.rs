@@ -384,6 +384,7 @@ impl System {
 }
 
 fmod_struct! {
+    #![fmod_no_pod]
     /// Advanced configuration settings.
     ///
     /// Structure to allow configuration of lesser used system level settings.

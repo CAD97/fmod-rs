@@ -30,29 +30,21 @@ macro_rules! group_syntax { ($($tt:tt)*) => ($($tt)*) }
 
 macro_rules! whoops {
     {
-        panic: $($args:tt)*
-    } => {{
-        #[cfg(feature = "log")]
-        log::error!($($args)*);
-        if cfg!(debug_assertions) {
-            if !::std::thread::panicking() {
-                panic!($($args)*);
-            }
-            use ::std::io::prelude::*;
-            let _ = writeln!(::std::io::stderr(), $($args)*);
-        }
-    }};
-    {
         no_panic: $($args:tt)*
     } => {{
         #[cfg(feature = "log")]
-        log::error!($($args)*);
+        ::log::error!($($args)*);
         if cfg!(debug_assertions) {
             use ::std::io::prelude::*;
             let _ = writeln!(::std::io::stderr(), $($args)*);
         }
     }};
-    ($($args:tt)*) => { whoops!{panic: $($args)*} };
+    ($($args:tt)*) => {{
+        if cfg!(debug_assertions) && !::std::thread::panicking() {
+            panic!($($args)*);
+        }
+        whoops!(no_panic: $($args)*);
+    }};
 }
 
 macro_rules! opaque_type {
@@ -68,11 +60,118 @@ macro_rules! opaque_type {
         }
 
         #[cfg(feature = "unstable")]
-        #[allow(unused_doc_comments)] // false positive vvvvvv
+        #[allow(unused_doc_comments)] // vvvvvv
         #[doc(cfg(all()))] // doesn't actually require cfg(feature = "unstable")
         extern {
             $(#[$meta])*
             $vis type $Name;
+        }
+    };
+}
+
+#[cfg(feature = "raw")]
+macro_rules! raw {
+    ($(#[$meta:meta])* pub $($tt:tt)*) => {
+        #[allow(clippy::missing_safety_doc, missing_docs)]
+        #[cfg_attr(feature = "unstable", doc(cfg(feature = "raw")))]
+        $(#[$meta])* pub $($tt)*
+    };
+    ($mac:ident! { $(#[$meta:meta])* pub $($tt:tt)* }) => {
+        $mac! {
+            #[allow(clippy::missing_safety_doc, missing_docs)]
+            #[doc(cfg(feature = "raw"))]
+            $(#[$meta])* pub $($tt)*
+        }
+    };
+
+}
+
+#[cfg(not(feature = "raw"))]
+macro_rules! raw {
+    ($(#[$meta:meta])* pub $($tt:tt)*) => {
+        #[allow(clippy::missing_safety_doc, dead_code, missing_docs)]
+        $(#[$meta])* pub(crate) $($tt)*
+    };
+    ($mac:ident! { $(#[$meta:meta])* pub $($tt:tt)* }) => {
+        $mac! {
+            #[allow(clippy::missing_safety_doc, dead_code, missing_docs)]
+            $(#[$meta])* pub(crate) $($tt)*
+        }
+    };
+}
+
+macro_rules! ffi {
+    ($e:expr) => {{
+        #[allow(unused_unsafe)]
+        fmod::Error::from_raw(unsafe { $e })
+    }};
+}
+
+macro_rules! fmod_flags_ops {
+    ($Name:ty: $($Op:ident)::+ $fn_op:ident $op:tt) => {
+        #[allow(deprecated)]
+        impl $($Op)::+ for $Name {
+            type Output = $Name;
+            fn $fn_op(self) -> $Name {
+                let raw = $op <$Name>::into_raw(self);
+                <$Name>::from_raw(raw)
+            }
+        }
+
+        #[allow(deprecated)]
+        impl $($Op)::+ for &'_ $Name {
+            type Output = $Name;
+            fn $fn_op(self) -> $Name {
+                $op *self
+            }
+        }
+    };
+    ($Name:ty: $($Op:ident)::+ $fn_op:ident $op:tt $($OpAssign:ident)::+ $fn_op_assign:ident) => {
+        #[allow(deprecated)]
+        impl $($Op)::+ for $Name {
+            type Output = $Name;
+            fn $fn_op(self, rhs: $Name) -> $Name {
+                let raw = <$Name>::into_raw(self) $op <$Name>::into_raw(rhs);
+                <$Name>::from_raw(raw)
+            }
+        }
+
+        #[allow(deprecated)]
+        impl $($Op)::+<&$Name> for $Name {
+            type Output = $Name;
+            fn $fn_op(self, rhs: &$Name) -> $Name {
+                self $op *rhs
+            }
+        }
+
+        #[allow(deprecated)]
+        impl $($Op)::+<$Name> for &$Name {
+            type Output = $Name;
+            fn $fn_op(self, rhs: $Name) -> $Name {
+                *self $op rhs
+            }
+        }
+
+        #[allow(deprecated)]
+        impl $($Op)::+<&$Name> for &$Name {
+            type Output = $Name;
+            fn $fn_op(self, rhs: &$Name) -> $Name {
+                *self $op *rhs
+            }
+        }
+
+        #[allow(deprecated)]
+        impl $($OpAssign)::+ for $Name {
+            fn $fn_op_assign(&mut self, rhs: $Name) {
+                *self = *self $op rhs;
+            }
+        }
+
+        #[allow(deprecated)]
+        impl $($OpAssign)::+<&$Name> for $Name {
+            fn $fn_op_assign(&mut self, rhs: &$Name) {
+                *self = *self $op *rhs;
+            }
         }
     };
 }
@@ -248,113 +347,6 @@ macro_rules! fmod_class {
     };
 }
 
-#[cfg(feature = "raw")]
-macro_rules! raw {
-    ($(#[$meta:meta])* pub $($tt:tt)*) => {
-        #[allow(clippy::missing_safety_doc, missing_docs)]
-        #[cfg_attr(feature = "unstable", doc(cfg(feature = "raw")))]
-        $(#[$meta])* pub $($tt)*
-    };
-    ($mac:ident! { $(#[$meta:meta])* pub $($tt:tt)* }) => {
-        $mac! {
-            #[allow(clippy::missing_safety_doc, missing_docs)]
-            #[doc(cfg(feature = "raw"))]
-            $(#[$meta])* pub $($tt)*
-        }
-    };
-
-}
-
-#[cfg(not(feature = "raw"))]
-macro_rules! raw {
-    ($(#[$meta:meta])* pub $($tt:tt)*) => {
-        #[allow(clippy::missing_safety_doc, dead_code, missing_docs)]
-        $(#[$meta])* pub(crate) $($tt)*
-    };
-    ($mac:ident! { $(#[$meta:meta])* pub $($tt:tt)* }) => {
-        $mac! {
-            #[allow(clippy::missing_safety_doc, dead_code, missing_docs)]
-            $(#[$meta])* pub(crate) $($tt)*
-        }
-    };
-}
-
-macro_rules! ffi {
-    ($e:expr) => {{
-        #[allow(unused_unsafe)]
-        fmod::Error::from_raw(unsafe { $e })
-    }};
-}
-
-macro_rules! fmod_flags_ops {
-    ($Name:ty: $($Op:ident)::+ $fn_op:ident $op:tt) => {
-        #[allow(deprecated)]
-        impl $($Op)::+ for $Name {
-            type Output = $Name;
-            fn $fn_op(self) -> $Name {
-                let raw = $op <$Name>::into_raw(self);
-                <$Name>::from_raw(raw)
-            }
-        }
-
-        #[allow(deprecated)]
-        impl $($Op)::+ for &'_ $Name {
-            type Output = $Name;
-            fn $fn_op(self) -> $Name {
-                $op *self
-            }
-        }
-    };
-    ($Name:ty: $($Op:ident)::+ $fn_op:ident $op:tt $($OpAssign:ident)::+ $fn_op_assign:ident) => {
-        #[allow(deprecated)]
-        impl $($Op)::+ for $Name {
-            type Output = $Name;
-            fn $fn_op(self, rhs: $Name) -> $Name {
-                let raw = <$Name>::into_raw(self) $op <$Name>::into_raw(rhs);
-                <$Name>::from_raw(raw)
-            }
-        }
-
-        #[allow(deprecated)]
-        impl $($Op)::+<&$Name> for $Name {
-            type Output = $Name;
-            fn $fn_op(self, rhs: &$Name) -> $Name {
-                self $op *rhs
-            }
-        }
-
-        #[allow(deprecated)]
-        impl $($Op)::+<$Name> for &$Name {
-            type Output = $Name;
-            fn $fn_op(self, rhs: $Name) -> $Name {
-                *self $op rhs
-            }
-        }
-
-        #[allow(deprecated)]
-        impl $($Op)::+<&$Name> for &$Name {
-            type Output = $Name;
-            fn $fn_op(self, rhs: &$Name) -> $Name {
-                *self $op *rhs
-            }
-        }
-
-        #[allow(deprecated)]
-        impl $($OpAssign)::+ for $Name {
-            fn $fn_op_assign(&mut self, rhs: $Name) {
-                *self = *self $op rhs;
-            }
-        }
-
-        #[allow(deprecated)]
-        impl $($OpAssign)::+<&$Name> for $Name {
-            fn $fn_op_assign(&mut self, rhs: &$Name) {
-                *self = *self $op *rhs;
-            }
-        }
-    };
-}
-
 macro_rules! fmod_flags {
     {$(
         $(#[$meta:meta])*
@@ -367,6 +359,7 @@ macro_rules! fmod_flags {
         $(#[$meta])*
         #[repr(transparent)]
         #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+        #[derive(::bytemuck::Pod, ::bytemuck::Zeroable)]
         $vis struct $Name {
             raw: $Raw,
         }
@@ -432,9 +425,9 @@ macro_rules! fmod_flags {
         fmod_flags_ops!($Name: std::ops::Not not !);
 
         #[allow(deprecated)]
-        impl std::fmt::Debug for $Name {
+        impl ::std::fmt::Debug for $Name {
             #[allow(unreachable_patterns)]
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match *self {
                     $($Name::$Variant => f.debug_struct(stringify!($Variant)).finish(),)*
                     _ => f.debug_struct(stringify!($Name)).field("raw", &self.raw).finish(),
@@ -613,6 +606,7 @@ macro_rules! fmod_enum {
         #[repr(i32)]
         #[non_exhaustive]
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+        #[derive(::bytemuck::NoUninit)]
         $vis enum $Name {
             $(
                 $(#[$($vmeta)*])*
@@ -683,7 +677,7 @@ macro_rules! fmod_enum {
             "fmod_enum! is missing some variant(s)",
         }
 
-        impl fmod::effect::DspParamType for $Name {
+        impl ::fmod::effect::DspParamType for $Name {
             fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
                 dsp.set_parameter::<$Raw>(index, value.into_raw())
             }
@@ -695,6 +689,23 @@ macro_rules! fmod_enum {
 
             fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<fmod::ArrayString<32>> {
                 dsp.get_parameter_string::<$Raw>(index)
+            }
+        }
+
+        unsafe impl ::bytemuck::Zeroable for $Name {}
+
+        unsafe impl ::bytemuck::Contiguous for $Name {
+            type Int = $Raw;
+
+            const MAX_VALUE: $Raw = $MAX - 1;
+            const MIN_VALUE: $Raw = $MIN;
+        }
+
+        unsafe impl ::bytemuck::CheckedBitPattern for $Name {
+            type Bits = $Raw;
+
+            fn is_valid_bit_pattern(bits: &$Raw) -> bool {
+                $MIN <= *bits && *bits < $MAX
             }
         }
     };
@@ -711,6 +722,7 @@ macro_rules! fmod_typedef {
         $(#[$meta])*
         #[repr(transparent)]
         #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+        #[derive(::bytemuck::Pod, ::bytemuck::Zeroable)]
         $vis struct $Name {
             raw: $Raw,
         }
@@ -832,6 +844,55 @@ macro_rules! fmod_struct {
     };
     {
         #![fmod_no_default]
+        $(#[$meta:meta])*
+        $vis:vis struct $Name:ident$(<$lt:lifetime>)? = $Raw:ident {
+            $($body:tt)*
+        }
+    } => {
+        fmod_struct! {
+            #![fmod_no_pod, fmod_no_default]
+            $(#[$meta])*
+            #[derive(::bytemuck::Pod, ::bytemuck::Zeroable)]
+            $vis struct $Name$(<$lt>)? = $Raw {
+                $($body)*
+            }
+        }
+
+        impl$(<$lt>)? ::fmod::effect::DspParamType for $Name$(<$lt>)? {
+            fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
+                _ = (dsp, index, value);
+                todo!()
+            }
+
+            fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
+                _ = (dsp, index);
+                todo!()
+            }
+
+            fn get_dsp_parameter_string(dsp: &Dsp, index: i32) -> Result<::fmod::ArrayString<32>> {
+                _ = (dsp, index);
+                todo!()
+            }
+        }
+    };
+    {
+        #![fmod_no_pod]
+        $(#[$meta:meta])*
+        $vis:vis struct $Name:ident$(<$lt:lifetime>)? = $Raw:ident {
+            $($body:tt)*
+        }
+    } => {
+        fmod_struct! {
+            #![fmod_no_pod, fmod_no_default]
+            $(#[$meta])*
+            #[derive(::bytemuck::Zeroable, ::smart_default::SmartDefault)]
+            $vis struct $Name$(<$lt>)? = $Raw {
+                $($body)*
+            }
+        }
+    };
+    {
+        #![fmod_no_pod, fmod_no_default]
         $(#[$meta:meta])*
         $vis:vis struct $Name:ident$(<$lt:lifetime>)? = $Raw:ident {
             $($body:tt)*

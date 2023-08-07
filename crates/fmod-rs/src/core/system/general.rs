@@ -74,7 +74,7 @@ impl System {
 }
 
 fmod_struct! {
-    #![fmod_no_default]
+    #![fmod_no_pod, fmod_no_default]
     /// Information describing an error that has occurred.
     pub struct ErrorInfo<'a> = FMOD_ERRORCALLBACK_INFO {
         result: Result,
