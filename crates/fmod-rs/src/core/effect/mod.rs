@@ -417,9 +417,7 @@ pub mod ConvolutionReverb {
             }
 
             let pcm_len = sound.get_length(TimeUnit::Pcm)?;
-            let byte_len = sound.get_length(TimeUnit::PcmBytes)?;
             let ir_len = ix!(pcm_len) * ix!(sound_info.channels) + 1;
-
             let mut ir_data = Vec::with_capacity(ir_len);
             ir_data.push(sound_info.channels as i16);
 
