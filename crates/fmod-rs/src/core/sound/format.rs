@@ -379,11 +379,11 @@ raw! {
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash)]
 pub struct SoundFormatInfo {
     /// Type of sound.
-    kind: SoundType,
+    pub kind: SoundType,
     /// Format of the sound.
-    format: SoundFormat,
+    pub format: SoundFormat,
     /// Number of channels.
-    channels: i32,
+    pub channels: i32,
     /// Number of bits per sample, corresponding to `format`.
-    bits_per_sample: i32,
+    pub bits_per_sample: i32,
 }

@@ -76,9 +76,7 @@ impl Example {
             .with_env_filter("info,fmod::handle=trace".parse::<tracing_subscriber::EnvFilter>()?)
             .init();
 
-        std::panic::set_hook(Box::new(|info| {
-            tracing::error!("{}", info);
-        }));
+        std::panic::set_hook(Box::new(tracing_panic::panic_hook));
 
         terminal::enable_raw_mode()?;
         execute!(

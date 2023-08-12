@@ -682,10 +682,10 @@ macro_rules! fmod_enum {
                 dsp.set_parameter::<$Raw>(index, value.into_raw())
             }
 
-            fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-                let value = dsp.get_parameter::<$Raw>(index)?;
-                Self::try_from_raw(value)
-            }
+            // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
+            //     let value = dsp.get_parameter::<$Raw>(index)?;
+            //     Self::try_from_raw(value)
+            // }
 
             fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
                 <$Raw>::get_dsp_parameter_string(dsp, index, bytes)
@@ -863,10 +863,10 @@ macro_rules! fmod_struct {
                 <[u8; ::std::mem::size_of::<Self>()]>::set_dsp_parameter(dsp, index, ::bytemuck::cast_ref(value))
             }
 
-            fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-                let value = <[u8; ::std::mem::size_of::<Self>()]>::get_dsp_parameter(dsp, index)?;
-                Ok(::bytemuck::cast(value))
-            }
+            // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
+            //     let value = <[u8; ::std::mem::size_of::<Self>()]>::get_dsp_parameter(dsp, index)?;
+            //     Ok(::bytemuck::cast(value))
+            // }
 
             fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
                 <[u8; ::std::mem::size_of::<Self>()]>::get_dsp_parameter_string(dsp, index, bytes)

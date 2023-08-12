@@ -79,8 +79,8 @@ impl<T: ?Sized + Resource> Drop for Handle<'_, T> {
 
 impl<'a, T: ?Sized + Resource> Handle<'a, T> {
     raw! {
-        pub fn into_raw(this: Self) -> *mut T::Raw {
-            let this = ManuallyDrop::new(this);
+        pub fn into_raw(self) -> *mut T::Raw {
+            let this = ManuallyDrop::new(self);
             this.as_raw()
         }
     }
@@ -105,7 +105,7 @@ impl<'a, T: ?Sized + Resource> Handle<'a, T> {
     /// This is only necessary if you want to handle potential errors yourself;
     /// the resource handle is automatically released when dropped.
     pub fn release(self) -> fmod::Result {
-        let this = ManuallyDrop::new(self);
+        let this = &*ManuallyDrop::new(self);
         let result = unsafe { T::release(this.as_raw()) };
         if result.is_ok() {
             #[cfg(feature = "log")]

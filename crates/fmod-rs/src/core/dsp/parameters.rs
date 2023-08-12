@@ -18,7 +18,7 @@ impl Dsp {
     }
 
     /// Sets a DSP parameter by index.
-    pub fn set_parameter<T: DspParamType>(
+    pub fn set_parameter<T: ?Sized + DspParamType>(
         &self,
         index: impl DspParam<T>,
         value: impl Borrow<T>,
@@ -26,13 +26,13 @@ impl Dsp {
         T::set_dsp_parameter(self, index.into(), value.borrow())
     }
 
-    /// Retrieves a DSP parameter by index.
-    pub fn get_parameter<T: DspParamType>(&self, index: impl DspParam<T>) -> Result<T> {
-        T::get_dsp_parameter(self, index.into())
-    }
+    // /// Retrieves a DSP parameter by index.
+    // pub fn get_parameter<T: DspParamType>(&self, index: impl DspParam<T>) -> Result<T> {
+    //     T::get_dsp_parameter(self, index.into())
+    // }
 
     /// Retrieves the string representation of a DSP parameter by index.
-    pub fn get_parameter_string<T: DspParamType>(
+    pub fn get_parameter_string<T: ?Sized + DspParamType>(
         &self,
         index: impl DspParam<T>,
         string: &mut String,

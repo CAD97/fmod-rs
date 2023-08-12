@@ -17,25 +17,30 @@ use {
     fmod::{raw::*, *},
     paste::paste,
     seq_macro::seq,
-    std::{mem::size_of, ptr},
+    std::{
+        mem::{size_of, size_of_val},
+        ptr,
+    },
 };
 
 /// A parameter index for a DSP effect.
-pub trait DspParam<T: DspParamType>: Into<i32> {
+pub trait DspParam<T: ?Sized + DspParamType>: Into<i32> {
     /// The type of DSP this parameter is for. Mostly informational.
     const KIND: DspType;
 }
 
-impl<T: DspParamType> DspParam<T> for i32 {
+impl<T: ?Sized + DspParamType> DspParam<T> for i32 {
     const KIND: DspType = DspType::Unknown;
 }
 
 /// A type usable for DSP parameters.
-pub trait DspParamType: Sized {
+pub trait DspParamType {
     /// Sets a DSP parameter by index.
     fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result;
-    /// Retrieves a DSP parameter by index.
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self>;
+    // /// Retrieves a DSP parameter by index.
+    // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self>
+    // where
+    //     Self: Sized;
     /// Retrieves the string representation of a DSP parameter by index.
     fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str>;
 }
@@ -50,17 +55,17 @@ impl DspParamType for bool {
         Ok(())
     }
 
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<bool> {
-        let mut value = FMOD_BOOL::default();
-        ffi!(FMOD_DSP_GetParameterBool(
-            dsp.as_raw(),
-            index,
-            &mut value,
-            ptr::null_mut(),
-            0,
-        ))?;
-        Ok(value != 0)
-    }
+    // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<bool> {
+    //     let mut value = FMOD_BOOL::default();
+    //     ffi!(FMOD_DSP_GetParameterBool(
+    //         dsp.as_raw(),
+    //         index,
+    //         &mut value,
+    //         ptr::null_mut(),
+    //         0,
+    //     ))?;
+    //     Ok(value != 0)
+    // }
 
     fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
         ffi!(FMOD_DSP_GetParameterBool(
@@ -74,48 +79,85 @@ impl DspParamType for bool {
     }
 }
 
-impl<const N: usize> DspParamType for [u8; N] {
-    fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &[u8; N]) -> Result {
-        ffi!(FMOD_DSP_SetParameterData(
-            dsp.as_raw(),
-            index,
-            value.as_ptr().cast_mut().cast(),
-            value.len() as u32,
-        ))?;
-        Ok(())
-    }
+macro_rules! data_array_param {
+    ($($T:ty),* $(,)?) => {$(
+        impl DspParamType for [$T] {
+            fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &[$T]) -> Result {
+                ffi!(FMOD_DSP_SetParameterData(
+                    dsp.as_raw(),
+                    index,
+                    value.as_ptr().cast_mut().cast(),
+                    size_of_val(value) as u32,
+                ))?;
+                Ok(())
+            }
 
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<[u8; N]> {
-        let mut value = ptr::null_mut();
-        let mut length = 0;
-        ffi!(FMOD_DSP_GetParameterData(
-            dsp.as_raw(),
-            index,
-            &mut value,
-            &mut length,
-            ptr::null_mut(),
-            0,
-        ))?;
+            // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> where Self: Sized {
+            //     unreachable!()
+            // }
 
-        if length as usize >= N {
-            yeet!(Error::InvalidParam);
+            fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
+                ffi!(FMOD_DSP_GetParameterData(
+                    dsp.as_raw(),
+                    index,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    bytes.as_mut_ptr().cast(),
+                    bytes.len() as i32,
+                ))?;
+                Ok(CStr8::from_utf8_until_nul(bytes).map_err(|_| Error::InvalidString)?)
+            }
         }
 
-        // FIXME: copying out could possibly race a set, what do?
-        Ok(unsafe { *value.cast() })
-    }
+        impl<const N: usize> DspParamType for [$T; N] {
+            fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &[$T; N]) -> Result {
+                ffi!(FMOD_DSP_SetParameterData(
+                    dsp.as_raw(),
+                    index,
+                    value.as_ptr().cast_mut().cast(),
+                    size_of::<[$T; N]>() as u32,
+                ))?;
+                Ok(())
+            }
 
-    fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
-        ffi!(FMOD_DSP_GetParameterData(
-            dsp.as_raw(),
-            index,
-            ptr::null_mut(),
-            ptr::null_mut(),
-            bytes.as_mut_ptr().cast(),
-            bytes.len() as i32,
-        ))?;
-        Ok(CStr8::from_utf8_until_nul(bytes).map_err(|_| Error::InvalidString)?)
-    }
+            // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<[$T; N]> {
+            //     let mut value = ptr::null_mut();
+            //     let mut length = 0;
+            //     ffi!(FMOD_DSP_GetParameterData(
+            //         dsp.as_raw(),
+            //         index,
+            //         &mut value,
+            //         &mut length,
+            //         ptr::null_mut(),
+            //         0,
+            //     ))?;
+
+            //     if length as usize >= size_of::<[$T; N]>() {
+            //         yeet!(Error::InvalidParam);
+            //     }
+
+            //     // FIXME: copying out could possibly race a set, what do?
+            //     Ok(unsafe { *value.cast() })
+            // }
+
+            fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
+                ffi!(FMOD_DSP_GetParameterData(
+                    dsp.as_raw(),
+                    index,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    bytes.as_mut_ptr().cast(),
+                    bytes.len() as i32,
+                ))?;
+                Ok(CStr8::from_utf8_until_nul(bytes).map_err(|_| Error::InvalidString)?)
+            }
+        }
+    )*}
+}
+
+data_array_param! {
+    u8, u16, u32, u64,
+    i8, i16, i32, i64,
 }
 
 impl DspParamType for f32 {
@@ -124,17 +166,17 @@ impl DspParamType for f32 {
         Ok(())
     }
 
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<f32> {
-        let mut value = f32::default();
-        ffi!(FMOD_DSP_GetParameterFloat(
-            dsp.as_raw(),
-            index,
-            &mut value,
-            ptr::null_mut(),
-            0,
-        ))?;
-        Ok(value)
-    }
+    // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<f32> {
+    //     let mut value = f32::default();
+    //     ffi!(FMOD_DSP_GetParameterFloat(
+    //         dsp.as_raw(),
+    //         index,
+    //         &mut value,
+    //         ptr::null_mut(),
+    //         0,
+    //     ))?;
+    //     Ok(value)
+    // }
 
     fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
         ffi!(FMOD_DSP_GetParameterFloat(
@@ -154,17 +196,17 @@ impl DspParamType for i32 {
         Ok(())
     }
 
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<i32> {
-        let mut value = i32::default();
-        ffi!(FMOD_DSP_GetParameterInt(
-            dsp.as_raw(),
-            index,
-            &mut value,
-            ptr::null_mut(),
-            0,
-        ))?;
-        Ok(value)
-    }
+    // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<i32> {
+    //     let mut value = i32::default();
+    //     ffi!(FMOD_DSP_GetParameterInt(
+    //         dsp.as_raw(),
+    //         index,
+    //         &mut value,
+    //         ptr::null_mut(),
+    //         0,
+    //     ))?;
+    //     Ok(value)
+    // }
 
     fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
         ffi!(FMOD_DSP_GetParameterInt(
@@ -342,6 +384,71 @@ pub mod ConvolutionReverb {
         pub struct Dry(FMOD_DSP_CONVOLUTION_REVERB_PARAM_DRY): f32;
         /// Linked - channels are mixed together before processing through the reverb.
         pub struct Linked(FMOD_DSP_CONVOLUTION_REVERB_PARAM_LINKED): bool;
+        /// Array of signed 16-bit (short) PCM data to be used as reverb impulse response.
+        pub struct Ir(FMOD_DSP_CONVOLUTION_REVERB_PARAM_IR): ImpulseResponse;
+    }
+
+    #[repr(C)]
+    /// Array of signed 16-bit (short) PCM data to be used as reverb impulse response.
+    pub struct ImpulseResponse {
+        /// The number of channels.
+        pub num_channels: i16,
+        /// The raw 16 bit PCM data.
+        pub pcm_data: [i16],
+    }
+
+    // TODO: a better way to manually create an ImpulseResponse? (slice-dst?)
+    // TODO: indexing based on PCM samples?
+
+    impl ImpulseResponse {
+        /// Extracts impulse response data from an IR sound.
+        pub fn from_sound(sound: &Sound) -> Result<Box<Self>> {
+            let sound_info = sound.get_format()?;
+            match sound_info.format {
+                SoundFormat::Pcm16 => {}, // expected
+                SoundFormat::None | SoundFormat::Bitstream => yeet!(Error::Format), // bad format
+                | SoundFormat::Pcm8
+                | SoundFormat::Pcm24
+                | SoundFormat::Pcm32
+                | SoundFormat::PcmFloat => {
+                    whoops!("FMOD.rs unimplemented IR PCM format");
+                    yeet!(Error::Format); // FIXME; don't actually panic though
+                },
+            }
+
+            let pcm_len = sound.get_length(TimeUnit::Pcm)?;
+            let byte_len = sound.get_length(TimeUnit::PcmBytes)?;
+            let ir_len = ix!(pcm_len) * ix!(sound_info.channels) + 1;
+
+            let mut ir_data = Vec::with_capacity(ir_len);
+            ir_data.push(sound_info.channels as i16);
+
+            unsafe {
+                let data_buf = &mut *(ir_data.spare_capacity_mut() as *mut _ as *mut [i16]);
+                let data_read = sound.read_data(bytemuck::cast_slice_mut(data_buf))?;
+                ir_data.set_len(data_read / size_of::<i16>() + 1);
+            }
+
+            assert_eq!(ir_data.len(), ir_len);
+            let ir_data = Box::into_raw(ir_data.into_boxed_slice()) as *mut i16;
+            let ir_data = ptr::slice_from_raw_parts_mut(ir_data, ir_len - 1);
+            unsafe { Ok(Box::from_raw(ir_data as *mut ImpulseResponse)) }
+        }
+    }
+
+    impl DspParamType for ImpulseResponse {
+        fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
+            let ir_data = unsafe { &*(value as *const _ as *const _) };
+            <[i16]>::set_dsp_parameter(dsp, index, ir_data)
+        }
+
+        fn get_dsp_parameter_string<'a>(
+            dsp: &Dsp,
+            index: i32,
+            bytes: &'a mut [u8],
+        ) -> Result<&'a str> {
+            <[i16]>::get_dsp_parameter_string(dsp, index, bytes)
+        }
     }
 
     // ImpulseResponse
@@ -985,17 +1092,17 @@ pub mod Oscillator {
             dsp.set_parameter::<i32>(index, *value as i32)
         }
 
-        fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-            match dsp.get_parameter::<i32>(index)? {
-                0 => Ok(Self::Sine),
-                1 => Ok(Self::Square),
-                2 => Ok(Self::SawUp),
-                3 => Ok(Self::SawDown),
-                4 => Ok(Self::Triangle),
-                5 => Ok(Self::Noise),
-                _ => Err(Error::InvalidParam),
-            }
-        }
+        // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
+        //     match dsp.get_parameter::<i32>(index)? {
+        //         0 => Ok(Self::Sine),
+        //         1 => Ok(Self::Square),
+        //         2 => Ok(Self::SawUp),
+        //         3 => Ok(Self::SawDown),
+        //         4 => Ok(Self::Triangle),
+        //         5 => Ok(Self::Noise),
+        //         _ => Err(Error::InvalidParam),
+        //     }
+        // }
 
         fn get_dsp_parameter_string<'a>(
             dsp: &Dsp,
@@ -1404,11 +1511,11 @@ impl DspParamType for Sidechain {
         dsp.set_parameter::<[u8; size_of::<FMOD_BOOL>()]>(index, value.to_ne_bytes())
     }
 
-    fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-        Ok(Self {
-            sidechainenable: FMOD_BOOL::from_ne_bytes(dsp.get_parameter(index)?) != 0,
-        })
-    }
+    // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
+    //     Ok(Self {
+    //         sidechainenable: FMOD_BOOL::from_ne_bytes(dsp.get_parameter(index)?) != 0,
+    //     })
+    // }
 
     fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
         <[u8; size_of::<FMOD_BOOL>()]>::get_dsp_parameter_string(dsp, index, bytes)

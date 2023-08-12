@@ -6,7 +6,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let media_path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/media/"));
     if !media_path.exists() {
         fs::create_dir_all(media_path)?;
-        let Some(core_media_path) = core_examples_media() else { return Ok(()) };
+        let Some(core_media_path) = core_examples_media() else {
+            return Ok(());
+        };
         let core_media = fs::read_dir(core_media_path)?
             .map(|entry| entry.map(|entry| entry.path()))
             .collect::<Result<Vec<_>, _>>()?;

@@ -1,4 +1,7 @@
-use fmod::{raw::*, *};
+use {
+    fmod::{raw::*, *},
+    std::ptr,
+};
 
 // We make the potentially dangerous assumption that for the FMOD_CHANNELCONTROL
 // API, FMOD_Channel_Op and FMOD_ChannelGroup_Op call the same static function
@@ -27,8 +30,14 @@ impl ChannelControl {
     ///
     /// [DSP Architecture and Usage]: https://fmod.com/docs/2.02/api/white-papers-dsp-architecture.html
     pub fn add_dsp(&self, index: i32, dsp: &Dsp) -> Result {
+        // FIXME: dropping the DSP without removing it from the mixer network is an error
         ffi!(FMOD_Channel_AddDSP(self.as_raw() as _, index, dsp.as_raw()))?;
         Ok(())
+    }
+
+    /// Adds a DSP to the end of the DSP chain (at the [tail](ChannelControl::DSP_TAIL)).
+    pub fn push_dsp(&self, dsp: &Dsp) -> Result {
+        self.add_dsp(Self::DSP_TAIL, dsp)
     }
 
     /// Removes the specified DSP unit from the DSP chain.
@@ -42,6 +51,23 @@ impl ChannelControl {
         let mut num_dsps = 0;
         ffi!(FMOD_Channel_GetNumDSPs(self.as_raw() as _, &mut num_dsps))?;
         Ok(num_dsps)
+    }
+
+    /// Retrieves the DSP unit at the specified index in the DSP chain.
+    pub unsafe fn get_dsp(&self, index: i32) -> Result<&Dsp> {
+        let mut dsp = ptr::null_mut();
+        ffi!(FMOD_Channel_GetDSP(self.as_raw() as _, index, &mut dsp))?;
+        Ok(Dsp::from_raw(dsp))
+    }
+
+    /// Retrieves the DSP unit at the head of the DSP chain.
+    pub unsafe fn get_dsp_head(&self) -> Result<&Dsp> {
+        self.get_dsp(Self::DSP_HEAD)
+    }
+
+    /// Retrieves the DSP unit at the tail of the DSP chain.
+    pub unsafe fn get_dsp_tail(&self) -> Result<&Dsp> {
+        self.get_dsp(Self::DSP_TAIL)
     }
 
     /// Sets the index in the DSP chain of the specified DSP.
