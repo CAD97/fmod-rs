@@ -4,7 +4,7 @@
 //!
 //! This example shows how to manipulate a DSP network and as an example, creates 2
 //! DSP effects, splitting a single sound into 2 audio paths, which it then filters
-//! seperately.
+//! separately.
 //!
 //! To only have each audio path come out of one speaker each,
 //! DSPConnection::setMixMatrix is used just before the 2 branches merge back together
@@ -26,7 +26,7 @@
 /*============================================================================*/
 #![allow(deprecated)]
 
-use fmod_examples::{media, sleep_ms, yeet, Buttons, Example};
+use fmod_examples::{media, sleep_ms, Buttons, Example};
 
 fn main() -> anyhow::Result<()> {
     let mut example = Example::init()?;
@@ -190,6 +190,12 @@ fn main() -> anyhow::Result<()> {
 
             sleep_ms(50);
         }
+
+        // Shut down
+        sound.release()?;
+        dsp_lowpass.release()?;
+        dsp_highpass.release()?;
+        system.release()?;
     }
 
     example.close()?;
