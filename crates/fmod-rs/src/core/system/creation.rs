@@ -52,11 +52,10 @@ impl System {
     /// Use of Mode::NonBlocking is currently not supported for Wasm.
     /// </span></div></div>
     pub fn create_sound(&self, name: &CStr8, mode: Mode) -> Result<Handle<'_, Sound>> {
-        if matches!(
-            mode,
-            Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw
-        ) {
-            whoops!("System::create_sound called with extended mode {mode:?}; use create_sound_ex instead");
+        if mode & (Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw)
+            != Mode::default()
+        {
+            whoops!("System::create_sound called with advanced mode {mode:?}; use create_sound_ex instead");
             yeet!(Error::InvalidParam);
         }
 
@@ -81,7 +80,8 @@ impl System {
     ///
     /// Note that [Mode::OpenRaw], [Mode::OpenMemory], [Mode::OpenMemoryPoint],
     /// and [Mode::OpenUser] will not work without required additional
-    /// information provided in the [`CreateSoundEx`] type.
+    /// information provided in the [`CreateSoundEx`] type. If you aren't using
+    /// those modes, use [`create_sound`](Self::create_sound) instead.
     ///
     /// Use [Mode::NonBlocking] to have the sound open or load in the
     /// background. You can use [Sound::get_open_state] to determine if it has
@@ -102,8 +102,36 @@ impl System {
     /// <span class="emoji">⚠️</span><span>
     /// Use of Mode::NonBlocking is currently not supported for Wasm.
     /// </span></div></div>
-    pub fn create_sound_ex(&self) -> CreateSoundEx<'_> {
-        CreateSoundEx::new()
+    ///
+    /// # Safety
+    ///
+    /// Configuration via `CreateSoundEx` must be correct, and `name_or_data`
+    /// must be a valid pointer that lives sufficiently long for the specified
+    /// sound creation mode.
+    pub unsafe fn create_sound_ex(
+        &self,
+        name_or_data: *const u8,
+        mode: Mode,
+        info: CreateSoundEx<'_>,
+    ) -> Result<Handle<'_, Sound>> {
+        if mode & (Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw)
+            == Mode::default()
+        {
+            whoops!(
+                "System::create_sound called with standard mode {mode:?}; use create_sound instead"
+            );
+            yeet!(Error::InvalidParam);
+        }
+
+        let mut sound = ptr::null_mut();
+        ffi!(FMOD_System_CreateSound(
+            self.as_raw(),
+            name_or_data.cast(),
+            mode.into_raw(),
+            info.as_raw(),
+            &mut sound,
+        ))?;
+        Ok(Handle::new(sound))
     }
 
     /// Opens a sound for streaming.
@@ -493,6 +521,7 @@ impl System {
 /// only be the memory allocated for 1 subsound. Previously there would still be
 /// 10,000 subsound pointers and other associated codec entries allocated along
 /// with it multiplied by 10,000.
+#[repr(transparent)]
 #[derive(Clone, Copy)]
 pub struct CreateSoundEx<'a> {
     info: FMOD_CREATESOUNDEXINFO,
@@ -516,31 +545,8 @@ impl CreateSoundEx<'_> {
         }
     }
 
-    /// Dispatch the sound creation.
-    ///
-    /// # Safety
-    ///
-    /// Information provided by the builder methods must agree with the sound
-    /// mode provided, and `name_or_data` must be valid as expected for creating
-    /// the sound in the selected mode.
-    ///
-    /// Consult the type-level documentation as well as [`System::create_sound`]
-    /// and [`create_sound_ex`](System::create_sound_ex) for more information.
-    pub unsafe fn create<'a>(
-        &self,
-        system: &'a System,
-        name_or_data: *const u8,
-        mode: Mode,
-    ) -> Result<Handle<'a, Sound>> {
-        let mut sound = ptr::null_mut();
-        ffi!(FMOD_System_CreateSound(
-            system.as_raw(),
-            name_or_data.cast(),
-            mode.into_raw(),
-            &self.info as *const _ as *mut _,
-            &mut sound,
-        ))?;
-        Ok(Handle::new(sound))
+    fn as_raw(&self) -> *mut FMOD_CREATESOUNDEXINFO {
+        &self.info as *const _ as *mut _
     }
 }
 
@@ -548,59 +554,59 @@ impl<'a> CreateSoundEx<'a> {
     /// Bytes to read starting at `file_offset`, or length of `Sound` to create
     /// for [`Mode::OpenUser`], or length of `name_or_data` for
     /// [`Mode::OpenMemory`] / [`Mode::OpenMemoryPoint`].
-    pub fn length(&mut self, length: u32) -> &mut Self {
+    pub fn length(mut self, length: u32) -> Self {
         self.info.length = length;
         self
     }
 
     /// File offset to start reading from.
-    pub fn file_offset(&mut self, offset: u32) -> &mut Self {
+    pub fn file_offset(mut self, offset: u32) -> Self {
         self.info.fileoffset = offset;
         self
     }
 
     /// Number of channels in sound data for [`Mode::OpenUser`] /
     /// [`Mode::OpenRaw`].
-    pub fn num_channels(&mut self, channels: i32) -> &mut Self {
+    pub fn num_channels(mut self, channels: i32) -> Self {
         self.info.numchannels = channels;
         self
     }
 
     /// Default frequency of sound data for [`Mode::OpenUser`] /
     /// [`Mode::OpenRaw`].
-    pub fn default_frequency(&mut self, frequency: i32) -> &mut Self {
+    pub fn default_frequency(mut self, frequency: i32) -> Self {
         self.info.defaultfrequency = frequency;
         self
     }
 
     /// Format of sound data for [`Mode::OpenUser`] / [`Mode::OpenRaw`].
-    pub fn format(&mut self, format: SoundFormat) -> &mut Self {
+    pub fn format(mut self, format: SoundFormat) -> Self {
         self.info.format = format.into_raw();
         self
     }
 
     /// Size of the decoded buffer for [`Mode::CreateStream`], or the block size
     /// used with [`pcm_callback`] for [`Mode::OpenUser`].
-    pub fn decode_buffer_size(&mut self, size: u32) -> &mut Self {
+    pub fn decode_buffer_size(mut self, size: u32) -> Self {
         self.info.decodebuffersize = size;
         self
     }
 
     /// Initial subsound to seek to for [`Mode::CreateStream`].
-    pub fn initial_subsound(&mut self, subsound: i32) -> &mut Self {
+    pub fn initial_subsound(mut self, subsound: i32) -> Self {
         self.info.initialsubsound = subsound;
         self
     }
 
     /// Number of subsounds available for [`Mode::OpenUser`], or maximum
     /// subsounds to load from file.
-    pub fn num_subsounds(&mut self, subsounds: i32) -> &mut Self {
+    pub fn num_subsounds(mut self, subsounds: i32) -> Self {
         self.info.numsubsounds = subsounds;
         self
     }
 
     /// List of subsound indices to load from file.
-    pub fn inclusion_list(&mut self, list: &'a [i32]) -> &mut Self {
+    pub fn inclusion_list(mut self, list: &'a [i32]) -> Self {
         self.info.inclusionlist = list.as_ptr() as *mut i32;
         self.info.inclusionlistnum = list.len() as i32;
         self
@@ -608,7 +614,7 @@ impl<'a> CreateSoundEx<'a> {
 
     /// Callbacks to provide audio and seek data for [`Mode::OpenUser`], or
     /// capture audio as it is decoded.
-    pub fn pcm_callback<F: PcmCallback>(&mut self) -> &mut Self {
+    pub fn pcm_callback<F: PcmCallback>(mut self) -> Self {
         self.info.pcmreadcallback = Some(pcm_read_callback::<F>);
         self.info.pcmsetposcallback = Some(pcm_setpos_callback::<F>);
         self
@@ -616,40 +622,40 @@ impl<'a> CreateSoundEx<'a> {
 
     /// Callback to notify completion for [`Mode::Nonblocking`], occurs during
     /// creation and seeking / restarting streams.
-    pub fn nonblock_callback<F: NonBlockCallback>(&mut self) -> &mut Self {
+    pub fn nonblock_callback<F: NonBlockCallback>(mut self) -> Self {
         self.info.nonblockcallback = Some(non_block_callback::<F>);
         self
     }
 
     /// File path for a [`SoundType::Dls`] sample set to use when loading a
     /// [`SoundType::Midi`] file, see type-level documentation for defaults.
-    pub fn dls_name(&mut self, name: &'a CStr) -> &mut Self {
+    pub fn dls_name(mut self, name: &'a CStr) -> Self {
         self.info.dlsname = name.as_ptr();
         self
     }
 
     /// Key for encrypted [`SoundType::Fsb`] file, cannot be used in conjunction
     /// with [`Mode::OpenMemoryPoint`].
-    pub fn encryption_key(&mut self, key: &'a CStr) -> &mut Self {
+    pub fn encryption_key(mut self, key: &'a CStr) -> Self {
         self.info.encryptionkey = key.as_ptr();
         self
     }
 
     /// Maximum voice count for [`SoundType::Midi`] / [`SoundType::It`].
-    pub fn max_polyphony(&mut self, polyphony: i32) -> &mut Self {
+    pub fn max_polyphony(mut self, polyphony: i32) -> Self {
         self.info.maxpolyphony = polyphony;
         self
     }
 
     /// Attempt to load using the specified type first instead of loading in
     /// codec priority order.
-    pub fn suggested_sound_type(&mut self, sound_type: SoundType) -> &mut Self {
+    pub fn suggested_sound_type(mut self, sound_type: SoundType) -> Self {
         self.info.suggestedsoundtype = sound_type.into_raw();
         self
     }
 
     /// Callbacks for file operations.
-    pub fn file_system<FS: AsyncListenFileSystem>(&mut self) -> &mut Self {
+    pub fn file_system<FS: AsyncListenFileSystem>(mut self) -> Self {
         self.info.fileuseropen = Some(useropen_listen::<FS>);
         self.info.fileuserclose = Some(userclose_listen::<FS>);
         self.info.fileuserread = Some(userread_listen::<FS>);
@@ -660,58 +666,58 @@ impl<'a> CreateSoundEx<'a> {
     }
 
     /// Buffer size for reading the file, -1 to disable buffering.
-    pub fn file_buffer_size(&mut self, size: i32) -> &mut Self {
+    pub fn file_buffer_size(mut self, size: i32) -> Self {
         self.info.filebuffersize = size;
         self
     }
 
     /// Custom ordering of speakers for this sound data.
-    pub fn channel_order(&mut self, order: ChannelOrder) -> &mut Self {
+    pub fn channel_order(mut self, order: ChannelOrder) -> Self {
         self.info.channelorder = order.into_raw();
         self
     }
 
     /// SoundGroup to place this Sound in once created.
-    pub fn initial_sound_group(&mut self, group: &'a SoundGroup) -> &mut Self {
+    pub fn initial_sound_group(mut self, group: &'a SoundGroup) -> Self {
         self.info.initialsoundgroup = group.as_raw();
         self
     }
 
     /// Initial position to seek to for [`Mode::CreateStream`].
-    pub fn initial_seek_position(&mut self, position: Time) -> &mut Self {
+    pub fn initial_seek_position(mut self, position: Time) -> Self {
         self.info.initialseekposition = position.value;
         self.info.initialseekpostype = position.unit.into_raw();
         self
     }
 
     /// Ignore file callbacks from [`System::set_file_system`] and this ex info.
-    pub fn ignore_set_filesystem(&mut self) -> &mut Self {
+    pub fn ignore_set_filesystem(mut self) -> Self {
         self.info.ignoresetfilesystem = 1;
         self
     }
 
     /// Hardware / software decoding policy for [`SoundType::AudioQueue`].
-    pub fn audio_queue_policy(&mut self, policy: AudioQueueCodecPolicy) -> &mut Self {
+    pub fn audio_queue_policy(mut self, policy: AudioQueueCodecPolicy) -> Self {
         self.info.audioqueuepolicy = policy.into_raw() as u32;
         self
     }
 
     /// Mixer granularity for [SoundType::Midi] sounds, smaller numbers give a
     /// more accurate reproduction at the cost of higher CPU usage.
-    pub fn min_midi_granularity(&mut self, granularity: u32) -> &mut Self {
+    pub fn min_midi_granularity(mut self, granularity: u32) -> Self {
         self.info.minmidigranularity = granularity;
         self
     }
 
     /// Thread index to execute [Mode::Nonblocking] loads on for parallel
     /// `Sound` loading.
-    pub fn non_block_tread_id(&mut self, thread_id: i32) -> &mut Self {
+    pub fn non_block_tread_id(mut self, thread_id: i32) -> Self {
         self.info.nonblockthreadid = thread_id;
         self
     }
 
     /// GUID of already loaded [`SoundType::Fsb`] file to reduce disk access.
-    pub fn fsb_guid(&mut self, guid: &'a Guid) -> &mut Self {
+    pub fn fsb_guid(mut self, guid: &'a Guid) -> Self {
         self.info.fsbguid = guid.as_raw() as *const FMOD_GUID as *mut FMOD_GUID;
         self
     }

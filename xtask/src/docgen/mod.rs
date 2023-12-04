@@ -34,7 +34,8 @@ pub fn main(fmod_path: &Path) -> color_eyre::Result<()> {
         let (content, footer) =
             select_content(&html.document).wrap_err_with(|| html_path.display().to_string())?;
 
-        let mut md = fmod2rustdoc::convert_all(content, &footer, &config)?;
+        let mut md = fmod2rustdoc::convert_all(content, &footer, &config)
+            .wrap_err_with(|| html_path.display().to_string())?;
 
         for replace in &config.replace {
             if let Cow::Owned(x) = replace.from.replace_all(&md, &*replace.to) {
@@ -45,6 +46,10 @@ pub fn main(fmod_path: &Path) -> color_eyre::Result<()> {
         for replace in &job.replace {
             if let Cow::Owned(x) = replace.from.replace_all(&md, &*replace.to) {
                 md = x;
+            } else {
+                return Err(eyre!("failed to replace pattern"))
+                    .context(format!(r#"replace r"{}""#, replace.from))
+                    .context(format!("job {:?} {:?}", job.from, job.to));
             }
         }
 

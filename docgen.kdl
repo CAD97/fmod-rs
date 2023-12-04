@@ -12,9 +12,71 @@ job "core-guide.html" "core/README.md" {
     // adjust language so we don't imply we are an official product
     replace "our parter plugins" "FMOD's partner plugins"
     // link to ReverProperties constants impl block
-    replace r"pre-set list of environments in \[ReverbProperties\]\(ReverbProperties" "$0#impl-1"
+    replace r"pre-set list of environments in \[`ReverbProperties`\]\(ReverbProperties" "$0#impl-1"
     // Escape literal []
     replace r"FMOD_\[CompanyName\]_\[ProductName\]_Get\[PluginType\]Description" r"FMOD_\[CompanyName\]_\[ProductName\]_Get\[PluginType\]Description"
+
+    // FMOD.rs notes
+    insert before="### Creating a Sound from memory" r#"
+<div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
+<span class="emoji">🦀</span><span>
+`System::create_sound_ex` is `unsafe` to use due to its number of vastly different modes.
+FMOD.rs does not yet expose a safe interface for advanced sound creation modes.
+</span></div></div>
+"#
+    replace "(?s)``````````cpp\nFMOD::Sound \\*sound;.*?, Mode::OpenMemory, .*?``````````" r#"
+```rust,ignore
+let buffer: &[u8] = /* load your audio data here */;
+let exinfo = fmod::CreateSoundEx::new().length(buffer.len()); // length of sound - PCM data in bytes
+
+let sound = system.create_sound_ex(buffer, Mode::OpenMemory, exinfo)?;
+// The audio data pointed to by "buffer" has been duplicated into FMOD's buffers, and can now be invalidated.
+// However, if loading as a stream with Mode::CreateStream, the memory must stay active, so do not invalidate it!
+```
+"#
+    replace "(?s)``````````cpp\nFMOD::Sound \\*sound;.*?, Mode::OpenMemoryPoint, .*?``````````" r#"
+```rust,ignore
+let buffer: &[u8] = /* load your audio data here */;
+let exinfo = fmod::CreateSoundEx::new().length(buffer.len()); // length of sound - PCM data in bytes
+
+let sound = system.create_sound_ex(buffer, Mode::OpenMemory, exinfo)?;
+// As FMOD is using the data stored at the buffer pointer as is, without copying it into its own buffers, the memory cannot be freed until after the Sound handle is released
+```
+"#
+    replace "(?s)``````````cpp\nFMOD::Sound \\*sound;.*?, Mode::OpenRaw, .*?``````````" r#"
+```rust,ignore
+let exinfo = fmod::CreateSoundEx::new()
+    .num_channels(2)             // Number of channels in the sound
+    .default_frequency(44100)    // Playback rate of sound
+    .format(SoundFormat::Pcm16); // Data format of sound
+
+let sound = system.create_sound_ex(cstr8!("./filepath.raw").as_bytes_with_nul(), Mode::OpenMemory, exinfo)?;
+// As FMOD is using the data stored at the buffer pointer as is, without copying it into its own buffers, the memory cannot be freed until after the Sound handle is released
+```
+"#
+    replace "(?s)``````````cpp\nFMOD::Sound \\*sound;.*?, Mode::OpenUser, .*?``````````" r#"
+```rust,ignore
+let exinfo = fmod::CreateSoundEx::new()
+    .num_channels(2)                  // Number of channels in the sound
+    .default_frequency(44100)         // Playback rate of sound
+    .length(44100 * 2 * size_of::<u16>() * len_seconds) // Length of sound - PCM data in bytes.
+    .format(SoundFormat::Pcm16)       // Data format of sound
+    .pcm_callback::<MyPcmCallback>(); // To read sound data, you must specify a callback
+// Alternatively, use Sound::lock and Sound::unlock to submit sample data to the sound when playing it back
+
+// As sample data is being loaded via callback or Sound::lock, pass null as first argument
+let sound = system.create_sound_ex(ptr::null(), Mode::OpenUser, exinfo)?;
+```
+"#
+    replace "(?s)``````````cpp\nFMOD::Sound \\*sound;.*?sound->readData.*?``````````" r#"
+```rust,ignore
+let sound = system.create_sound(cstr8!("drumloop.wav"), Mode::OpenOnly)?;
+let length = sound.get_length(TimeUnit::RawBytes)?;
+
+let mut buffer = vec![0; length as usize];
+sound.read_data(&mut buffer)?;
+```
+"#
 }
 
 // studio/README.md
@@ -292,8 +354,13 @@ replace r"FMOD_ERR_OUTPUT_INIT" "Error::OutputInit"
 replace r"FMOD_ERR_PLUGIN_MISSING" "Error::PluginMissing"
 replace r"FMOD_INIT_3D_RIGHTHANDED" "InitFlags::RightHanded3d"
 replace r"FMOD_INIT_PREFER_DOLBY_DOWNMIX" "InitFlags::PreferDolbyDownmix"
+replace r"FMOD_MODE" "Mode"
 replace r"FMOD_NONBLOCKING" "Mode::NonBlocking"
-replace r"FMOD_OPENMEMORY_POINT" "OpenMemory::Point"
+replace r"FMOD_OPENMEMORY\b" "Mode::OpenMemory"
+replace r"FMOD_OPENMEMORY_POINT" "Mode::OpenMemoryPoint"
+replace r"FMOD_OPENONLY" "Mode::OpenOnly"
+replace r"FMOD_OPENRAW" "Mode::OpenRaw"
+replace r"FMOD_OPENUSER" "Mode::OpenUser"
 replace r"FMOD_REVERB_PRESETS" "ReverbProperties"
 replace r"FMOD_SOUND_TYPE" "SoundType"
 replace r"FMOD_SPEAKER\b" "Speaker"
@@ -306,10 +373,11 @@ replace r"FMOD_THREAD_PRIORITY_HIGH" "ThreadPriority::High"
 replace r"FMOD_THREAD_PRIORITY_LOW" "ThreadPriority::Low"
 replace r"FMOD_THREAD_PRIORITY_MEDIUM" "ThreadPriority::Medium"
 replace r"FMOD_THREAD_PRIORITY_VERY_HIGH" "ThreadPriority::VeryHigh"
-replace r"Memory_Initialize" "raw::FMOD_Memory_Initialize"
+replace r"FMOD_TIMEUNIT" "TimeUnit"
+replace r"Memory_Initialize" "memory::initialize_alloc"
 replace r"System::create\b" "System::new"
 replace r"System_Create" "System::new"
-replace r"Thread_SetAttributes" "raw::FMOD_Thread_SetAttributes"
+replace r"Thread_SetAttributes" "thread::set_attributes"
 replace r"addDSP" "add_dsp"
 replace r"addInput" "add_input"
 replace r"addPolygon" "add_polygon"
@@ -324,6 +392,7 @@ replace r"decodeBufferSize" "decode_buffer_size"
 replace r"defaultDecodeBufferSize" "default_decode_buffer_size"
 replace r"disconnectFrom" "disconnect_from"
 replace r"getDriverInfo" "get_driver_info"
+replace r"getLength" "get_length"
 replace r"getMasterChannelGroup" "get_master_channel_group"
 replace r"getNumDrivers" "get_num_drivers"
 replace r"getSubSound" "get_sub_sound"
@@ -334,6 +403,7 @@ replace r"recordStart" "record_start"
 replace r"registerCodec" "register_codec"
 replace r"registerDSP" "register_dsp"
 replace r"registerOutput" "register_output"
+replace r"seekData" "seek_data"
 replace r"set3DAttributes" "set_3d_attributes"
 replace r"set3DCustomRolloff" "set_3d_custom_rolloff"
 replace r"set3DListenerAttributes" "set_3d_listener_attributes"

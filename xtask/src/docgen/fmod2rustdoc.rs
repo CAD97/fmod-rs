@@ -1,3 +1,5 @@
+use eyre::Context;
+
 use {
     super::config::Config,
     color_eyre::Result,
@@ -10,10 +12,41 @@ use {
     std::{fmt::Write, iter},
 };
 
+#[derive(Debug, PartialEq, Eq)]
+enum LanguageSelector {
+    Not,
+    ExpectCode,
+    SkipCode,
+}
+
+impl LanguageSelector {
+    fn mark_code(&mut self) -> bool {
+        if *self == LanguageSelector::ExpectCode {
+            *self = LanguageSelector::SkipCode;
+            true
+        } else {
+            *self == LanguageSelector::Not
+        }
+    }
+
+    fn mark_noncode(&mut self, e: &str) -> Result<()> {
+        if *self == LanguageSelector::ExpectCode {
+            Err(eyre!(
+                "expected code in language-selector, got non-code <{e}>"
+            ))
+        } else {
+            *self = LanguageSelector::Not;
+            Ok(())
+        }
+    }
+}
+
 struct Converter<'a> {
     out: &'a mut String,
     ordered: bool,
     blockquote: usize,
+    code_group: LanguageSelector,
+    approx_line: usize,
     config: &'a Config,
 }
 
@@ -23,6 +56,8 @@ impl<'a> Converter<'a> {
             out,
             ordered: false,
             blockquote: 0,
+            code_group: LanguageSelector::Not,
+            approx_line: 0,
             config,
         }
     }
@@ -36,7 +71,7 @@ pub fn convert_all(html: Handle, source: &str, config: &Config) -> Result<String
     let mut children = children.iter();
 
     for child in children.by_ref() {
-        if converter.convert_first(child)? {
+        if converter.convert_first(child).context("first node")? {
             break;
         }
     }
@@ -49,7 +84,9 @@ pub fn convert_all(html: Handle, source: &str, config: &Config) -> Result<String
 
     for child in children {
         // let _ = converter.convert(child);
-        converter.convert(child)?;
+        converter
+            .convert(child)
+            .with_context(|| format!("around line {}", converter.approx_line))?;
     }
 
     Ok(out)
@@ -83,9 +120,15 @@ impl Converter<'_> {
             NodeData::Doctype { .. } => Err(eyre!("unexpected <!DOCTYPE>")),
             NodeData::Text { contents } => {
                 let contents = contents.borrow();
-                // Normalize HTML whitespace
-                self.out
-                    .push_str(&re_whitespace().replace_all(&contents, " "));
+                if !contents.trim().is_empty() {
+                    self.code_group
+                        .mark_noncode("")
+                        .with_context(|| contents.to_string())?;
+                    // Normalize HTML whitespace
+                    self.out
+                        .push_str(&re_whitespace().replace_all(&contents, " "));
+                }
+                self.approx_line += contents.lines().count();
                 Ok(())
             },
             NodeData::Comment { .. } => Ok(()),
@@ -102,6 +145,7 @@ impl Converter<'_> {
                 // is the place to check!
                 match *name {
                     local_name!("h1") => {
+                        self.code_group.mark_noncode(name)?;
                         write!(self.out, "{blockquote}# ")?;
                         for child in &**children {
                             self.convert(&strip_a(child))?;
@@ -110,6 +154,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("h2") => {
+                        self.code_group.mark_noncode(name)?;
                         write!(self.out, "{blockquote}## ")?;
                         for child in &**children {
                             self.convert(&strip_a(child))?;
@@ -118,6 +163,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("h3") => {
+                        self.code_group.mark_noncode(name)?;
                         write!(self.out, "{blockquote}### ")?;
                         for child in &**children {
                             self.convert(&strip_a(child))?;
@@ -126,6 +172,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("h4") => {
+                        self.code_group.mark_noncode(name)?;
                         write!(self.out, "{blockquote}#### ")?;
                         for child in &**children {
                             self.convert(&strip_a(child))?;
@@ -134,6 +181,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("p") => {
+                        // self.code_group.mark_noncode(name)?;
                         write!(self.out, "{blockquote}")?;
                         for child in &**children {
                             self.convert(child)?;
@@ -142,6 +190,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("blockquote") => {
+                        self.code_group.mark_noncode(name)?;
                         self.blockquote += 1;
                         for child in &**children {
                             self.convert(child)?;
@@ -151,6 +200,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("em") => {
+                        self.code_group.mark_noncode(name)?;
                         self.out.push('*');
                         for child in &**children {
                             self.convert(child)?;
@@ -159,6 +209,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("strong") => {
+                        self.code_group.mark_noncode(name)?;
                         self.out.push_str("**");
                         for child in &**children {
                             self.convert(child)?;
@@ -167,10 +218,12 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("br") => {
+                        self.code_group.mark_noncode(name)?;
                         self.out.push_str("  \n");
                         Ok(())
                     },
                     local_name!("code") => {
+                        self.code_group.mark_noncode(name)?;
                         self.out.push('`');
                         for child in &**children {
                             self.convert(child)?;
@@ -179,6 +232,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("ul") => {
+                        self.code_group.mark_noncode(name)?;
                         self.ordered = false;
                         for child in &**children {
                             self.convert(child)?;
@@ -187,6 +241,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("ol") => {
+                        self.code_group.mark_noncode(name)?;
                         self.ordered = true;
                         for child in &**children {
                             self.convert(child)?;
@@ -195,6 +250,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("li") => {
+                        self.code_group.mark_noncode(name)?;
                         write!(self.out, "{blockquote}")?;
                         match self.ordered {
                             true => self.out.push_str("1. "),
@@ -207,6 +263,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("img") => {
+                        self.code_group.mark_noncode(name)?;
                         let image_base = &self.config.image_base;
                         let alt = get_attr(&attrs, "alt").unwrap_or_default();
                         let src = get_attr(&attrs, "src").unwrap_or_default();
@@ -216,49 +273,91 @@ impl Converter<'_> {
                     local_name!("div") => {
                         let class = get_attr(&attrs, "class").unwrap_or_default();
                         match &*class {
+                            "language-selector" => {
+                                self.code_group = LanguageSelector::ExpectCode;
+                                Ok(())
+                            },
                             "highlight language-text" => {
-                                let text = get_text_transitively(children.iter().cloned());
-                                self.out.push_str("``````````text\n");
-                                for child in text {
-                                    self.out.push_str(&child);
+                                if self.code_group.mark_code() {
+                                    let text = get_text_transitively(children.iter().cloned());
+                                    self.out.push_str("``````````text\n");
+                                    for child in text {
+                                        self.out.push_str(&child);
+                                    }
+                                    self.out.push_str("``````````\n\n");
+                                    self.code_group = LanguageSelector::SkipCode;
                                 }
-                                self.out.push_str("``````````\n\n");
+                                Ok(())
+                            },
+                            "highlight language-c" => {
+                                if self.code_group.mark_code() {
+                                    let text = get_text_transitively(children.iter().cloned());
+                                    self.out.push_str("``````````c\n");
+                                    for child in text {
+                                        self.out.push_str(&child);
+                                    }
+                                    self.out.push_str("``````````\n\n");
+                                }
                                 Ok(())
                             },
                             "highlight language-cpp" => {
-                                let text = get_text_transitively(children.iter().cloned());
-                                self.out.push_str("``````````cpp\n");
-                                for child in text {
-                                    self.out.push_str(&child);
+                                if self.code_group.mark_code() {
+                                    let text = get_text_transitively(children.iter().cloned());
+                                    self.out.push_str("``````````cpp\n");
+                                    for child in text {
+                                        self.out.push_str(&child);
+                                    }
+                                    self.out.push_str("``````````\n\n");
                                 }
-                                self.out.push_str("``````````\n\n");
                                 Ok(())
                             },
                             "highlight language-objective-c" => {
-                                let text = get_text_transitively(children.iter().cloned());
-                                self.out.push_str("``````````objective-c\n");
-                                for child in text {
-                                    self.out.push_str(&child);
+                                if self.code_group.mark_code() {
+                                    let text = get_text_transitively(children.iter().cloned());
+                                    self.out.push_str("``````````objective-c\n");
+                                    for child in text {
+                                        self.out.push_str(&child);
+                                    }
+                                    self.out.push_str("``````````\n\n");
                                 }
-                                self.out.push_str("``````````\n\n");
                                 Ok(())
                             },
                             "highlight language-java" => {
-                                let text = get_text_transitively(children.iter().cloned());
-                                self.out.push_str("``````````java\n");
-                                for child in text {
-                                    self.out.push_str(&child);
+                                if self.code_group.mark_code() {
+                                    let text = get_text_transitively(children.iter().cloned());
+                                    self.out.push_str("``````````java\n");
+                                    for child in text {
+                                        self.out.push_str(&child);
+                                    }
+                                    self.out.push_str("``````````\n\n");
                                 }
-                                self.out.push_str("``````````\n\n");
+                                Ok(())
+                            },
+                            "highlight language-javascript" => {
+                                if self.code_group.mark_code() {
+                                    let text = get_text_transitively(children.iter().cloned());
+                                    self.out.push_str("``````````javascript\n");
+                                    for child in text {
+                                        self.out.push_str(&child);
+                                    }
+                                    self.out.push_str("``````````\n\n");
+                                }
                                 Ok(())
                             },
                             "highlight language-csharp" => {
-                                let text = get_text_transitively(children.iter().cloned());
-                                self.out.push_str("``````````csharp\n");
-                                for child in text {
-                                    self.out.push_str(&child);
+                                if self.code_group.mark_code() {
+                                    let text = get_text_transitively(children.iter().cloned());
+                                    self.out.push_str("``````````csharp\n");
+                                    for child in text {
+                                        self.out.push_str(&child);
+                                    }
+                                    self.out.push_str("``````````\n\n");
                                 }
-                                self.out.push_str("``````````\n\n");
+                                Ok(())
+                            },
+                            "admonition language-javascript" => {
+                                assert_eq!(self.code_group, LanguageSelector::SkipCode);
+                                // skip
                                 Ok(())
                             },
                             "toc" => {
@@ -266,12 +365,14 @@ impl Converter<'_> {
                                 Ok(())
                             },
                             "mixdowntable" => {
+                                self.code_group.mark_noncode(name)?;
                                 for child in children.iter() {
                                     self.convert(child)?;
                                 }
                                 Ok(())
                             },
                             "admonition important" => {
+                                self.code_group.mark_noncode(name)?;
                                 self.out.push_str(r#"<pre class="ignore" style="white-space:normal;font:inherit;">"#);
                                 self.out.push('\n');
                                 for child in children.iter() {
@@ -284,6 +385,7 @@ impl Converter<'_> {
                         }
                     },
                     local_name!("a") => {
+                        self.code_group.mark_noncode(name)?;
                         let class = get_attr(&attrs, "class").unwrap_or_default();
                         let title = get_attr(&attrs, "title");
                         let href = get_attr(&attrs, "href").unwrap_or_default();
@@ -327,6 +429,7 @@ impl Converter<'_> {
                         Ok(())
                     },
                     local_name!("table") => {
+                        self.code_group.mark_noncode(name)?;
                         let thead = children
                             .iter()
                             .filter(super::tag_is("thead"))

@@ -58,9 +58,9 @@ link-search = [
 unstable = []
 
 [dependencies]
-fmod-core-sys = { version = "2.16.0", path = "../fmod-core-sys", optional = true }
-fmod-fsbank-sys = { version = "2.16.0", path = "../fmod-fsbank-sys", optional = true }
-fmod-studio-sys = { version = "2.16.0", path = "../fmod-studio-sys", optional = true }
+fmod-core-sys = { version = "2.19.0", path = "../fmod-core-sys", optional = true }
+fmod-fsbank-sys = { version = "2.19.0", path = "../fmod-fsbank-sys", optional = true }
+fmod-studio-sys = { version = "2.19.0", path = "../fmod-studio-sys", optional = true }
 
 bytemuck = { version = "1.13.1", features = [
     "derive",

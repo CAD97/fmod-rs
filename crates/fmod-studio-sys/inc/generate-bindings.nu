@@ -16,9 +16,9 @@
   --with-derive-custom FMOD_STUDIO_PARAMETER_DESCRIPTION=Debug,Copy,Clone
   --with-derive-custom FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES=Debug,Copy,Clone
   --with-derive-custom FMOD_STUDIO_SOUND_INFO=Debug,Copy,Clone
-| str replace -am '^.*type FMOD_BOOL.*$\n' ''
-| str replace -as 'extern "C"' 'extern "system"'
-| str replace -as 'type_' 'r#type'
-| str replace -as '__bindgen_anon_1' 'payload'
-| str replace -as '__bindgen_ty_1' '_PAYLOAD'
+| str replace -arm '^.*type FMOD_BOOL.*$\n' ''
+| str replace -a   'extern "C"' 'extern "system"'
+| str replace -a   'type_' 'r#type'
+| str replace -a   '__bindgen_anon_1' 'payload'
+| str replace -a   '__bindgen_ty_1' '_PAYLOAD'
 | save bindings.rs -f)
