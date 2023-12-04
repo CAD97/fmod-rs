@@ -8,7 +8,7 @@ fn main() {
         link_search();
     }
 
-    println!("cargo:version=2.02.16");
+    println!("cargo:version=2.02.19");
 }
 
 fn link_lib() {
