@@ -189,6 +189,8 @@ fmod_enum! {
         AudioWorklet = FMOD_OUTPUTTYPE_AUDIOWORKLET,
         /// Mac / iOS - PHASE framework. (Disabled)
         Phase        = FMOD_OUTPUTTYPE_PHASE,
+        /// OpenHarmony - OHAudio.
+        OhAudio      = FMOD_OUTPUTTYPE_OHAUDIO,
     }
 }
 

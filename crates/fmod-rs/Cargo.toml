@@ -53,7 +53,7 @@ link-search = [
 ## Use unstable Rust features for the safe API. Currently, this means to:
 ## - Use `feature(extern_type)` for FMOD resource types.
 ## - Use `feature(doc_auto_cfg, doc_cfg)` to display cfg gates in documentation.
-## - Use `feature(read_buf)` to elide some defensively duplicated stack buffers.
+## - Use `feature(core_io_borrowed_buf, read_buf)` to elide some defensively duplicated stack buffers.
 ## - Use `feature(trait_alias)` for the `ChannelControlCallback` trait alias.
 unstable = []
 
