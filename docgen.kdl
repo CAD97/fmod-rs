@@ -20,9 +20,10 @@ job "core-guide.html" "core/README.md" {
     insert before="### Creating a Sound from memory" r#"
 <div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
 <span class="emoji">🦀</span><span>
-`System::create_sound_ex` is `unsafe` to use due to its number of vastly different modes.
-FMOD.rs does not yet expose a safe interface for advanced sound creation modes.
+<code>System::create_sound_ex</code> is <code>unsafe</code> to use due to its number of vastly
+different modes. FMOD.rs does not yet expose a safe interface for advanced sound creation modes.
 </span></div></div>
+
 "#
     replace "(?s)``````````cpp\nFMOD::Sound \\*sound;.*?, Mode::OpenMemory, .*?``````````" r#"
 ```rust,ignore
@@ -341,7 +342,7 @@ replace r"FMOD_3D_ROLLOFF_CALLBACK" "raw::FMOD_3D_ROLLOFF_CALLBACK"
 replace r"FMOD_ADVANCEDSETTINGS" "AdvancedSettings"
 replace r"FMOD_ASYNCREADINFO" "AsyncReadInfo"
 replace r"FMOD_CREATECOMPRESSEDSAMPLE" "Mode::CreateCompressedSample"
-replace r"FMOD_CREATESOUNDEXINFO" "CreateSoundExInfo"
+replace r"FMOD_CREATESOUNDEXINFO" "CreateSoundEx"
 replace r"FMOD_CREATESTREAM" "Mode::CreateStream"
 replace r"FMOD_DSP_DESCRIPTION" "DspDescription"
 replace r"FMOD_DSP_PARAMETER_3DATTRIBUTES\b" "raw::FMOD_DSP_PARAMETER_3DATTRIBUTES"
@@ -382,7 +383,7 @@ replace r"addDSP" "add_dsp"
 replace r"addInput" "add_input"
 replace r"addPolygon" "add_polygon"
 replace r"calculatePannerAttributes" "calculate_panner_attributes"
-replace r"createDSP" "create_dsp"
+replace r"createDSP\b" "create_dsp"
 replace r"createDSPByType" "create_dsp_by_type"
 replace r"createGeometry" "create_geometry"
 replace r"createReverb3D" "create_reverb_3d"

@@ -119,7 +119,7 @@ Proxy specification and authentication are supported, as well as real-time shout
 
 ### Streaming settings
 
-Streaming behavior can be adjusted in several ways. As streaming a file takes 2 threads, one for file reading, and one for codec decoding/decompression. File buffer sizes can be adjusted with [`System::set_stream_buffer_size`](System::set_stream_buffer_size) and codec decoding buffer size can be adjusted with [`CreateSoundExInfo`](CreateSoundExInfo) decode_buffer_size member, or [`AdvancedSettings::default_decode_buffer_size`](AdvancedSettings::default_decode_buffer_size).
+Streaming behavior can be adjusted in several ways. As streaming a file takes 2 threads, one for file reading, and one for codec decoding/decompression. File buffer sizes can be adjusted with [`System::set_stream_buffer_size`](System::set_stream_buffer_size) and codec decoding buffer size can be adjusted with [`CreateSoundEx`](CreateSoundEx) decode_buffer_size member, or [`AdvancedSettings::default_decode_buffer_size`](AdvancedSettings::default_decode_buffer_size).
 
 ### Compressed sample playback
 
@@ -214,7 +214,7 @@ The [`Sound`](Sound) can also be played while it is recording, to allow realtime
 
 FMOD Core API has native/built in code to support many special effects out of the box, such as low-pass, compressor, reverb and parametric EQ. A more comprehensive list can be found in the [`DspType`](DspType) list.
 
-An effect can be created with [`System::create_dspByType`](System::create_dspByType) and added to a [`Channel`](Channel) or [`ChannelGroup`](ChannelGroup) with [`ChannelControl::add_dsp`](ChannelControl::add_dsp).
+An effect can be created with [`System::create_dsp_by_type`](System::create_dsp_by_type) and added to a [`Channel`](Channel) or [`ChannelGroup`](ChannelGroup) with [`ChannelControl::add_dsp`](ChannelControl::add_dsp).
 
 ### DSP Effects - Reverb types and 3D reverb zones
 
@@ -236,7 +236,7 @@ There is also an even higher quality Convolution Reverb which allows a user to i
 
 This is an expensive to process effect, so FMOD supports GPU acceleration to offload the processing to the graphics card. This greatly reduces the overhead of the effect to being almost negligible. GPU acceleration is supported on Xbox One and PS4 platforms.
 
-Convolution reverb can be created with [`System::create_dspByType`](System::create_dspByType) with [`DspType::ConvolutionReverb`](DspType::ConvolutionReverb) and added to a [`ChannelGroup`](ChannelGroup) with [`ChannelControl::add_dsp`](ChannelControl::add_dsp). It is recommended to only implement 1 or a limited number of these effects and place them on a sub-mix/group bus (a [`ChannelGroup`](ChannelGroup)), and not per [`Channel`](Channel).
+Convolution reverb can be created with [`System::create_dsp_by_type`](System::create_dsp_by_type) with [`DspType::ConvolutionReverb`](DspType::ConvolutionReverb) and added to a [`ChannelGroup`](ChannelGroup) with [`ChannelControl::add_dsp`](ChannelControl::add_dsp). It is recommended to only implement 1 or a limited number of these effects and place them on a sub-mix/group bus (a [`ChannelGroup`](ChannelGroup)), and not per [`Channel`](Channel).
 
 ### Virtual 3D Reverb System
 
@@ -526,19 +526,20 @@ FMOD handles downmixing using mix matrices. Below you can find the various mix m
 
 ## Advanced Sound Creation
 
-FMOD has a number of [`Mode`](Mode) modes for [`Sound`](Sound) creation that require the use of [`CreateSoundExInfo`](CreateSoundExInfo) to specify various properties of the sound, such as the data format, frequency, length, callbacks, and so on. The following details how to use these modes, and provides basic examples of creating a sound using each mode.
+FMOD has a number of [`Mode`](Mode) modes for [`Sound`](Sound) creation that require the use of [`CreateSoundEx`](CreateSoundEx) to specify various properties of the sound, such as the data format, frequency, length, callbacks, and so on. The following details how to use these modes, and provides basic examples of creating a sound using each mode.
 
 
 <div class="item-info"><div class="stab" style="white-space:normal;font-size:inherit">
 <span class="emoji">🦀</span><span>
-`System::create_sound_ex` is `unsafe` to use due to its number of vastly different modes.
-FMOD.rs does not yet expose a safe interface for advanced sound creation modes.
+<code>System::create_sound_ex</code> is <code>unsafe</code> to use due to its number of vastly
+different modes. FMOD.rs does not yet expose a safe interface for advanced sound creation modes.
 </span></div></div>
+
 ### Creating a Sound from memory
 
 #### Mode::OpenMemory
 
-[`Mode::OpenMemory`](Mode::OpenMemory) causes FMOD to interpret the first argument of [`System::create_sound`](System::create_sound) or [`System::create_stream`](System::create_stream) as a pointer to memory instead of a filename. [`CreateSoundExInfo::length`](CreateSoundExInfo::length) is used to specify the length of the sound, specifically the amount of memory in bytes the sound's data occupies. This data is copied into FMOD's buffers and can be freed after the sound is created. If using [`Mode::CreateStream`](Mode::CreateStream), the data is instead streamed from the buffer pointed to by the pointer you passed in, so you should ensure that the memory isn't freed until you have finished with and released the stream.
+[`Mode::OpenMemory`](Mode::OpenMemory) causes FMOD to interpret the first argument of [`System::create_sound`](System::create_sound) or [`System::create_stream`](System::create_stream) as a pointer to memory instead of a filename. [`CreateSoundEx::length`](CreateSoundEx::length) is used to specify the length of the sound, specifically the amount of memory in bytes the sound's data occupies. This data is copied into FMOD's buffers and can be freed after the sound is created. If using [`Mode::CreateStream`](Mode::CreateStream), the data is instead streamed from the buffer pointed to by the pointer you passed in, so you should ensure that the memory isn't freed until you have finished with and released the stream.
 
 
 
@@ -557,7 +558,7 @@ let sound = system.create_sound_ex(buffer, Mode::OpenMemory, exinfo)?;
 
 #### Mode::OpenMemoryPoint
 
-[`Mode::OpenMemoryPoint`](Mode::OpenMemoryPoint) also causes FMOD to interpret the first argument of [`System::create_sound`](System::create_sound) or [`System::create_stream`](System::create_stream) as a pointer to memory instead of a filename. However, unlike [`Mode::OpenMemory`](Mode::OpenMemory), FMOD will use the memory as is instead of copying it to its own buffers. As a result, you may only free the memory after [`Sound::release`](Sound::release) is called. [`CreateSoundExInfo::length`](CreateSoundExInfo::length) is used to specify the length of the sound, specifically the amount of memory in bytes the sound's data occupies.
+[`Mode::OpenMemoryPoint`](Mode::OpenMemoryPoint) also causes FMOD to interpret the first argument of [`System::create_sound`](System::create_sound) or [`System::create_stream`](System::create_stream) as a pointer to memory instead of a filename. However, unlike [`Mode::OpenMemory`](Mode::OpenMemory), FMOD will use the memory as is instead of copying it to its own buffers. As a result, you may only free the memory after [`Sound::release`](Sound::release) is called. [`CreateSoundEx::length`](CreateSoundEx::length) is used to specify the length of the sound, specifically the amount of memory in bytes the sound's data occupies.
 
 
 
@@ -577,7 +578,7 @@ let sound = system.create_sound_ex(buffer, Mode::OpenMemory, exinfo)?;
 
 #### Mode::OpenRaw
 
-[`Mode::OpenRaw`](Mode::OpenRaw) causes FMOD to ignore the format of the provided audio file, and instead treat it as raw PCM data. Use [`CreateSoundExInfo`](CreateSoundExInfo) to specify the [frequency](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_defaultfrequency>), [number of channels](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_numchannels>), and data [format](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_format>) of the file.
+[`Mode::OpenRaw`](Mode::OpenRaw) causes FMOD to ignore the format of the provided audio file, and instead treat it as raw PCM data. Use [`CreateSoundEx`](CreateSoundEx) to specify the [frequency](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_defaultfrequency>), [number of channels](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_numchannels>), and data [format](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_format>) of the file.
 
 
 
@@ -599,7 +600,7 @@ let sound = system.create_sound_ex(cstr8!("./filepath.raw").as_bytes_with_nul(),
 
 #### Mode::OpenUser
 
-[`Mode::OpenUser`](Mode::OpenUser) causes FMOD to ignore the first argument of [`System::create_sound`](System::create_sound) or [`System::create_stream`](System::create_stream), and instead create a static sample or stream to which you must manually provide audio data. Use [`CreateSoundExInfo`](CreateSoundExInfo) to specify the [frequency](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_defaultfrequency>), [number of channels](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_numchannels>), and data [format](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_format>). You can optionally provide a [read callback](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_pcmreadcallback>), which is used to place your own audio data into FMOD's buffers. If no read callback is provided, the sample will be empty, so [`Sound::lock`](Sound::lock) and [`Sound::unlock`](Sound::unlock) must be used to provide audio data instead.
+[`Mode::OpenUser`](Mode::OpenUser) causes FMOD to ignore the first argument of [`System::create_sound`](System::create_sound) or [`System::create_stream`](System::create_stream), and instead create a static sample or stream to which you must manually provide audio data. Use [`CreateSoundEx`](CreateSoundEx) to specify the [frequency](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_defaultfrequency>), [number of channels](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_numchannels>), and data [format](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_format>). You can optionally provide a [read callback](<https://fmod.com/docs/2.02/api/core-api-system.html#fmod_createsoundexinfo_pcmreadcallback>), which is used to place your own audio data into FMOD's buffers. If no read callback is provided, the sample will be empty, so [`Sound::lock`](Sound::lock) and [`Sound::unlock`](Sound::unlock) must be used to provide audio data instead.
 
 
 
