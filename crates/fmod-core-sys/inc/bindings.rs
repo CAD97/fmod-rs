@@ -2,6 +2,1264 @@
 
 /* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2024. */
 
+pub type FMOD_BOOL = ::std::ffi::c_int;
+pub type FMOD_DEBUG_FLAGS = ::std::ffi::c_uint;
+pub type FMOD_MEMORY_TYPE = ::std::ffi::c_uint;
+pub type FMOD_INITFLAGS = ::std::ffi::c_uint;
+pub type FMOD_DRIVER_STATE = ::std::ffi::c_uint;
+pub type FMOD_TIMEUNIT = ::std::ffi::c_uint;
+pub type FMOD_SYSTEM_CALLBACK_TYPE = ::std::ffi::c_uint;
+pub type FMOD_MODE = ::std::ffi::c_uint;
+pub type FMOD_CHANNELMASK = ::std::ffi::c_uint;
+pub type FMOD_PORT_INDEX = ::std::ffi::c_ulonglong;
+pub type FMOD_THREAD_PRIORITY = ::std::ffi::c_int;
+pub type FMOD_THREAD_STACK_SIZE = ::std::ffi::c_uint;
+pub type FMOD_THREAD_AFFINITY = ::std::ffi::c_longlong;
+pub type FMOD_THREAD_TYPE = ::std::ffi::c_int;
+pub type FMOD_RESULT = ::std::ffi::c_int;
+pub type FMOD_CHANNELCONTROL_TYPE = ::std::ffi::c_int;
+pub type FMOD_OUTPUTTYPE = ::std::ffi::c_int;
+pub type FMOD_DEBUG_MODE = ::std::ffi::c_int;
+pub type FMOD_SPEAKERMODE = ::std::ffi::c_int;
+pub type FMOD_SPEAKER = ::std::ffi::c_int;
+pub type FMOD_CHANNELORDER = ::std::ffi::c_int;
+pub type FMOD_PLUGINTYPE = ::std::ffi::c_int;
+pub type FMOD_SOUND_TYPE = ::std::ffi::c_int;
+pub type FMOD_SOUND_FORMAT = ::std::ffi::c_int;
+pub type FMOD_OPENSTATE = ::std::ffi::c_int;
+pub type FMOD_SOUNDGROUP_BEHAVIOR = ::std::ffi::c_int;
+pub type FMOD_CHANNELCONTROL_CALLBACK_TYPE = ::std::ffi::c_int;
+pub type FMOD_CHANNELCONTROL_DSP_INDEX = ::std::ffi::c_int;
+pub type FMOD_ERRORCALLBACK_INSTANCETYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_RESAMPLER = ::std::ffi::c_int;
+pub type FMOD_DSP_CALLBACK_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSPCONNECTION_TYPE = ::std::ffi::c_int;
+pub type FMOD_TAGTYPE = ::std::ffi::c_int;
+pub type FMOD_TAGDATATYPE = ::std::ffi::c_int;
+pub type FMOD_PORT_TYPE = ::std::ffi::c_int;
+pub type FMOD_DEBUG_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        flags: FMOD_DEBUG_FLAGS,
+        file: *const ::std::ffi::c_char,
+        line: ::std::ffi::c_int,
+        func: *const ::std::ffi::c_char,
+        message: *const ::std::ffi::c_char,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_SYSTEM_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        system: *mut FMOD_SYSTEM,
+        r#type: FMOD_SYSTEM_CALLBACK_TYPE,
+        commanddata1: *mut ::std::ffi::c_void,
+        commanddata2: *mut ::std::ffi::c_void,
+        userdata: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CHANNELCONTROL_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        channelcontrol: *mut FMOD_CHANNELCONTROL,
+        controltype: FMOD_CHANNELCONTROL_TYPE,
+        callbacktype: FMOD_CHANNELCONTROL_CALLBACK_TYPE,
+        commanddata1: *mut ::std::ffi::c_void,
+        commanddata2: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp: *mut FMOD_DSP,
+        r#type: FMOD_DSP_CALLBACK_TYPE,
+        data: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_SOUND_NONBLOCK_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(sound: *mut FMOD_SOUND, result: FMOD_RESULT) -> FMOD_RESULT,
+>;
+pub type FMOD_SOUND_PCMREAD_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        sound: *mut FMOD_SOUND,
+        data: *mut ::std::ffi::c_void,
+        datalen: ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_SOUND_PCMSETPOS_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        sound: *mut FMOD_SOUND,
+        subsound: ::std::ffi::c_int,
+        position: ::std::ffi::c_uint,
+        postype: FMOD_TIMEUNIT,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_FILE_OPEN_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        name: *const ::std::ffi::c_char,
+        filesize: *mut ::std::ffi::c_uint,
+        handle: *mut *mut ::std::ffi::c_void,
+        userdata: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_FILE_CLOSE_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        handle: *mut ::std::ffi::c_void,
+        userdata: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_FILE_READ_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        handle: *mut ::std::ffi::c_void,
+        buffer: *mut ::std::ffi::c_void,
+        sizebytes: ::std::ffi::c_uint,
+        bytesread: *mut ::std::ffi::c_uint,
+        userdata: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_FILE_SEEK_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        handle: *mut ::std::ffi::c_void,
+        pos: ::std::ffi::c_uint,
+        userdata: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_FILE_ASYNCREAD_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        info: *mut FMOD_ASYNCREADINFO,
+        userdata: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_FILE_ASYNCCANCEL_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        info: *mut FMOD_ASYNCREADINFO,
+        userdata: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_FILE_ASYNCDONE_FUNC =
+    ::std::option::Option<unsafe extern "system" fn(info: *mut FMOD_ASYNCREADINFO, result: FMOD_RESULT)>;
+pub type FMOD_MEMORY_ALLOC_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        size: ::std::ffi::c_uint,
+        r#type: FMOD_MEMORY_TYPE,
+        sourcestr: *const ::std::ffi::c_char,
+    ) -> *mut ::std::ffi::c_void,
+>;
+pub type FMOD_MEMORY_REALLOC_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        ptr: *mut ::std::ffi::c_void,
+        size: ::std::ffi::c_uint,
+        r#type: FMOD_MEMORY_TYPE,
+        sourcestr: *const ::std::ffi::c_char,
+    ) -> *mut ::std::ffi::c_void,
+>;
+pub type FMOD_MEMORY_FREE_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        ptr: *mut ::std::ffi::c_void,
+        r#type: FMOD_MEMORY_TYPE,
+        sourcestr: *const ::std::ffi::c_char,
+    ),
+>;
+pub type FMOD_3D_ROLLOFF_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        channelcontrol: *mut FMOD_CHANNELCONTROL,
+        distance: ::std::ffi::c_float,
+    ) -> ::std::ffi::c_float,
+>;
+pub type FMOD_CODEC_SEEK_METHOD = ::std::ffi::c_int;
+pub type FMOD_CODEC_OPEN_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        usermode: FMOD_MODE,
+        userexinfo: *mut FMOD_CREATESOUNDEXINFO,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_CLOSE_CALLBACK =
+    ::std::option::Option<unsafe extern "system" fn(codec_state: *mut FMOD_CODEC_STATE) -> FMOD_RESULT>;
+pub type FMOD_CODEC_READ_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        buffer: *mut ::std::ffi::c_void,
+        samples_in: ::std::ffi::c_uint,
+        samples_out: *mut ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_GETLENGTH_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        length: *mut ::std::ffi::c_uint,
+        lengthtype: FMOD_TIMEUNIT,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_SETPOSITION_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        subsound: ::std::ffi::c_int,
+        position: ::std::ffi::c_uint,
+        postype: FMOD_TIMEUNIT,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_GETPOSITION_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        position: *mut ::std::ffi::c_uint,
+        postype: FMOD_TIMEUNIT,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_SOUNDCREATE_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        subsound: ::std::ffi::c_int,
+        sound: *mut FMOD_SOUND,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_GETWAVEFORMAT_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        index: ::std::ffi::c_int,
+        waveformat: *mut FMOD_CODEC_WAVEFORMAT,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_METADATA_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        tagtype: FMOD_TAGTYPE,
+        name: *mut ::std::ffi::c_char,
+        data: *mut ::std::ffi::c_void,
+        datalen: ::std::ffi::c_uint,
+        datatype: FMOD_TAGDATATYPE,
+        unique: ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_ALLOC_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        size: ::std::ffi::c_uint,
+        align: ::std::ffi::c_uint,
+        file: *const ::std::ffi::c_char,
+        line: ::std::ffi::c_int,
+    ) -> *mut ::std::ffi::c_void,
+>;
+pub type FMOD_CODEC_FREE_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        ptr: *mut ::std::ffi::c_void,
+        file: *const ::std::ffi::c_char,
+        line: ::std::ffi::c_int,
+    ),
+>;
+pub type FMOD_CODEC_LOG_FUNC = ::std::option::Option<
+    unsafe extern "C" fn(
+        level: FMOD_DEBUG_FLAGS,
+        file: *const ::std::ffi::c_char,
+        line: ::std::ffi::c_int,
+        function: *const ::std::ffi::c_char,
+        string: *const ::std::ffi::c_char,
+        ...
+    ),
+>;
+pub type FMOD_CODEC_FILE_READ_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        buffer: *mut ::std::ffi::c_void,
+        sizebytes: ::std::ffi::c_uint,
+        bytesread: *mut ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_FILE_SEEK_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        pos: ::std::ffi::c_uint,
+        method: FMOD_CODEC_SEEK_METHOD,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_FILE_TELL_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        pos: *mut ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_CODEC_FILE_SIZE_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        codec_state: *mut FMOD_CODEC_STATE,
+        size: *mut ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_OSCILLATOR = ::std::ffi::c_int;
+pub type FMOD_DSP_LOWPASS = ::std::ffi::c_int;
+pub type FMOD_DSP_ITLOWPASS = ::std::ffi::c_int;
+pub type FMOD_DSP_HIGHPASS = ::std::ffi::c_int;
+pub type FMOD_DSP_ECHO = ::std::ffi::c_int;
+pub type FMOD_DSP_FADER = ::std::ffi::c_int;
+pub type FMOD_DSP_FLANGE = ::std::ffi::c_int;
+pub type FMOD_DSP_DISTORTION = ::std::ffi::c_int;
+pub type FMOD_DSP_NORMALIZE = ::std::ffi::c_int;
+pub type FMOD_DSP_LIMITER = ::std::ffi::c_int;
+pub type FMOD_DSP_PARAMEQ = ::std::ffi::c_int;
+pub type FMOD_DSP_MULTIBAND_EQ = ::std::ffi::c_int;
+pub type FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_PITCHSHIFT = ::std::ffi::c_int;
+pub type FMOD_DSP_CHORUS = ::std::ffi::c_int;
+pub type FMOD_DSP_ITECHO = ::std::ffi::c_int;
+pub type FMOD_DSP_COMPRESSOR = ::std::ffi::c_int;
+pub type FMOD_DSP_SFXREVERB = ::std::ffi::c_int;
+pub type FMOD_DSP_LOWPASS_SIMPLE = ::std::ffi::c_int;
+pub type FMOD_DSP_DELAY = ::std::ffi::c_int;
+pub type FMOD_DSP_TREMOLO = ::std::ffi::c_int;
+pub type FMOD_DSP_SEND = ::std::ffi::c_int;
+pub type FMOD_DSP_RETURN = ::std::ffi::c_int;
+pub type FMOD_DSP_HIGHPASS_SIMPLE = ::std::ffi::c_int;
+pub type FMOD_DSP_PAN_2D_STEREO_MODE_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_PAN_MODE_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_PAN_3D_ROLLOFF_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_PAN_3D_EXTENT_MODE_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_PAN = ::std::ffi::c_int;
+pub type FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_THREE_EQ = ::std::ffi::c_int;
+pub type FMOD_DSP_FFT_WINDOW = ::std::ffi::c_int;
+pub type FMOD_DSP_FFT = ::std::ffi::c_int;
+pub type FMOD_DSP_LOUDNESS_METER = ::std::ffi::c_int;
+pub type FMOD_DSP_LOUDNESS_METER_STATE_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_ENVELOPEFOLLOWER = ::std::ffi::c_int;
+pub type FMOD_DSP_CONVOLUTION_REVERB = ::std::ffi::c_int;
+pub type FMOD_DSP_CHANNELMIX_OUTPUT = ::std::ffi::c_int;
+pub type FMOD_DSP_CHANNELMIX = ::std::ffi::c_int;
+pub type FMOD_DSP_TRANSCEIVER_SPEAKERMODE = ::std::ffi::c_int;
+pub type FMOD_DSP_TRANSCEIVER = ::std::ffi::c_int;
+pub type FMOD_DSP_OBJECTPAN = ::std::ffi::c_int;
+pub type FMOD_DSP_PROCESS_OPERATION = ::std::ffi::c_int;
+pub type FMOD_DSP_PAN_SURROUND_FLAGS = ::std::ffi::c_int;
+pub type FMOD_DSP_PARAMETER_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_PARAMETER_DATA_TYPE = ::std::ffi::c_int;
+pub type FMOD_DSP_CREATE_CALLBACK =
+    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+pub type FMOD_DSP_RELEASE_CALLBACK =
+    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+pub type FMOD_DSP_RESET_CALLBACK =
+    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+pub type FMOD_DSP_READ_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        inbuffer: *mut ::std::ffi::c_float,
+        outbuffer: *mut ::std::ffi::c_float,
+        length: ::std::ffi::c_uint,
+        inchannels: ::std::ffi::c_int,
+        outchannels: *mut ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_PROCESS_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        length: ::std::ffi::c_uint,
+        inbufferarray: *const FMOD_DSP_BUFFER_ARRAY,
+        outbufferarray: *mut FMOD_DSP_BUFFER_ARRAY,
+        inputsidle: FMOD_BOOL,
+        op: FMOD_DSP_PROCESS_OPERATION,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_SETPOSITION_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE, pos: ::std::ffi::c_uint) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_SHOULDIPROCESS_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        inputsidle: FMOD_BOOL,
+        length: ::std::ffi::c_uint,
+        inmask: FMOD_CHANNELMASK,
+        inchannels: ::std::ffi::c_int,
+        speakermode: FMOD_SPEAKERMODE,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_SETPARAM_FLOAT_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        index: ::std::ffi::c_int,
+        value: ::std::ffi::c_float,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_SETPARAM_INT_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        index: ::std::ffi::c_int,
+        value: ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_SETPARAM_BOOL_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        index: ::std::ffi::c_int,
+        value: FMOD_BOOL,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_SETPARAM_DATA_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        index: ::std::ffi::c_int,
+        data: *mut ::std::ffi::c_void,
+        length: ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_GETPARAM_FLOAT_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        index: ::std::ffi::c_int,
+        value: *mut ::std::ffi::c_float,
+        valuestr: *mut ::std::ffi::c_char,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_GETPARAM_INT_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        index: ::std::ffi::c_int,
+        value: *mut ::std::ffi::c_int,
+        valuestr: *mut ::std::ffi::c_char,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_GETPARAM_BOOL_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        index: ::std::ffi::c_int,
+        value: *mut FMOD_BOOL,
+        valuestr: *mut ::std::ffi::c_char,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_GETPARAM_DATA_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        index: ::std::ffi::c_int,
+        data: *mut *mut ::std::ffi::c_void,
+        length: *mut ::std::ffi::c_uint,
+        valuestr: *mut ::std::ffi::c_char,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_SYSTEM_REGISTER_CALLBACK =
+    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+pub type FMOD_DSP_SYSTEM_DEREGISTER_CALLBACK =
+    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+pub type FMOD_DSP_SYSTEM_MIX_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE, stage: ::std::ffi::c_int) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_ALLOC_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        size: ::std::ffi::c_uint,
+        r#type: FMOD_MEMORY_TYPE,
+        sourcestr: *const ::std::ffi::c_char,
+    ) -> *mut ::std::ffi::c_void,
+>;
+pub type FMOD_DSP_REALLOC_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        ptr: *mut ::std::ffi::c_void,
+        size: ::std::ffi::c_uint,
+        r#type: FMOD_MEMORY_TYPE,
+        sourcestr: *const ::std::ffi::c_char,
+    ) -> *mut ::std::ffi::c_void,
+>;
+pub type FMOD_DSP_FREE_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        ptr: *mut ::std::ffi::c_void,
+        r#type: FMOD_MEMORY_TYPE,
+        sourcestr: *const ::std::ffi::c_char,
+    ),
+>;
+pub type FMOD_DSP_LOG_FUNC = ::std::option::Option<
+    unsafe extern "C" fn(
+        level: FMOD_DEBUG_FLAGS,
+        file: *const ::std::ffi::c_char,
+        line: ::std::ffi::c_int,
+        function: *const ::std::ffi::c_char,
+        str_: *const ::std::ffi::c_char,
+        ...
+    ),
+>;
+pub type FMOD_DSP_GETSAMPLERATE_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        rate: *mut ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_GETBLOCKSIZE_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        blocksize: *mut ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_GETSPEAKERMODE_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        speakermode_mixer: *mut FMOD_SPEAKERMODE,
+        speakermode_output: *mut FMOD_SPEAKERMODE,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_GETCLOCK_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        clock: *mut ::std::ffi::c_ulonglong,
+        offset: *mut ::std::ffi::c_uint,
+        length: *mut ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_GETLISTENERATTRIBUTES_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        numlisteners: *mut ::std::ffi::c_int,
+        attributes: *mut FMOD_3D_ATTRIBUTES,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_GETUSERDATA_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        userdata: *mut *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_DFT_FFTREAL_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        size: ::std::ffi::c_int,
+        signal: *const ::std::ffi::c_float,
+        dft: *mut FMOD_COMPLEX,
+        window: *const ::std::ffi::c_float,
+        signalhop: ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_DFT_IFFTREAL_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        size: ::std::ffi::c_int,
+        dft: *const FMOD_COMPLEX,
+        signal: *mut ::std::ffi::c_float,
+        window: *const ::std::ffi::c_float,
+        signalhop: ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_PAN_SUMMONOMATRIX_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        sourceSpeakerMode: FMOD_SPEAKERMODE,
+        lowFrequencyGain: ::std::ffi::c_float,
+        overallGain: ::std::ffi::c_float,
+        matrix: *mut ::std::ffi::c_float,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_PAN_SUMSTEREOMATRIX_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        sourceSpeakerMode: FMOD_SPEAKERMODE,
+        pan: ::std::ffi::c_float,
+        lowFrequencyGain: ::std::ffi::c_float,
+        overallGain: ::std::ffi::c_float,
+        matrixHop: ::std::ffi::c_int,
+        matrix: *mut ::std::ffi::c_float,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_PAN_SUMSURROUNDMATRIX_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        sourceSpeakerMode: FMOD_SPEAKERMODE,
+        targetSpeakerMode: FMOD_SPEAKERMODE,
+        direction: ::std::ffi::c_float,
+        extent: ::std::ffi::c_float,
+        rotation: ::std::ffi::c_float,
+        lowFrequencyGain: ::std::ffi::c_float,
+        overallGain: ::std::ffi::c_float,
+        matrixHop: ::std::ffi::c_int,
+        matrix: *mut ::std::ffi::c_float,
+        flags: FMOD_DSP_PAN_SURROUND_FLAGS,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_PAN_SUMMONOTOSURROUNDMATRIX_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        targetSpeakerMode: FMOD_SPEAKERMODE,
+        direction: ::std::ffi::c_float,
+        extent: ::std::ffi::c_float,
+        lowFrequencyGain: ::std::ffi::c_float,
+        overallGain: ::std::ffi::c_float,
+        matrixHop: ::std::ffi::c_int,
+        matrix: *mut ::std::ffi::c_float,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_PAN_SUMSTEREOTOSURROUNDMATRIX_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        targetSpeakerMode: FMOD_SPEAKERMODE,
+        direction: ::std::ffi::c_float,
+        extent: ::std::ffi::c_float,
+        rotation: ::std::ffi::c_float,
+        lowFrequencyGain: ::std::ffi::c_float,
+        overallGain: ::std::ffi::c_float,
+        matrixHop: ::std::ffi::c_int,
+        matrix: *mut ::std::ffi::c_float,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_DSP_PAN_GETROLLOFFGAIN_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        dsp_state: *mut FMOD_DSP_STATE,
+        rolloff: FMOD_DSP_PAN_3D_ROLLOFF_TYPE,
+        distance: ::std::ffi::c_float,
+        mindistance: ::std::ffi::c_float,
+        maxdistance: ::std::ffi::c_float,
+        gain: *mut ::std::ffi::c_float,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_METHOD = ::std::ffi::c_uint;
+pub type FMOD_OUTPUT_GETNUMDRIVERS_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        numdrivers: *mut ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_GETDRIVERINFO_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        id: ::std::ffi::c_int,
+        name: *mut ::std::ffi::c_char,
+        namelen: ::std::ffi::c_int,
+        guid: *mut FMOD_GUID,
+        systemrate: *mut ::std::ffi::c_int,
+        speakermode: *mut FMOD_SPEAKERMODE,
+        speakermodechannels: *mut ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_INIT_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        selecteddriver: ::std::ffi::c_int,
+        flags: FMOD_INITFLAGS,
+        outputrate: *mut ::std::ffi::c_int,
+        speakermode: *mut FMOD_SPEAKERMODE,
+        speakermodechannels: *mut ::std::ffi::c_int,
+        outputformat: *mut FMOD_SOUND_FORMAT,
+        dspbufferlength: ::std::ffi::c_int,
+        dspnumbuffers: *mut ::std::ffi::c_int,
+        dspnumadditionalbuffers: *mut ::std::ffi::c_int,
+        extradriverdata: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_START_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_STOP_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_CLOSE_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_UPDATE_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_GETHANDLE_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        handle: *mut *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_MIXER_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_OBJECT3DGETINFO_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        maxhardwareobjects: *mut ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_OBJECT3DALLOC_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        object3d: *mut *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_OBJECT3DFREE_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        object3d: *mut ::std::ffi::c_void,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_OBJECT3DUPDATE_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        object3d: *mut ::std::ffi::c_void,
+        info: *const FMOD_OUTPUT_OBJECT3DINFO,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_OPENPORT_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        portType: FMOD_PORT_TYPE,
+        portIndex: FMOD_PORT_INDEX,
+        portId: *mut ::std::ffi::c_int,
+        portRate: *mut ::std::ffi::c_int,
+        portChannels: *mut ::std::ffi::c_int,
+        portFormat: *mut FMOD_SOUND_FORMAT,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_CLOSEPORT_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        portId: ::std::ffi::c_int,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_DEVICELISTCHANGED_CALLBACK = ::std::option::Option<
+    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_READFROMMIXER_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        buffer: *mut ::std::ffi::c_void,
+        length: ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_COPYPORT_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        output_state: *mut FMOD_OUTPUT_STATE,
+        portId: ::std::ffi::c_int,
+        buffer: *mut ::std::ffi::c_void,
+        length: ::std::ffi::c_uint,
+    ) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_REQUESTRESET_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
+>;
+pub type FMOD_OUTPUT_ALLOC_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        size: ::std::ffi::c_uint,
+        align: ::std::ffi::c_uint,
+        file: *const ::std::ffi::c_char,
+        line: ::std::ffi::c_int,
+    ) -> *mut ::std::ffi::c_void,
+>;
+pub type FMOD_OUTPUT_FREE_FUNC = ::std::option::Option<
+    unsafe extern "system" fn(
+        ptr: *mut ::std::ffi::c_void,
+        file: *const ::std::ffi::c_char,
+        line: ::std::ffi::c_int,
+    ),
+>;
+pub type FMOD_OUTPUT_LOG_FUNC = ::std::option::Option<
+    unsafe extern "C" fn(
+        level: FMOD_DEBUG_FLAGS,
+        file: *const ::std::ffi::c_char,
+        line: ::std::ffi::c_int,
+        function: *const ::std::ffi::c_char,
+        string: *const ::std::ffi::c_char,
+        ...
+    ),
+>;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_SYSTEM {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_SOUND {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_CHANNELCONTROL {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_CHANNEL {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_CHANNELGROUP {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_SOUNDGROUP {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_REVERB3D {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSPCONNECTION {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_POLYGON {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_GEOMETRY {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_SYNCPOINT {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_ASYNCREADINFO {
+    pub handle: *mut ::std::ffi::c_void,
+    pub offset: ::std::ffi::c_uint,
+    pub sizebytes: ::std::ffi::c_uint,
+    pub priority: ::std::ffi::c_int,
+    pub userdata: *mut ::std::ffi::c_void,
+    pub buffer: *mut ::std::ffi::c_void,
+    pub bytesread: ::std::ffi::c_uint,
+    pub done: FMOD_FILE_ASYNCDONE_FUNC,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_VECTOR {
+    pub x: ::std::ffi::c_float,
+    pub y: ::std::ffi::c_float,
+    pub z: ::std::ffi::c_float,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_3D_ATTRIBUTES {
+    pub position: FMOD_VECTOR,
+    pub velocity: FMOD_VECTOR,
+    pub forward: FMOD_VECTOR,
+    pub up: FMOD_VECTOR,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_GUID {
+    pub Data1: ::std::ffi::c_uint,
+    pub Data2: ::std::ffi::c_ushort,
+    pub Data3: ::std::ffi::c_ushort,
+    pub Data4: [::std::ffi::c_uchar; 8usize],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_PLUGINLIST {
+    pub r#type: FMOD_PLUGINTYPE,
+    pub description: *mut ::std::ffi::c_void,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_ADVANCEDSETTINGS {
+    pub cbSize: ::std::ffi::c_int,
+    pub maxMPEGCodecs: ::std::ffi::c_int,
+    pub maxADPCMCodecs: ::std::ffi::c_int,
+    pub maxXMACodecs: ::std::ffi::c_int,
+    pub maxVorbisCodecs: ::std::ffi::c_int,
+    pub maxAT9Codecs: ::std::ffi::c_int,
+    pub maxFADPCMCodecs: ::std::ffi::c_int,
+    pub maxPCMCodecs: ::std::ffi::c_int,
+    pub ASIONumChannels: ::std::ffi::c_int,
+    pub ASIOChannelList: *mut *mut ::std::ffi::c_char,
+    pub ASIOSpeakerList: *mut FMOD_SPEAKER,
+    pub vol0virtualvol: ::std::ffi::c_float,
+    pub defaultDecodeBufferSize: ::std::ffi::c_uint,
+    pub profilePort: ::std::ffi::c_ushort,
+    pub geometryMaxFadeTime: ::std::ffi::c_uint,
+    pub distanceFilterCenterFreq: ::std::ffi::c_float,
+    pub reverb3Dinstance: ::std::ffi::c_int,
+    pub DSPBufferPoolSize: ::std::ffi::c_int,
+    pub resamplerMethod: FMOD_DSP_RESAMPLER,
+    pub randomSeed: ::std::ffi::c_uint,
+    pub maxConvolutionThreads: ::std::ffi::c_int,
+    pub maxOpusCodecs: ::std::ffi::c_int,
+    pub maxSpatialObjects: ::std::ffi::c_int,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_TAG {
+    pub r#type: FMOD_TAGTYPE,
+    pub datatype: FMOD_TAGDATATYPE,
+    pub name: *mut ::std::ffi::c_char,
+    pub data: *mut ::std::ffi::c_void,
+    pub datalen: ::std::ffi::c_uint,
+    pub updated: FMOD_BOOL,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_CREATESOUNDEXINFO {
+    pub cbsize: ::std::ffi::c_int,
+    pub length: ::std::ffi::c_uint,
+    pub fileoffset: ::std::ffi::c_uint,
+    pub numchannels: ::std::ffi::c_int,
+    pub defaultfrequency: ::std::ffi::c_int,
+    pub format: FMOD_SOUND_FORMAT,
+    pub decodebuffersize: ::std::ffi::c_uint,
+    pub initialsubsound: ::std::ffi::c_int,
+    pub numsubsounds: ::std::ffi::c_int,
+    pub inclusionlist: *mut ::std::ffi::c_int,
+    pub inclusionlistnum: ::std::ffi::c_int,
+    pub pcmreadcallback: FMOD_SOUND_PCMREAD_CALLBACK,
+    pub pcmsetposcallback: FMOD_SOUND_PCMSETPOS_CALLBACK,
+    pub nonblockcallback: FMOD_SOUND_NONBLOCK_CALLBACK,
+    pub dlsname: *const ::std::ffi::c_char,
+    pub encryptionkey: *const ::std::ffi::c_char,
+    pub maxpolyphony: ::std::ffi::c_int,
+    pub userdata: *mut ::std::ffi::c_void,
+    pub suggestedsoundtype: FMOD_SOUND_TYPE,
+    pub fileuseropen: FMOD_FILE_OPEN_CALLBACK,
+    pub fileuserclose: FMOD_FILE_CLOSE_CALLBACK,
+    pub fileuserread: FMOD_FILE_READ_CALLBACK,
+    pub fileuserseek: FMOD_FILE_SEEK_CALLBACK,
+    pub fileuserasyncread: FMOD_FILE_ASYNCREAD_CALLBACK,
+    pub fileuserasynccancel: FMOD_FILE_ASYNCCANCEL_CALLBACK,
+    pub fileuserdata: *mut ::std::ffi::c_void,
+    pub filebuffersize: ::std::ffi::c_int,
+    pub channelorder: FMOD_CHANNELORDER,
+    pub initialsoundgroup: *mut FMOD_SOUNDGROUP,
+    pub initialseekposition: ::std::ffi::c_uint,
+    pub initialseekpostype: FMOD_TIMEUNIT,
+    pub ignoresetfilesystem: ::std::ffi::c_int,
+    pub audioqueuepolicy: ::std::ffi::c_uint,
+    pub minmidigranularity: ::std::ffi::c_uint,
+    pub nonblockthreadid: ::std::ffi::c_int,
+    pub fsbguid: *mut FMOD_GUID,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_REVERB_PROPERTIES {
+    pub DecayTime: ::std::ffi::c_float,
+    pub EarlyDelay: ::std::ffi::c_float,
+    pub LateDelay: ::std::ffi::c_float,
+    pub HFReference: ::std::ffi::c_float,
+    pub HFDecayRatio: ::std::ffi::c_float,
+    pub Diffusion: ::std::ffi::c_float,
+    pub Density: ::std::ffi::c_float,
+    pub LowShelfFrequency: ::std::ffi::c_float,
+    pub LowShelfGain: ::std::ffi::c_float,
+    pub HighCut: ::std::ffi::c_float,
+    pub EarlyLateMix: ::std::ffi::c_float,
+    pub WetLevel: ::std::ffi::c_float,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_ERRORCALLBACK_INFO {
+    pub result: FMOD_RESULT,
+    pub instancetype: FMOD_ERRORCALLBACK_INSTANCETYPE,
+    pub instance: *mut ::std::ffi::c_void,
+    pub functionname: *const ::std::ffi::c_char,
+    pub functionparams: *const ::std::ffi::c_char,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_CPU_USAGE {
+    pub dsp: ::std::ffi::c_float,
+    pub stream: ::std::ffi::c_float,
+    pub geometry: ::std::ffi::c_float,
+    pub update: ::std::ffi::c_float,
+    pub convolution1: ::std::ffi::c_float,
+    pub convolution2: ::std::ffi::c_float,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_DATA_PARAMETER_INFO {
+    pub data: *mut ::std::ffi::c_void,
+    pub length: ::std::ffi::c_uint,
+    pub index: ::std::ffi::c_int,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_CODEC_DESCRIPTION {
+    pub apiversion: ::std::ffi::c_uint,
+    pub name: *const ::std::ffi::c_char,
+    pub version: ::std::ffi::c_uint,
+    pub defaultasstream: ::std::ffi::c_int,
+    pub timeunits: FMOD_TIMEUNIT,
+    pub open: FMOD_CODEC_OPEN_CALLBACK,
+    pub close: FMOD_CODEC_CLOSE_CALLBACK,
+    pub read: FMOD_CODEC_READ_CALLBACK,
+    pub getlength: FMOD_CODEC_GETLENGTH_CALLBACK,
+    pub setposition: FMOD_CODEC_SETPOSITION_CALLBACK,
+    pub getposition: FMOD_CODEC_GETPOSITION_CALLBACK,
+    pub soundcreate: FMOD_CODEC_SOUNDCREATE_CALLBACK,
+    pub getwaveformat: FMOD_CODEC_GETWAVEFORMAT_CALLBACK,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_CODEC_WAVEFORMAT {
+    pub name: *const ::std::ffi::c_char,
+    pub format: FMOD_SOUND_FORMAT,
+    pub channels: ::std::ffi::c_int,
+    pub frequency: ::std::ffi::c_int,
+    pub lengthbytes: ::std::ffi::c_uint,
+    pub lengthpcm: ::std::ffi::c_uint,
+    pub pcmblocksize: ::std::ffi::c_uint,
+    pub loopstart: ::std::ffi::c_int,
+    pub loopend: ::std::ffi::c_int,
+    pub mode: FMOD_MODE,
+    pub channelmask: FMOD_CHANNELMASK,
+    pub channelorder: FMOD_CHANNELORDER,
+    pub peakvolume: ::std::ffi::c_float,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_CODEC_STATE_FUNCTIONS {
+    pub metadata: FMOD_CODEC_METADATA_FUNC,
+    pub alloc: FMOD_CODEC_ALLOC_FUNC,
+    pub free: FMOD_CODEC_FREE_FUNC,
+    pub log: FMOD_CODEC_LOG_FUNC,
+    pub read: FMOD_CODEC_FILE_READ_FUNC,
+    pub seek: FMOD_CODEC_FILE_SEEK_FUNC,
+    pub tell: FMOD_CODEC_FILE_TELL_FUNC,
+    pub size: FMOD_CODEC_FILE_SIZE_FUNC,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_CODEC_STATE {
+    pub plugindata: *mut ::std::ffi::c_void,
+    pub waveformat: *mut FMOD_CODEC_WAVEFORMAT,
+    pub functions: *mut FMOD_CODEC_STATE_FUNCTIONS,
+    pub numsubsounds: ::std::ffi::c_int,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
+    pub momentaryloudness: ::std::ffi::c_float,
+    pub shorttermloudness: ::std::ffi::c_float,
+    pub integratedloudness: ::std::ffi::c_float,
+    pub loudness10thpercentile: ::std::ffi::c_float,
+    pub loudness95thpercentile: ::std::ffi::c_float,
+    pub loudnesshistogram: [::std::ffi::c_float; 66usize],
+    pub maxtruepeak: ::std::ffi::c_float,
+    pub maxmomentaryloudness: ::std::ffi::c_float,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
+    pub channelweight: [::std::ffi::c_float; 32usize],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_BUFFER_ARRAY {
+    pub numbuffers: ::std::ffi::c_int,
+    pub buffernumchannels: *mut ::std::ffi::c_int,
+    pub bufferchannelmask: *mut FMOD_CHANNELMASK,
+    pub buffers: *mut *mut ::std::ffi::c_float,
+    pub speakermode: FMOD_SPEAKERMODE,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_COMPLEX {
+    pub real: ::std::ffi::c_float,
+    pub imag: ::std::ffi::c_float,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
+    pub numpoints: ::std::ffi::c_int,
+    pub pointparamvalues: *mut ::std::ffi::c_float,
+    pub pointpositions: *mut ::std::ffi::c_float,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_FLOAT_MAPPING {
+    pub r#type: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE,
+    pub piecewiselinearmapping: FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_DESC_FLOAT {
+    pub min: ::std::ffi::c_float,
+    pub max: ::std::ffi::c_float,
+    pub defaultval: ::std::ffi::c_float,
+    pub mapping: FMOD_DSP_PARAMETER_FLOAT_MAPPING,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_DESC_INT {
+    pub min: ::std::ffi::c_int,
+    pub max: ::std::ffi::c_int,
+    pub defaultval: ::std::ffi::c_int,
+    pub goestoinf: FMOD_BOOL,
+    pub valuenames: *const *const ::std::ffi::c_char,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_DESC_BOOL {
+    pub defaultval: FMOD_BOOL,
+    pub valuenames: *const *const ::std::ffi::c_char,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_DESC_DATA {
+    pub datatype: ::std::ffi::c_int,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_DESC {
+    pub r#type: FMOD_DSP_PARAMETER_TYPE,
+    pub name: [::std::ffi::c_char; 16usize],
+    pub label: [::std::ffi::c_char; 16usize],
+    pub description: *const ::std::ffi::c_char,
+    pub payload: FMOD_DSP_PARAMETER_DESC_PAYLOAD,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_OVERALLGAIN {
+    pub linear_gain: ::std::ffi::c_float,
+    pub linear_gain_additive: ::std::ffi::c_float,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_3DATTRIBUTES {
+    pub relative: FMOD_3D_ATTRIBUTES,
+    pub absolute: FMOD_3D_ATTRIBUTES,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
+    pub numlisteners: ::std::ffi::c_int,
+    pub relative: [FMOD_3D_ATTRIBUTES; 8usize],
+    pub weight: [::std::ffi::c_float; 8usize],
+    pub absolute: FMOD_3D_ATTRIBUTES,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
+    pub min: ::std::ffi::c_float,
+    pub max: ::std::ffi::c_float,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_SIDECHAIN {
+    pub sidechainenable: FMOD_BOOL,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_PARAMETER_FFT {
+    pub length: ::std::ffi::c_int,
+    pub numchannels: ::std::ffi::c_int,
+    pub spectrum: [*mut ::std::ffi::c_float; 32usize],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_DESCRIPTION {
+    pub pluginsdkversion: ::std::ffi::c_uint,
+    pub name: [::std::ffi::c_char; 32usize],
+    pub version: ::std::ffi::c_uint,
+    pub numinputbuffers: ::std::ffi::c_int,
+    pub numoutputbuffers: ::std::ffi::c_int,
+    pub create: FMOD_DSP_CREATE_CALLBACK,
+    pub release: FMOD_DSP_RELEASE_CALLBACK,
+    pub reset: FMOD_DSP_RESET_CALLBACK,
+    pub read: FMOD_DSP_READ_CALLBACK,
+    pub process: FMOD_DSP_PROCESS_CALLBACK,
+    pub setposition: FMOD_DSP_SETPOSITION_CALLBACK,
+    pub numparameters: ::std::ffi::c_int,
+    pub paramdesc: *mut *mut FMOD_DSP_PARAMETER_DESC,
+    pub setparameterfloat: FMOD_DSP_SETPARAM_FLOAT_CALLBACK,
+    pub setparameterint: FMOD_DSP_SETPARAM_INT_CALLBACK,
+    pub setparameterbool: FMOD_DSP_SETPARAM_BOOL_CALLBACK,
+    pub setparameterdata: FMOD_DSP_SETPARAM_DATA_CALLBACK,
+    pub getparameterfloat: FMOD_DSP_GETPARAM_FLOAT_CALLBACK,
+    pub getparameterint: FMOD_DSP_GETPARAM_INT_CALLBACK,
+    pub getparameterbool: FMOD_DSP_GETPARAM_BOOL_CALLBACK,
+    pub getparameterdata: FMOD_DSP_GETPARAM_DATA_CALLBACK,
+    pub shouldiprocess: FMOD_DSP_SHOULDIPROCESS_CALLBACK,
+    pub userdata: *mut ::std::ffi::c_void,
+    pub sys_register: FMOD_DSP_SYSTEM_REGISTER_CALLBACK,
+    pub sys_deregister: FMOD_DSP_SYSTEM_DEREGISTER_CALLBACK,
+    pub sys_mix: FMOD_DSP_SYSTEM_MIX_CALLBACK,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_STATE_DFT_FUNCTIONS {
+    pub fftreal: FMOD_DSP_DFT_FFTREAL_FUNC,
+    pub inversefftreal: FMOD_DSP_DFT_IFFTREAL_FUNC,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_STATE_PAN_FUNCTIONS {
+    pub summonomatrix: FMOD_DSP_PAN_SUMMONOMATRIX_FUNC,
+    pub sumstereomatrix: FMOD_DSP_PAN_SUMSTEREOMATRIX_FUNC,
+    pub sumsurroundmatrix: FMOD_DSP_PAN_SUMSURROUNDMATRIX_FUNC,
+    pub summonotosurroundmatrix: FMOD_DSP_PAN_SUMMONOTOSURROUNDMATRIX_FUNC,
+    pub sumstereotosurroundmatrix: FMOD_DSP_PAN_SUMSTEREOTOSURROUNDMATRIX_FUNC,
+    pub getrolloffgain: FMOD_DSP_PAN_GETROLLOFFGAIN_FUNC,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_STATE_FUNCTIONS {
+    pub alloc: FMOD_DSP_ALLOC_FUNC,
+    pub realloc: FMOD_DSP_REALLOC_FUNC,
+    pub free: FMOD_DSP_FREE_FUNC,
+    pub getsamplerate: FMOD_DSP_GETSAMPLERATE_FUNC,
+    pub getblocksize: FMOD_DSP_GETBLOCKSIZE_FUNC,
+    pub dft: *mut FMOD_DSP_STATE_DFT_FUNCTIONS,
+    pub pan: *mut FMOD_DSP_STATE_PAN_FUNCTIONS,
+    pub getspeakermode: FMOD_DSP_GETSPEAKERMODE_FUNC,
+    pub getclock: FMOD_DSP_GETCLOCK_FUNC,
+    pub getlistenerattributes: FMOD_DSP_GETLISTENERATTRIBUTES_FUNC,
+    pub log: FMOD_DSP_LOG_FUNC,
+    pub getuserdata: FMOD_DSP_GETUSERDATA_FUNC,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_STATE {
+    pub instance: *mut ::std::ffi::c_void,
+    pub plugindata: *mut ::std::ffi::c_void,
+    pub channelmask: FMOD_CHANNELMASK,
+    pub source_speakermode: FMOD_SPEAKERMODE,
+    pub sidechaindata: *mut ::std::ffi::c_float,
+    pub sidechainchannels: ::std::ffi::c_int,
+    pub functions: *mut FMOD_DSP_STATE_FUNCTIONS,
+    pub systemobject: ::std::ffi::c_int,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_DSP_METERING_INFO {
+    pub numsamples: ::std::ffi::c_int,
+    pub peaklevel: [::std::ffi::c_float; 32usize],
+    pub rmslevel: [::std::ffi::c_float; 32usize],
+    pub numchannels: ::std::ffi::c_short,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_OUTPUT_DESCRIPTION {
+    pub apiversion: ::std::ffi::c_uint,
+    pub name: *const ::std::ffi::c_char,
+    pub version: ::std::ffi::c_uint,
+    pub method: FMOD_OUTPUT_METHOD,
+    pub getnumdrivers: FMOD_OUTPUT_GETNUMDRIVERS_CALLBACK,
+    pub getdriverinfo: FMOD_OUTPUT_GETDRIVERINFO_CALLBACK,
+    pub init: FMOD_OUTPUT_INIT_CALLBACK,
+    pub start: FMOD_OUTPUT_START_CALLBACK,
+    pub stop: FMOD_OUTPUT_STOP_CALLBACK,
+    pub close: FMOD_OUTPUT_CLOSE_CALLBACK,
+    pub update: FMOD_OUTPUT_UPDATE_CALLBACK,
+    pub gethandle: FMOD_OUTPUT_GETHANDLE_CALLBACK,
+    pub mixer: FMOD_OUTPUT_MIXER_CALLBACK,
+    pub object3dgetinfo: FMOD_OUTPUT_OBJECT3DGETINFO_CALLBACK,
+    pub object3dalloc: FMOD_OUTPUT_OBJECT3DALLOC_CALLBACK,
+    pub object3dfree: FMOD_OUTPUT_OBJECT3DFREE_CALLBACK,
+    pub object3dupdate: FMOD_OUTPUT_OBJECT3DUPDATE_CALLBACK,
+    pub openport: FMOD_OUTPUT_OPENPORT_CALLBACK,
+    pub closeport: FMOD_OUTPUT_CLOSEPORT_CALLBACK,
+    pub devicelistchanged: FMOD_OUTPUT_DEVICELISTCHANGED_CALLBACK,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_OUTPUT_STATE {
+    pub plugindata: *mut ::std::ffi::c_void,
+    pub readfrommixer: FMOD_OUTPUT_READFROMMIXER_FUNC,
+    pub alloc: FMOD_OUTPUT_ALLOC_FUNC,
+    pub free: FMOD_OUTPUT_FREE_FUNC,
+    pub log: FMOD_OUTPUT_LOG_FUNC,
+    pub copyport: FMOD_OUTPUT_COPYPORT_FUNC,
+    pub requestreset: FMOD_OUTPUT_REQUESTRESET_FUNC,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct FMOD_OUTPUT_OBJECT3DINFO {
+    pub buffer: *mut ::std::ffi::c_float,
+    pub bufferlength: ::std::ffi::c_uint,
+    pub position: FMOD_VECTOR,
+    pub gain: ::std::ffi::c_float,
+    pub spread: ::std::ffi::c_float,
+    pub priority: ::std::ffi::c_float,
+}
 pub const FMOD_VERSION: u32 = 131618;
 pub const FMOD_DEBUG_LEVEL_NONE: u32 = 0;
 pub const FMOD_DEBUG_LEVEL_ERROR: u32 = 1;
@@ -197,79 +1455,6 @@ pub const FMOD_DSP_GETPARAM_VALUESTR_LENGTH: u32 = 32;
 pub const FMOD_OUTPUT_PLUGIN_VERSION: u32 = 5;
 pub const FMOD_OUTPUT_METHOD_MIX_DIRECT: u32 = 0;
 pub const FMOD_OUTPUT_METHOD_MIX_BUFFERED: u32 = 1;
-pub type FMOD_BOOL = ::std::ffi::c_int;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_SYSTEM {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_SOUND {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_CHANNELCONTROL {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_CHANNEL {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_CHANNELGROUP {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_SOUNDGROUP {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_REVERB3D {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSPCONNECTION {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_POLYGON {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_GEOMETRY {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_SYNCPOINT {
-    _unused: [u8; 0],
-}
-pub type FMOD_DEBUG_FLAGS = ::std::ffi::c_uint;
-pub type FMOD_MEMORY_TYPE = ::std::ffi::c_uint;
-pub type FMOD_INITFLAGS = ::std::ffi::c_uint;
-pub type FMOD_DRIVER_STATE = ::std::ffi::c_uint;
-pub type FMOD_TIMEUNIT = ::std::ffi::c_uint;
-pub type FMOD_SYSTEM_CALLBACK_TYPE = ::std::ffi::c_uint;
-pub type FMOD_MODE = ::std::ffi::c_uint;
-pub type FMOD_CHANNELMASK = ::std::ffi::c_uint;
-pub type FMOD_PORT_INDEX = ::std::ffi::c_ulonglong;
-pub type FMOD_THREAD_PRIORITY = ::std::ffi::c_int;
-pub type FMOD_THREAD_STACK_SIZE = ::std::ffi::c_uint;
-pub type FMOD_THREAD_AFFINITY = ::std::ffi::c_longlong;
 pub const FMOD_THREAD_TYPE_MIXER: FMOD_THREAD_TYPE = 0;
 pub const FMOD_THREAD_TYPE_FEEDER: FMOD_THREAD_TYPE = 1;
 pub const FMOD_THREAD_TYPE_STREAM: FMOD_THREAD_TYPE = 2;
@@ -285,7 +1470,6 @@ pub const FMOD_THREAD_TYPE_CONVOLUTION1: FMOD_THREAD_TYPE = 11;
 pub const FMOD_THREAD_TYPE_CONVOLUTION2: FMOD_THREAD_TYPE = 12;
 pub const FMOD_THREAD_TYPE_MAX: FMOD_THREAD_TYPE = 13;
 pub const FMOD_THREAD_TYPE_FORCEINT: FMOD_THREAD_TYPE = 65536;
-pub type FMOD_THREAD_TYPE = ::std::ffi::c_int;
 pub const FMOD_OK: FMOD_RESULT = 0;
 pub const FMOD_ERR_BADCOMMAND: FMOD_RESULT = 1;
 pub const FMOD_ERR_CHANNEL_ALLOC: FMOD_RESULT = 2;
@@ -369,12 +1553,10 @@ pub const FMOD_ERR_NOT_LOCKED: FMOD_RESULT = 79;
 pub const FMOD_ERR_RECORD_DISCONNECTED: FMOD_RESULT = 80;
 pub const FMOD_ERR_TOOMANYSAMPLES: FMOD_RESULT = 81;
 pub const FMOD_RESULT_FORCEINT: FMOD_RESULT = 65536;
-pub type FMOD_RESULT = ::std::ffi::c_int;
 pub const FMOD_CHANNELCONTROL_CHANNEL: FMOD_CHANNELCONTROL_TYPE = 0;
 pub const FMOD_CHANNELCONTROL_CHANNELGROUP: FMOD_CHANNELCONTROL_TYPE = 1;
 pub const FMOD_CHANNELCONTROL_MAX: FMOD_CHANNELCONTROL_TYPE = 2;
 pub const FMOD_CHANNELCONTROL_FORCEINT: FMOD_CHANNELCONTROL_TYPE = 65536;
-pub type FMOD_CHANNELCONTROL_TYPE = ::std::ffi::c_int;
 pub const FMOD_OUTPUTTYPE_AUTODETECT: FMOD_OUTPUTTYPE = 0;
 pub const FMOD_OUTPUTTYPE_UNKNOWN: FMOD_OUTPUTTYPE = 1;
 pub const FMOD_OUTPUTTYPE_NOSOUND: FMOD_OUTPUTTYPE = 2;
@@ -399,12 +1581,10 @@ pub const FMOD_OUTPUTTYPE_PHASE: FMOD_OUTPUTTYPE = 20;
 pub const FMOD_OUTPUTTYPE_OHAUDIO: FMOD_OUTPUTTYPE = 21;
 pub const FMOD_OUTPUTTYPE_MAX: FMOD_OUTPUTTYPE = 22;
 pub const FMOD_OUTPUTTYPE_FORCEINT: FMOD_OUTPUTTYPE = 65536;
-pub type FMOD_OUTPUTTYPE = ::std::ffi::c_int;
 pub const FMOD_DEBUG_MODE_TTY: FMOD_DEBUG_MODE = 0;
 pub const FMOD_DEBUG_MODE_FILE: FMOD_DEBUG_MODE = 1;
 pub const FMOD_DEBUG_MODE_CALLBACK: FMOD_DEBUG_MODE = 2;
 pub const FMOD_DEBUG_MODE_FORCEINT: FMOD_DEBUG_MODE = 65536;
-pub type FMOD_DEBUG_MODE = ::std::ffi::c_int;
 pub const FMOD_SPEAKERMODE_DEFAULT: FMOD_SPEAKERMODE = 0;
 pub const FMOD_SPEAKERMODE_RAW: FMOD_SPEAKERMODE = 1;
 pub const FMOD_SPEAKERMODE_MONO: FMOD_SPEAKERMODE = 2;
@@ -416,7 +1596,6 @@ pub const FMOD_SPEAKERMODE_7POINT1: FMOD_SPEAKERMODE = 7;
 pub const FMOD_SPEAKERMODE_7POINT1POINT4: FMOD_SPEAKERMODE = 8;
 pub const FMOD_SPEAKERMODE_MAX: FMOD_SPEAKERMODE = 9;
 pub const FMOD_SPEAKERMODE_FORCEINT: FMOD_SPEAKERMODE = 65536;
-pub type FMOD_SPEAKERMODE = ::std::ffi::c_int;
 pub const FMOD_SPEAKER_NONE: FMOD_SPEAKER = -1;
 pub const FMOD_SPEAKER_FRONT_LEFT: FMOD_SPEAKER = 0;
 pub const FMOD_SPEAKER_FRONT_RIGHT: FMOD_SPEAKER = 1;
@@ -432,7 +1611,6 @@ pub const FMOD_SPEAKER_TOP_BACK_LEFT: FMOD_SPEAKER = 10;
 pub const FMOD_SPEAKER_TOP_BACK_RIGHT: FMOD_SPEAKER = 11;
 pub const FMOD_SPEAKER_MAX: FMOD_SPEAKER = 12;
 pub const FMOD_SPEAKER_FORCEINT: FMOD_SPEAKER = 65536;
-pub type FMOD_SPEAKER = ::std::ffi::c_int;
 pub const FMOD_CHANNELORDER_DEFAULT: FMOD_CHANNELORDER = 0;
 pub const FMOD_CHANNELORDER_WAVEFORMAT: FMOD_CHANNELORDER = 1;
 pub const FMOD_CHANNELORDER_PROTOOLS: FMOD_CHANNELORDER = 2;
@@ -441,13 +1619,11 @@ pub const FMOD_CHANNELORDER_ALLSTEREO: FMOD_CHANNELORDER = 4;
 pub const FMOD_CHANNELORDER_ALSA: FMOD_CHANNELORDER = 5;
 pub const FMOD_CHANNELORDER_MAX: FMOD_CHANNELORDER = 6;
 pub const FMOD_CHANNELORDER_FORCEINT: FMOD_CHANNELORDER = 65536;
-pub type FMOD_CHANNELORDER = ::std::ffi::c_int;
 pub const FMOD_PLUGINTYPE_OUTPUT: FMOD_PLUGINTYPE = 0;
 pub const FMOD_PLUGINTYPE_CODEC: FMOD_PLUGINTYPE = 1;
 pub const FMOD_PLUGINTYPE_DSP: FMOD_PLUGINTYPE = 2;
 pub const FMOD_PLUGINTYPE_MAX: FMOD_PLUGINTYPE = 3;
 pub const FMOD_PLUGINTYPE_FORCEINT: FMOD_PLUGINTYPE = 65536;
-pub type FMOD_PLUGINTYPE = ::std::ffi::c_int;
 pub const FMOD_SOUND_TYPE_UNKNOWN: FMOD_SOUND_TYPE = 0;
 pub const FMOD_SOUND_TYPE_AIFF: FMOD_SOUND_TYPE = 1;
 pub const FMOD_SOUND_TYPE_ASF: FMOD_SOUND_TYPE = 2;
@@ -475,7 +1651,6 @@ pub const FMOD_SOUND_TYPE_FADPCM: FMOD_SOUND_TYPE = 23;
 pub const FMOD_SOUND_TYPE_OPUS: FMOD_SOUND_TYPE = 24;
 pub const FMOD_SOUND_TYPE_MAX: FMOD_SOUND_TYPE = 25;
 pub const FMOD_SOUND_TYPE_FORCEINT: FMOD_SOUND_TYPE = 65536;
-pub type FMOD_SOUND_TYPE = ::std::ffi::c_int;
 pub const FMOD_SOUND_FORMAT_NONE: FMOD_SOUND_FORMAT = 0;
 pub const FMOD_SOUND_FORMAT_PCM8: FMOD_SOUND_FORMAT = 1;
 pub const FMOD_SOUND_FORMAT_PCM16: FMOD_SOUND_FORMAT = 2;
@@ -485,7 +1660,6 @@ pub const FMOD_SOUND_FORMAT_PCMFLOAT: FMOD_SOUND_FORMAT = 5;
 pub const FMOD_SOUND_FORMAT_BITSTREAM: FMOD_SOUND_FORMAT = 6;
 pub const FMOD_SOUND_FORMAT_MAX: FMOD_SOUND_FORMAT = 7;
 pub const FMOD_SOUND_FORMAT_FORCEINT: FMOD_SOUND_FORMAT = 65536;
-pub type FMOD_SOUND_FORMAT = ::std::ffi::c_int;
 pub const FMOD_OPENSTATE_READY: FMOD_OPENSTATE = 0;
 pub const FMOD_OPENSTATE_LOADING: FMOD_OPENSTATE = 1;
 pub const FMOD_OPENSTATE_ERROR: FMOD_OPENSTATE = 2;
@@ -496,25 +1670,21 @@ pub const FMOD_OPENSTATE_PLAYING: FMOD_OPENSTATE = 6;
 pub const FMOD_OPENSTATE_SETPOSITION: FMOD_OPENSTATE = 7;
 pub const FMOD_OPENSTATE_MAX: FMOD_OPENSTATE = 8;
 pub const FMOD_OPENSTATE_FORCEINT: FMOD_OPENSTATE = 65536;
-pub type FMOD_OPENSTATE = ::std::ffi::c_int;
 pub const FMOD_SOUNDGROUP_BEHAVIOR_FAIL: FMOD_SOUNDGROUP_BEHAVIOR = 0;
 pub const FMOD_SOUNDGROUP_BEHAVIOR_MUTE: FMOD_SOUNDGROUP_BEHAVIOR = 1;
 pub const FMOD_SOUNDGROUP_BEHAVIOR_STEALLOWEST: FMOD_SOUNDGROUP_BEHAVIOR = 2;
 pub const FMOD_SOUNDGROUP_BEHAVIOR_MAX: FMOD_SOUNDGROUP_BEHAVIOR = 3;
 pub const FMOD_SOUNDGROUP_BEHAVIOR_FORCEINT: FMOD_SOUNDGROUP_BEHAVIOR = 65536;
-pub type FMOD_SOUNDGROUP_BEHAVIOR = ::std::ffi::c_int;
 pub const FMOD_CHANNELCONTROL_CALLBACK_END: FMOD_CHANNELCONTROL_CALLBACK_TYPE = 0;
 pub const FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE: FMOD_CHANNELCONTROL_CALLBACK_TYPE = 1;
 pub const FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT: FMOD_CHANNELCONTROL_CALLBACK_TYPE = 2;
 pub const FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION: FMOD_CHANNELCONTROL_CALLBACK_TYPE = 3;
 pub const FMOD_CHANNELCONTROL_CALLBACK_MAX: FMOD_CHANNELCONTROL_CALLBACK_TYPE = 4;
 pub const FMOD_CHANNELCONTROL_CALLBACK_FORCEINT: FMOD_CHANNELCONTROL_CALLBACK_TYPE = 65536;
-pub type FMOD_CHANNELCONTROL_CALLBACK_TYPE = ::std::ffi::c_int;
 pub const FMOD_CHANNELCONTROL_DSP_HEAD: FMOD_CHANNELCONTROL_DSP_INDEX = -1;
 pub const FMOD_CHANNELCONTROL_DSP_FADER: FMOD_CHANNELCONTROL_DSP_INDEX = -2;
 pub const FMOD_CHANNELCONTROL_DSP_TAIL: FMOD_CHANNELCONTROL_DSP_INDEX = -3;
 pub const FMOD_CHANNELCONTROL_DSP_FORCEINT: FMOD_CHANNELCONTROL_DSP_INDEX = 65536;
-pub type FMOD_CHANNELCONTROL_DSP_INDEX = ::std::ffi::c_int;
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_NONE: FMOD_ERRORCALLBACK_INSTANCETYPE = 0;
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_SYSTEM: FMOD_ERRORCALLBACK_INSTANCETYPE = 1;
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_CHANNEL: FMOD_ERRORCALLBACK_INSTANCETYPE = 2;
@@ -539,7 +1709,6 @@ pub const FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BANK: FMOD_ERRORCALLBACK_INSTAN
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_COMMANDREPLAY: FMOD_ERRORCALLBACK_INSTANCETYPE =
     18;
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_FORCEINT: FMOD_ERRORCALLBACK_INSTANCETYPE = 65536;
-pub type FMOD_ERRORCALLBACK_INSTANCETYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_RESAMPLER_DEFAULT: FMOD_DSP_RESAMPLER = 0;
 pub const FMOD_DSP_RESAMPLER_NOINTERP: FMOD_DSP_RESAMPLER = 1;
 pub const FMOD_DSP_RESAMPLER_LINEAR: FMOD_DSP_RESAMPLER = 2;
@@ -547,18 +1716,15 @@ pub const FMOD_DSP_RESAMPLER_CUBIC: FMOD_DSP_RESAMPLER = 3;
 pub const FMOD_DSP_RESAMPLER_SPLINE: FMOD_DSP_RESAMPLER = 4;
 pub const FMOD_DSP_RESAMPLER_MAX: FMOD_DSP_RESAMPLER = 5;
 pub const FMOD_DSP_RESAMPLER_FORCEINT: FMOD_DSP_RESAMPLER = 65536;
-pub type FMOD_DSP_RESAMPLER = ::std::ffi::c_int;
 pub const FMOD_DSP_CALLBACK_DATAPARAMETERRELEASE: FMOD_DSP_CALLBACK_TYPE = 0;
 pub const FMOD_DSP_CALLBACK_MAX: FMOD_DSP_CALLBACK_TYPE = 1;
 pub const FMOD_DSP_CALLBACK_FORCEINT: FMOD_DSP_CALLBACK_TYPE = 65536;
-pub type FMOD_DSP_CALLBACK_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSPCONNECTION_TYPE_STANDARD: FMOD_DSPCONNECTION_TYPE = 0;
 pub const FMOD_DSPCONNECTION_TYPE_SIDECHAIN: FMOD_DSPCONNECTION_TYPE = 1;
 pub const FMOD_DSPCONNECTION_TYPE_SEND: FMOD_DSPCONNECTION_TYPE = 2;
 pub const FMOD_DSPCONNECTION_TYPE_SEND_SIDECHAIN: FMOD_DSPCONNECTION_TYPE = 3;
 pub const FMOD_DSPCONNECTION_TYPE_MAX: FMOD_DSPCONNECTION_TYPE = 4;
 pub const FMOD_DSPCONNECTION_TYPE_FORCEINT: FMOD_DSPCONNECTION_TYPE = 65536;
-pub type FMOD_DSPCONNECTION_TYPE = ::std::ffi::c_int;
 pub const FMOD_TAGTYPE_UNKNOWN: FMOD_TAGTYPE = 0;
 pub const FMOD_TAGTYPE_ID3V1: FMOD_TAGTYPE = 1;
 pub const FMOD_TAGTYPE_ID3V2: FMOD_TAGTYPE = 2;
@@ -572,7 +1738,6 @@ pub const FMOD_TAGTYPE_FMOD: FMOD_TAGTYPE = 9;
 pub const FMOD_TAGTYPE_USER: FMOD_TAGTYPE = 10;
 pub const FMOD_TAGTYPE_MAX: FMOD_TAGTYPE = 11;
 pub const FMOD_TAGTYPE_FORCEINT: FMOD_TAGTYPE = 65536;
-pub type FMOD_TAGTYPE = ::std::ffi::c_int;
 pub const FMOD_TAGDATATYPE_BINARY: FMOD_TAGDATATYPE = 0;
 pub const FMOD_TAGDATATYPE_INT: FMOD_TAGDATATYPE = 1;
 pub const FMOD_TAGDATATYPE_FLOAT: FMOD_TAGDATATYPE = 2;
@@ -582,7 +1747,6 @@ pub const FMOD_TAGDATATYPE_STRING_UTF16BE: FMOD_TAGDATATYPE = 5;
 pub const FMOD_TAGDATATYPE_STRING_UTF8: FMOD_TAGDATATYPE = 6;
 pub const FMOD_TAGDATATYPE_MAX: FMOD_TAGDATATYPE = 7;
 pub const FMOD_TAGDATATYPE_FORCEINT: FMOD_TAGDATATYPE = 65536;
-pub type FMOD_TAGDATATYPE = ::std::ffi::c_int;
 pub const FMOD_PORT_TYPE_MUSIC: FMOD_PORT_TYPE = 0;
 pub const FMOD_PORT_TYPE_COPYRIGHT_MUSIC: FMOD_PORT_TYPE = 1;
 pub const FMOD_PORT_TYPE_VOICE: FMOD_PORT_TYPE = 2;
@@ -592,464 +1756,6 @@ pub const FMOD_PORT_TYPE_VIBRATION: FMOD_PORT_TYPE = 5;
 pub const FMOD_PORT_TYPE_AUX: FMOD_PORT_TYPE = 6;
 pub const FMOD_PORT_TYPE_MAX: FMOD_PORT_TYPE = 7;
 pub const FMOD_PORT_TYPE_FORCEINT: FMOD_PORT_TYPE = 65536;
-pub type FMOD_PORT_TYPE = ::std::ffi::c_int;
-pub type FMOD_DEBUG_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        flags: FMOD_DEBUG_FLAGS,
-        file: *const ::std::ffi::c_char,
-        line: ::std::ffi::c_int,
-        func: *const ::std::ffi::c_char,
-        message: *const ::std::ffi::c_char,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_SYSTEM_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        system: *mut FMOD_SYSTEM,
-        r#type: FMOD_SYSTEM_CALLBACK_TYPE,
-        commanddata1: *mut ::std::ffi::c_void,
-        commanddata2: *mut ::std::ffi::c_void,
-        userdata: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CHANNELCONTROL_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        channelcontrol: *mut FMOD_CHANNELCONTROL,
-        controltype: FMOD_CHANNELCONTROL_TYPE,
-        callbacktype: FMOD_CHANNELCONTROL_CALLBACK_TYPE,
-        commanddata1: *mut ::std::ffi::c_void,
-        commanddata2: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp: *mut FMOD_DSP,
-        r#type: FMOD_DSP_CALLBACK_TYPE,
-        data: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_SOUND_NONBLOCK_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(sound: *mut FMOD_SOUND, result: FMOD_RESULT) -> FMOD_RESULT,
->;
-pub type FMOD_SOUND_PCMREAD_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        sound: *mut FMOD_SOUND,
-        data: *mut ::std::ffi::c_void,
-        datalen: ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_SOUND_PCMSETPOS_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        sound: *mut FMOD_SOUND,
-        subsound: ::std::ffi::c_int,
-        position: ::std::ffi::c_uint,
-        postype: FMOD_TIMEUNIT,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_FILE_OPEN_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        name: *const ::std::ffi::c_char,
-        filesize: *mut ::std::ffi::c_uint,
-        handle: *mut *mut ::std::ffi::c_void,
-        userdata: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_FILE_CLOSE_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        handle: *mut ::std::ffi::c_void,
-        userdata: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_FILE_READ_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        handle: *mut ::std::ffi::c_void,
-        buffer: *mut ::std::ffi::c_void,
-        sizebytes: ::std::ffi::c_uint,
-        bytesread: *mut ::std::ffi::c_uint,
-        userdata: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_FILE_SEEK_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        handle: *mut ::std::ffi::c_void,
-        pos: ::std::ffi::c_uint,
-        userdata: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_FILE_ASYNCREAD_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        info: *mut FMOD_ASYNCREADINFO,
-        userdata: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_FILE_ASYNCCANCEL_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        info: *mut FMOD_ASYNCREADINFO,
-        userdata: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_FILE_ASYNCDONE_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(info: *mut FMOD_ASYNCREADINFO, result: FMOD_RESULT),
->;
-pub type FMOD_MEMORY_ALLOC_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        size: ::std::ffi::c_uint,
-        r#type: FMOD_MEMORY_TYPE,
-        sourcestr: *const ::std::ffi::c_char,
-    ) -> *mut ::std::ffi::c_void,
->;
-pub type FMOD_MEMORY_REALLOC_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        ptr: *mut ::std::ffi::c_void,
-        size: ::std::ffi::c_uint,
-        r#type: FMOD_MEMORY_TYPE,
-        sourcestr: *const ::std::ffi::c_char,
-    ) -> *mut ::std::ffi::c_void,
->;
-pub type FMOD_MEMORY_FREE_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        ptr: *mut ::std::ffi::c_void,
-        r#type: FMOD_MEMORY_TYPE,
-        sourcestr: *const ::std::ffi::c_char,
-    ),
->;
-pub type FMOD_3D_ROLLOFF_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        channelcontrol: *mut FMOD_CHANNELCONTROL,
-        distance: ::std::ffi::c_float,
-    ) -> ::std::ffi::c_float,
->;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_ASYNCREADINFO {
-    pub handle: *mut ::std::ffi::c_void,
-    pub offset: ::std::ffi::c_uint,
-    pub sizebytes: ::std::ffi::c_uint,
-    pub priority: ::std::ffi::c_int,
-    pub userdata: *mut ::std::ffi::c_void,
-    pub buffer: *mut ::std::ffi::c_void,
-    pub bytesread: ::std::ffi::c_uint,
-    pub done: FMOD_FILE_ASYNCDONE_FUNC,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_VECTOR {
-    pub x: ::std::ffi::c_float,
-    pub y: ::std::ffi::c_float,
-    pub z: ::std::ffi::c_float,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_3D_ATTRIBUTES {
-    pub position: FMOD_VECTOR,
-    pub velocity: FMOD_VECTOR,
-    pub forward: FMOD_VECTOR,
-    pub up: FMOD_VECTOR,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_GUID {
-    pub Data1: ::std::ffi::c_uint,
-    pub Data2: ::std::ffi::c_ushort,
-    pub Data3: ::std::ffi::c_ushort,
-    pub Data4: [::std::ffi::c_uchar; 8usize],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_PLUGINLIST {
-    pub r#type: FMOD_PLUGINTYPE,
-    pub description: *mut ::std::ffi::c_void,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_ADVANCEDSETTINGS {
-    pub cbSize: ::std::ffi::c_int,
-    pub maxMPEGCodecs: ::std::ffi::c_int,
-    pub maxADPCMCodecs: ::std::ffi::c_int,
-    pub maxXMACodecs: ::std::ffi::c_int,
-    pub maxVorbisCodecs: ::std::ffi::c_int,
-    pub maxAT9Codecs: ::std::ffi::c_int,
-    pub maxFADPCMCodecs: ::std::ffi::c_int,
-    pub maxPCMCodecs: ::std::ffi::c_int,
-    pub ASIONumChannels: ::std::ffi::c_int,
-    pub ASIOChannelList: *mut *mut ::std::ffi::c_char,
-    pub ASIOSpeakerList: *mut FMOD_SPEAKER,
-    pub vol0virtualvol: ::std::ffi::c_float,
-    pub defaultDecodeBufferSize: ::std::ffi::c_uint,
-    pub profilePort: ::std::ffi::c_ushort,
-    pub geometryMaxFadeTime: ::std::ffi::c_uint,
-    pub distanceFilterCenterFreq: ::std::ffi::c_float,
-    pub reverb3Dinstance: ::std::ffi::c_int,
-    pub DSPBufferPoolSize: ::std::ffi::c_int,
-    pub resamplerMethod: FMOD_DSP_RESAMPLER,
-    pub randomSeed: ::std::ffi::c_uint,
-    pub maxConvolutionThreads: ::std::ffi::c_int,
-    pub maxOpusCodecs: ::std::ffi::c_int,
-    pub maxSpatialObjects: ::std::ffi::c_int,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_TAG {
-    pub r#type: FMOD_TAGTYPE,
-    pub datatype: FMOD_TAGDATATYPE,
-    pub name: *mut ::std::ffi::c_char,
-    pub data: *mut ::std::ffi::c_void,
-    pub datalen: ::std::ffi::c_uint,
-    pub updated: FMOD_BOOL,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_CREATESOUNDEXINFO {
-    pub cbsize: ::std::ffi::c_int,
-    pub length: ::std::ffi::c_uint,
-    pub fileoffset: ::std::ffi::c_uint,
-    pub numchannels: ::std::ffi::c_int,
-    pub defaultfrequency: ::std::ffi::c_int,
-    pub format: FMOD_SOUND_FORMAT,
-    pub decodebuffersize: ::std::ffi::c_uint,
-    pub initialsubsound: ::std::ffi::c_int,
-    pub numsubsounds: ::std::ffi::c_int,
-    pub inclusionlist: *mut ::std::ffi::c_int,
-    pub inclusionlistnum: ::std::ffi::c_int,
-    pub pcmreadcallback: FMOD_SOUND_PCMREAD_CALLBACK,
-    pub pcmsetposcallback: FMOD_SOUND_PCMSETPOS_CALLBACK,
-    pub nonblockcallback: FMOD_SOUND_NONBLOCK_CALLBACK,
-    pub dlsname: *const ::std::ffi::c_char,
-    pub encryptionkey: *const ::std::ffi::c_char,
-    pub maxpolyphony: ::std::ffi::c_int,
-    pub userdata: *mut ::std::ffi::c_void,
-    pub suggestedsoundtype: FMOD_SOUND_TYPE,
-    pub fileuseropen: FMOD_FILE_OPEN_CALLBACK,
-    pub fileuserclose: FMOD_FILE_CLOSE_CALLBACK,
-    pub fileuserread: FMOD_FILE_READ_CALLBACK,
-    pub fileuserseek: FMOD_FILE_SEEK_CALLBACK,
-    pub fileuserasyncread: FMOD_FILE_ASYNCREAD_CALLBACK,
-    pub fileuserasynccancel: FMOD_FILE_ASYNCCANCEL_CALLBACK,
-    pub fileuserdata: *mut ::std::ffi::c_void,
-    pub filebuffersize: ::std::ffi::c_int,
-    pub channelorder: FMOD_CHANNELORDER,
-    pub initialsoundgroup: *mut FMOD_SOUNDGROUP,
-    pub initialseekposition: ::std::ffi::c_uint,
-    pub initialseekpostype: FMOD_TIMEUNIT,
-    pub ignoresetfilesystem: ::std::ffi::c_int,
-    pub audioqueuepolicy: ::std::ffi::c_uint,
-    pub minmidigranularity: ::std::ffi::c_uint,
-    pub nonblockthreadid: ::std::ffi::c_int,
-    pub fsbguid: *mut FMOD_GUID,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_REVERB_PROPERTIES {
-    pub DecayTime: ::std::ffi::c_float,
-    pub EarlyDelay: ::std::ffi::c_float,
-    pub LateDelay: ::std::ffi::c_float,
-    pub HFReference: ::std::ffi::c_float,
-    pub HFDecayRatio: ::std::ffi::c_float,
-    pub Diffusion: ::std::ffi::c_float,
-    pub Density: ::std::ffi::c_float,
-    pub LowShelfFrequency: ::std::ffi::c_float,
-    pub LowShelfGain: ::std::ffi::c_float,
-    pub HighCut: ::std::ffi::c_float,
-    pub EarlyLateMix: ::std::ffi::c_float,
-    pub WetLevel: ::std::ffi::c_float,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_ERRORCALLBACK_INFO {
-    pub result: FMOD_RESULT,
-    pub instancetype: FMOD_ERRORCALLBACK_INSTANCETYPE,
-    pub instance: *mut ::std::ffi::c_void,
-    pub functionname: *const ::std::ffi::c_char,
-    pub functionparams: *const ::std::ffi::c_char,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_CPU_USAGE {
-    pub dsp: ::std::ffi::c_float,
-    pub stream: ::std::ffi::c_float,
-    pub geometry: ::std::ffi::c_float,
-    pub update: ::std::ffi::c_float,
-    pub convolution1: ::std::ffi::c_float,
-    pub convolution2: ::std::ffi::c_float,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_DATA_PARAMETER_INFO {
-    pub data: *mut ::std::ffi::c_void,
-    pub length: ::std::ffi::c_uint,
-    pub index: ::std::ffi::c_int,
-}
-pub type FMOD_CODEC_SEEK_METHOD = ::std::ffi::c_int;
-pub type FMOD_CODEC_OPEN_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        usermode: FMOD_MODE,
-        userexinfo: *mut FMOD_CREATESOUNDEXINFO,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_CLOSE_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(codec_state: *mut FMOD_CODEC_STATE) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_READ_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        buffer: *mut ::std::ffi::c_void,
-        samples_in: ::std::ffi::c_uint,
-        samples_out: *mut ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_GETLENGTH_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        length: *mut ::std::ffi::c_uint,
-        lengthtype: FMOD_TIMEUNIT,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_SETPOSITION_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        subsound: ::std::ffi::c_int,
-        position: ::std::ffi::c_uint,
-        postype: FMOD_TIMEUNIT,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_GETPOSITION_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        position: *mut ::std::ffi::c_uint,
-        postype: FMOD_TIMEUNIT,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_SOUNDCREATE_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        subsound: ::std::ffi::c_int,
-        sound: *mut FMOD_SOUND,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_GETWAVEFORMAT_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        index: ::std::ffi::c_int,
-        waveformat: *mut FMOD_CODEC_WAVEFORMAT,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_METADATA_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        tagtype: FMOD_TAGTYPE,
-        name: *mut ::std::ffi::c_char,
-        data: *mut ::std::ffi::c_void,
-        datalen: ::std::ffi::c_uint,
-        datatype: FMOD_TAGDATATYPE,
-        unique: ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_ALLOC_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        size: ::std::ffi::c_uint,
-        align: ::std::ffi::c_uint,
-        file: *const ::std::ffi::c_char,
-        line: ::std::ffi::c_int,
-    ) -> *mut ::std::ffi::c_void,
->;
-pub type FMOD_CODEC_FREE_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        ptr: *mut ::std::ffi::c_void,
-        file: *const ::std::ffi::c_char,
-        line: ::std::ffi::c_int,
-    ),
->;
-pub type FMOD_CODEC_LOG_FUNC = ::std::option::Option<
-    unsafe extern "C" fn(
-        level: FMOD_DEBUG_FLAGS,
-        file: *const ::std::ffi::c_char,
-        line: ::std::ffi::c_int,
-        function: *const ::std::ffi::c_char,
-        string: *const ::std::ffi::c_char,
-        ...
-    ),
->;
-pub type FMOD_CODEC_FILE_READ_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        buffer: *mut ::std::ffi::c_void,
-        sizebytes: ::std::ffi::c_uint,
-        bytesread: *mut ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_FILE_SEEK_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        pos: ::std::ffi::c_uint,
-        method: FMOD_CODEC_SEEK_METHOD,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_FILE_TELL_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        pos: *mut ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_CODEC_FILE_SIZE_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        codec_state: *mut FMOD_CODEC_STATE,
-        size: *mut ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_CODEC_DESCRIPTION {
-    pub apiversion: ::std::ffi::c_uint,
-    pub name: *const ::std::ffi::c_char,
-    pub version: ::std::ffi::c_uint,
-    pub defaultasstream: ::std::ffi::c_int,
-    pub timeunits: FMOD_TIMEUNIT,
-    pub open: FMOD_CODEC_OPEN_CALLBACK,
-    pub close: FMOD_CODEC_CLOSE_CALLBACK,
-    pub read: FMOD_CODEC_READ_CALLBACK,
-    pub getlength: FMOD_CODEC_GETLENGTH_CALLBACK,
-    pub setposition: FMOD_CODEC_SETPOSITION_CALLBACK,
-    pub getposition: FMOD_CODEC_GETPOSITION_CALLBACK,
-    pub soundcreate: FMOD_CODEC_SOUNDCREATE_CALLBACK,
-    pub getwaveformat: FMOD_CODEC_GETWAVEFORMAT_CALLBACK,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_CODEC_WAVEFORMAT {
-    pub name: *const ::std::ffi::c_char,
-    pub format: FMOD_SOUND_FORMAT,
-    pub channels: ::std::ffi::c_int,
-    pub frequency: ::std::ffi::c_int,
-    pub lengthbytes: ::std::ffi::c_uint,
-    pub lengthpcm: ::std::ffi::c_uint,
-    pub pcmblocksize: ::std::ffi::c_uint,
-    pub loopstart: ::std::ffi::c_int,
-    pub loopend: ::std::ffi::c_int,
-    pub mode: FMOD_MODE,
-    pub channelmask: FMOD_CHANNELMASK,
-    pub channelorder: FMOD_CHANNELORDER,
-    pub peakvolume: ::std::ffi::c_float,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_CODEC_STATE_FUNCTIONS {
-    pub metadata: FMOD_CODEC_METADATA_FUNC,
-    pub alloc: FMOD_CODEC_ALLOC_FUNC,
-    pub free: FMOD_CODEC_FREE_FUNC,
-    pub log: FMOD_CODEC_LOG_FUNC,
-    pub read: FMOD_CODEC_FILE_READ_FUNC,
-    pub seek: FMOD_CODEC_FILE_SEEK_FUNC,
-    pub tell: FMOD_CODEC_FILE_TELL_FUNC,
-    pub size: FMOD_CODEC_FILE_SIZE_FUNC,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_CODEC_STATE {
-    pub plugindata: *mut ::std::ffi::c_void,
-    pub waveformat: *mut FMOD_CODEC_WAVEFORMAT,
-    pub functions: *mut FMOD_CODEC_STATE_FUNCTIONS,
-    pub numsubsounds: ::std::ffi::c_int,
-}
 pub const FMOD_DSP_TYPE_UNKNOWN: FMOD_DSP_TYPE = 0;
 pub const FMOD_DSP_TYPE_MIXER: FMOD_DSP_TYPE = 1;
 pub const FMOD_DSP_TYPE_OSCILLATOR: FMOD_DSP_TYPE = 2;
@@ -1089,46 +1795,34 @@ pub const FMOD_DSP_TYPE_OBJECTPAN: FMOD_DSP_TYPE = 35;
 pub const FMOD_DSP_TYPE_MULTIBAND_EQ: FMOD_DSP_TYPE = 36;
 pub const FMOD_DSP_TYPE_MAX: FMOD_DSP_TYPE = 37;
 pub const FMOD_DSP_TYPE_FORCEINT: FMOD_DSP_TYPE = 65536;
-pub type FMOD_DSP_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_OSCILLATOR_TYPE: FMOD_DSP_OSCILLATOR = 0;
 pub const FMOD_DSP_OSCILLATOR_RATE: FMOD_DSP_OSCILLATOR = 1;
-pub type FMOD_DSP_OSCILLATOR = ::std::ffi::c_int;
 pub const FMOD_DSP_LOWPASS_CUTOFF: FMOD_DSP_LOWPASS = 0;
 pub const FMOD_DSP_LOWPASS_RESONANCE: FMOD_DSP_LOWPASS = 1;
-pub type FMOD_DSP_LOWPASS = ::std::ffi::c_int;
 pub const FMOD_DSP_ITLOWPASS_CUTOFF: FMOD_DSP_ITLOWPASS = 0;
 pub const FMOD_DSP_ITLOWPASS_RESONANCE: FMOD_DSP_ITLOWPASS = 1;
-pub type FMOD_DSP_ITLOWPASS = ::std::ffi::c_int;
 pub const FMOD_DSP_HIGHPASS_CUTOFF: FMOD_DSP_HIGHPASS = 0;
 pub const FMOD_DSP_HIGHPASS_RESONANCE: FMOD_DSP_HIGHPASS = 1;
-pub type FMOD_DSP_HIGHPASS = ::std::ffi::c_int;
 pub const FMOD_DSP_ECHO_DELAY: FMOD_DSP_ECHO = 0;
 pub const FMOD_DSP_ECHO_FEEDBACK: FMOD_DSP_ECHO = 1;
 pub const FMOD_DSP_ECHO_DRYLEVEL: FMOD_DSP_ECHO = 2;
 pub const FMOD_DSP_ECHO_WETLEVEL: FMOD_DSP_ECHO = 3;
-pub type FMOD_DSP_ECHO = ::std::ffi::c_int;
 pub const FMOD_DSP_FADER_GAIN: FMOD_DSP_FADER = 0;
 pub const FMOD_DSP_FADER_OVERALL_GAIN: FMOD_DSP_FADER = 1;
-pub type FMOD_DSP_FADER = ::std::ffi::c_int;
 pub const FMOD_DSP_FLANGE_MIX: FMOD_DSP_FLANGE = 0;
 pub const FMOD_DSP_FLANGE_DEPTH: FMOD_DSP_FLANGE = 1;
 pub const FMOD_DSP_FLANGE_RATE: FMOD_DSP_FLANGE = 2;
-pub type FMOD_DSP_FLANGE = ::std::ffi::c_int;
 pub const FMOD_DSP_DISTORTION_LEVEL: FMOD_DSP_DISTORTION = 0;
-pub type FMOD_DSP_DISTORTION = ::std::ffi::c_int;
 pub const FMOD_DSP_NORMALIZE_FADETIME: FMOD_DSP_NORMALIZE = 0;
 pub const FMOD_DSP_NORMALIZE_THRESHOLD: FMOD_DSP_NORMALIZE = 1;
 pub const FMOD_DSP_NORMALIZE_MAXAMP: FMOD_DSP_NORMALIZE = 2;
-pub type FMOD_DSP_NORMALIZE = ::std::ffi::c_int;
 pub const FMOD_DSP_LIMITER_RELEASETIME: FMOD_DSP_LIMITER = 0;
 pub const FMOD_DSP_LIMITER_CEILING: FMOD_DSP_LIMITER = 1;
 pub const FMOD_DSP_LIMITER_MAXIMIZERGAIN: FMOD_DSP_LIMITER = 2;
 pub const FMOD_DSP_LIMITER_MODE: FMOD_DSP_LIMITER = 3;
-pub type FMOD_DSP_LIMITER = ::std::ffi::c_int;
 pub const FMOD_DSP_PARAMEQ_CENTER: FMOD_DSP_PARAMEQ = 0;
 pub const FMOD_DSP_PARAMEQ_BANDWIDTH: FMOD_DSP_PARAMEQ = 1;
 pub const FMOD_DSP_PARAMEQ_GAIN: FMOD_DSP_PARAMEQ = 2;
-pub type FMOD_DSP_PARAMEQ = ::std::ffi::c_int;
 pub const FMOD_DSP_MULTIBAND_EQ_A_FILTER: FMOD_DSP_MULTIBAND_EQ = 0;
 pub const FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY: FMOD_DSP_MULTIBAND_EQ = 1;
 pub const FMOD_DSP_MULTIBAND_EQ_A_Q: FMOD_DSP_MULTIBAND_EQ = 2;
@@ -1149,7 +1843,6 @@ pub const FMOD_DSP_MULTIBAND_EQ_E_FILTER: FMOD_DSP_MULTIBAND_EQ = 16;
 pub const FMOD_DSP_MULTIBAND_EQ_E_FREQUENCY: FMOD_DSP_MULTIBAND_EQ = 17;
 pub const FMOD_DSP_MULTIBAND_EQ_E_Q: FMOD_DSP_MULTIBAND_EQ = 18;
 pub const FMOD_DSP_MULTIBAND_EQ_E_GAIN: FMOD_DSP_MULTIBAND_EQ = 19;
-pub type FMOD_DSP_MULTIBAND_EQ = ::std::ffi::c_int;
 pub const FMOD_DSP_MULTIBAND_EQ_FILTER_DISABLED: FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE = 0;
 pub const FMOD_DSP_MULTIBAND_EQ_FILTER_LOWPASS_12DB: FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE = 1;
 pub const FMOD_DSP_MULTIBAND_EQ_FILTER_LOWPASS_24DB: FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE = 2;
@@ -1163,22 +1856,18 @@ pub const FMOD_DSP_MULTIBAND_EQ_FILTER_PEAKING: FMOD_DSP_MULTIBAND_EQ_FILTER_TYP
 pub const FMOD_DSP_MULTIBAND_EQ_FILTER_BANDPASS: FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE = 10;
 pub const FMOD_DSP_MULTIBAND_EQ_FILTER_NOTCH: FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE = 11;
 pub const FMOD_DSP_MULTIBAND_EQ_FILTER_ALLPASS: FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE = 12;
-pub type FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_PITCHSHIFT_PITCH: FMOD_DSP_PITCHSHIFT = 0;
 pub const FMOD_DSP_PITCHSHIFT_FFTSIZE: FMOD_DSP_PITCHSHIFT = 1;
 pub const FMOD_DSP_PITCHSHIFT_OVERLAP: FMOD_DSP_PITCHSHIFT = 2;
 pub const FMOD_DSP_PITCHSHIFT_MAXCHANNELS: FMOD_DSP_PITCHSHIFT = 3;
-pub type FMOD_DSP_PITCHSHIFT = ::std::ffi::c_int;
 pub const FMOD_DSP_CHORUS_MIX: FMOD_DSP_CHORUS = 0;
 pub const FMOD_DSP_CHORUS_RATE: FMOD_DSP_CHORUS = 1;
 pub const FMOD_DSP_CHORUS_DEPTH: FMOD_DSP_CHORUS = 2;
-pub type FMOD_DSP_CHORUS = ::std::ffi::c_int;
 pub const FMOD_DSP_ITECHO_WETDRYMIX: FMOD_DSP_ITECHO = 0;
 pub const FMOD_DSP_ITECHO_FEEDBACK: FMOD_DSP_ITECHO = 1;
 pub const FMOD_DSP_ITECHO_LEFTDELAY: FMOD_DSP_ITECHO = 2;
 pub const FMOD_DSP_ITECHO_RIGHTDELAY: FMOD_DSP_ITECHO = 3;
 pub const FMOD_DSP_ITECHO_PANDELAY: FMOD_DSP_ITECHO = 4;
-pub type FMOD_DSP_ITECHO = ::std::ffi::c_int;
 pub const FMOD_DSP_COMPRESSOR_THRESHOLD: FMOD_DSP_COMPRESSOR = 0;
 pub const FMOD_DSP_COMPRESSOR_RATIO: FMOD_DSP_COMPRESSOR = 1;
 pub const FMOD_DSP_COMPRESSOR_ATTACK: FMOD_DSP_COMPRESSOR = 2;
@@ -1186,7 +1875,6 @@ pub const FMOD_DSP_COMPRESSOR_RELEASE: FMOD_DSP_COMPRESSOR = 3;
 pub const FMOD_DSP_COMPRESSOR_GAINMAKEUP: FMOD_DSP_COMPRESSOR = 4;
 pub const FMOD_DSP_COMPRESSOR_USESIDECHAIN: FMOD_DSP_COMPRESSOR = 5;
 pub const FMOD_DSP_COMPRESSOR_LINKED: FMOD_DSP_COMPRESSOR = 6;
-pub type FMOD_DSP_COMPRESSOR = ::std::ffi::c_int;
 pub const FMOD_DSP_SFXREVERB_DECAYTIME: FMOD_DSP_SFXREVERB = 0;
 pub const FMOD_DSP_SFXREVERB_EARLYDELAY: FMOD_DSP_SFXREVERB = 1;
 pub const FMOD_DSP_SFXREVERB_LATEDELAY: FMOD_DSP_SFXREVERB = 2;
@@ -1200,9 +1888,7 @@ pub const FMOD_DSP_SFXREVERB_HIGHCUT: FMOD_DSP_SFXREVERB = 9;
 pub const FMOD_DSP_SFXREVERB_EARLYLATEMIX: FMOD_DSP_SFXREVERB = 10;
 pub const FMOD_DSP_SFXREVERB_WETLEVEL: FMOD_DSP_SFXREVERB = 11;
 pub const FMOD_DSP_SFXREVERB_DRYLEVEL: FMOD_DSP_SFXREVERB = 12;
-pub type FMOD_DSP_SFXREVERB = ::std::ffi::c_int;
 pub const FMOD_DSP_LOWPASS_SIMPLE_CUTOFF: FMOD_DSP_LOWPASS_SIMPLE = 0;
-pub type FMOD_DSP_LOWPASS_SIMPLE = ::std::ffi::c_int;
 pub const FMOD_DSP_DELAY_CH0: FMOD_DSP_DELAY = 0;
 pub const FMOD_DSP_DELAY_CH1: FMOD_DSP_DELAY = 1;
 pub const FMOD_DSP_DELAY_CH2: FMOD_DSP_DELAY = 2;
@@ -1220,7 +1906,6 @@ pub const FMOD_DSP_DELAY_CH13: FMOD_DSP_DELAY = 13;
 pub const FMOD_DSP_DELAY_CH14: FMOD_DSP_DELAY = 14;
 pub const FMOD_DSP_DELAY_CH15: FMOD_DSP_DELAY = 15;
 pub const FMOD_DSP_DELAY_MAXDELAY: FMOD_DSP_DELAY = 16;
-pub type FMOD_DSP_DELAY = ::std::ffi::c_int;
 pub const FMOD_DSP_TREMOLO_FREQUENCY: FMOD_DSP_TREMOLO = 0;
 pub const FMOD_DSP_TREMOLO_DEPTH: FMOD_DSP_TREMOLO = 1;
 pub const FMOD_DSP_TREMOLO_SHAPE: FMOD_DSP_TREMOLO = 2;
@@ -1229,32 +1914,24 @@ pub const FMOD_DSP_TREMOLO_DUTY: FMOD_DSP_TREMOLO = 4;
 pub const FMOD_DSP_TREMOLO_SQUARE: FMOD_DSP_TREMOLO = 5;
 pub const FMOD_DSP_TREMOLO_PHASE: FMOD_DSP_TREMOLO = 6;
 pub const FMOD_DSP_TREMOLO_SPREAD: FMOD_DSP_TREMOLO = 7;
-pub type FMOD_DSP_TREMOLO = ::std::ffi::c_int;
 pub const FMOD_DSP_SEND_RETURNID: FMOD_DSP_SEND = 0;
 pub const FMOD_DSP_SEND_LEVEL: FMOD_DSP_SEND = 1;
-pub type FMOD_DSP_SEND = ::std::ffi::c_int;
 pub const FMOD_DSP_RETURN_ID: FMOD_DSP_RETURN = 0;
 pub const FMOD_DSP_RETURN_INPUT_SPEAKER_MODE: FMOD_DSP_RETURN = 1;
-pub type FMOD_DSP_RETURN = ::std::ffi::c_int;
 pub const FMOD_DSP_HIGHPASS_SIMPLE_CUTOFF: FMOD_DSP_HIGHPASS_SIMPLE = 0;
-pub type FMOD_DSP_HIGHPASS_SIMPLE = ::std::ffi::c_int;
 pub const FMOD_DSP_PAN_2D_STEREO_MODE_DISTRIBUTED: FMOD_DSP_PAN_2D_STEREO_MODE_TYPE = 0;
 pub const FMOD_DSP_PAN_2D_STEREO_MODE_DISCRETE: FMOD_DSP_PAN_2D_STEREO_MODE_TYPE = 1;
-pub type FMOD_DSP_PAN_2D_STEREO_MODE_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_PAN_MODE_MONO: FMOD_DSP_PAN_MODE_TYPE = 0;
 pub const FMOD_DSP_PAN_MODE_STEREO: FMOD_DSP_PAN_MODE_TYPE = 1;
 pub const FMOD_DSP_PAN_MODE_SURROUND: FMOD_DSP_PAN_MODE_TYPE = 2;
-pub type FMOD_DSP_PAN_MODE_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_PAN_3D_ROLLOFF_LINEARSQUARED: FMOD_DSP_PAN_3D_ROLLOFF_TYPE = 0;
 pub const FMOD_DSP_PAN_3D_ROLLOFF_LINEAR: FMOD_DSP_PAN_3D_ROLLOFF_TYPE = 1;
 pub const FMOD_DSP_PAN_3D_ROLLOFF_INVERSE: FMOD_DSP_PAN_3D_ROLLOFF_TYPE = 2;
 pub const FMOD_DSP_PAN_3D_ROLLOFF_INVERSETAPERED: FMOD_DSP_PAN_3D_ROLLOFF_TYPE = 3;
 pub const FMOD_DSP_PAN_3D_ROLLOFF_CUSTOM: FMOD_DSP_PAN_3D_ROLLOFF_TYPE = 4;
-pub type FMOD_DSP_PAN_3D_ROLLOFF_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_PAN_3D_EXTENT_MODE_AUTO: FMOD_DSP_PAN_3D_EXTENT_MODE_TYPE = 0;
 pub const FMOD_DSP_PAN_3D_EXTENT_MODE_USER: FMOD_DSP_PAN_3D_EXTENT_MODE_TYPE = 1;
 pub const FMOD_DSP_PAN_3D_EXTENT_MODE_OFF: FMOD_DSP_PAN_3D_EXTENT_MODE_TYPE = 2;
-pub type FMOD_DSP_PAN_3D_EXTENT_MODE_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_PAN_MODE: FMOD_DSP_PAN = 0;
 pub const FMOD_DSP_PAN_2D_STEREO_POSITION: FMOD_DSP_PAN = 1;
 pub const FMOD_DSP_PAN_2D_DIRECTION: FMOD_DSP_PAN = 2;
@@ -1279,67 +1956,41 @@ pub const FMOD_DSP_PAN_SURROUND_SPEAKER_MODE: FMOD_DSP_PAN = 20;
 pub const FMOD_DSP_PAN_2D_HEIGHT_BLEND: FMOD_DSP_PAN = 21;
 pub const FMOD_DSP_PAN_ATTENUATION_RANGE: FMOD_DSP_PAN = 22;
 pub const FMOD_DSP_PAN_OVERRIDE_RANGE: FMOD_DSP_PAN = 23;
-pub type FMOD_DSP_PAN = ::std::ffi::c_int;
 pub const FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_12DB: FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE = 0;
 pub const FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_24DB: FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE = 1;
 pub const FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_48DB: FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE = 2;
-pub type FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_THREE_EQ_LOWGAIN: FMOD_DSP_THREE_EQ = 0;
 pub const FMOD_DSP_THREE_EQ_MIDGAIN: FMOD_DSP_THREE_EQ = 1;
 pub const FMOD_DSP_THREE_EQ_HIGHGAIN: FMOD_DSP_THREE_EQ = 2;
 pub const FMOD_DSP_THREE_EQ_LOWCROSSOVER: FMOD_DSP_THREE_EQ = 3;
 pub const FMOD_DSP_THREE_EQ_HIGHCROSSOVER: FMOD_DSP_THREE_EQ = 4;
 pub const FMOD_DSP_THREE_EQ_CROSSOVERSLOPE: FMOD_DSP_THREE_EQ = 5;
-pub type FMOD_DSP_THREE_EQ = ::std::ffi::c_int;
 pub const FMOD_DSP_FFT_WINDOW_RECT: FMOD_DSP_FFT_WINDOW = 0;
 pub const FMOD_DSP_FFT_WINDOW_TRIANGLE: FMOD_DSP_FFT_WINDOW = 1;
 pub const FMOD_DSP_FFT_WINDOW_HAMMING: FMOD_DSP_FFT_WINDOW = 2;
 pub const FMOD_DSP_FFT_WINDOW_HANNING: FMOD_DSP_FFT_WINDOW = 3;
 pub const FMOD_DSP_FFT_WINDOW_BLACKMAN: FMOD_DSP_FFT_WINDOW = 4;
 pub const FMOD_DSP_FFT_WINDOW_BLACKMANHARRIS: FMOD_DSP_FFT_WINDOW = 5;
-pub type FMOD_DSP_FFT_WINDOW = ::std::ffi::c_int;
 pub const FMOD_DSP_FFT_WINDOWSIZE: FMOD_DSP_FFT = 0;
 pub const FMOD_DSP_FFT_WINDOWTYPE: FMOD_DSP_FFT = 1;
 pub const FMOD_DSP_FFT_SPECTRUMDATA: FMOD_DSP_FFT = 2;
 pub const FMOD_DSP_FFT_DOMINANT_FREQ: FMOD_DSP_FFT = 3;
-pub type FMOD_DSP_FFT = ::std::ffi::c_int;
 pub const FMOD_DSP_LOUDNESS_METER_STATE: FMOD_DSP_LOUDNESS_METER = 0;
 pub const FMOD_DSP_LOUDNESS_METER_WEIGHTING: FMOD_DSP_LOUDNESS_METER = 1;
 pub const FMOD_DSP_LOUDNESS_METER_INFO: FMOD_DSP_LOUDNESS_METER = 2;
-pub type FMOD_DSP_LOUDNESS_METER = ::std::ffi::c_int;
 pub const FMOD_DSP_LOUDNESS_METER_STATE_RESET_INTEGRATED: FMOD_DSP_LOUDNESS_METER_STATE_TYPE = -3;
 pub const FMOD_DSP_LOUDNESS_METER_STATE_RESET_MAXPEAK: FMOD_DSP_LOUDNESS_METER_STATE_TYPE = -2;
 pub const FMOD_DSP_LOUDNESS_METER_STATE_RESET_ALL: FMOD_DSP_LOUDNESS_METER_STATE_TYPE = -1;
 pub const FMOD_DSP_LOUDNESS_METER_STATE_PAUSED: FMOD_DSP_LOUDNESS_METER_STATE_TYPE = 0;
 pub const FMOD_DSP_LOUDNESS_METER_STATE_ANALYZING: FMOD_DSP_LOUDNESS_METER_STATE_TYPE = 1;
-pub type FMOD_DSP_LOUDNESS_METER_STATE_TYPE = ::std::ffi::c_int;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
-    pub momentaryloudness: ::std::ffi::c_float,
-    pub shorttermloudness: ::std::ffi::c_float,
-    pub integratedloudness: ::std::ffi::c_float,
-    pub loudness10thpercentile: ::std::ffi::c_float,
-    pub loudness95thpercentile: ::std::ffi::c_float,
-    pub loudnesshistogram: [::std::ffi::c_float; 66usize],
-    pub maxtruepeak: ::std::ffi::c_float,
-    pub maxmomentaryloudness: ::std::ffi::c_float,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
-    pub channelweight: [::std::ffi::c_float; 32usize],
-}
 pub const FMOD_DSP_ENVELOPEFOLLOWER_ATTACK: FMOD_DSP_ENVELOPEFOLLOWER = 0;
 pub const FMOD_DSP_ENVELOPEFOLLOWER_RELEASE: FMOD_DSP_ENVELOPEFOLLOWER = 1;
 pub const FMOD_DSP_ENVELOPEFOLLOWER_ENVELOPE: FMOD_DSP_ENVELOPEFOLLOWER = 2;
 pub const FMOD_DSP_ENVELOPEFOLLOWER_USESIDECHAIN: FMOD_DSP_ENVELOPEFOLLOWER = 3;
-pub type FMOD_DSP_ENVELOPEFOLLOWER = ::std::ffi::c_int;
 pub const FMOD_DSP_CONVOLUTION_REVERB_PARAM_IR: FMOD_DSP_CONVOLUTION_REVERB = 0;
 pub const FMOD_DSP_CONVOLUTION_REVERB_PARAM_WET: FMOD_DSP_CONVOLUTION_REVERB = 1;
 pub const FMOD_DSP_CONVOLUTION_REVERB_PARAM_DRY: FMOD_DSP_CONVOLUTION_REVERB = 2;
 pub const FMOD_DSP_CONVOLUTION_REVERB_PARAM_LINKED: FMOD_DSP_CONVOLUTION_REVERB = 3;
-pub type FMOD_DSP_CONVOLUTION_REVERB = ::std::ffi::c_int;
 pub const FMOD_DSP_CHANNELMIX_OUTPUT_DEFAULT: FMOD_DSP_CHANNELMIX_OUTPUT = 0;
 pub const FMOD_DSP_CHANNELMIX_OUTPUT_ALLMONO: FMOD_DSP_CHANNELMIX_OUTPUT = 1;
 pub const FMOD_DSP_CHANNELMIX_OUTPUT_ALLSTEREO: FMOD_DSP_CHANNELMIX_OUTPUT = 2;
@@ -1348,7 +1999,6 @@ pub const FMOD_DSP_CHANNELMIX_OUTPUT_ALL5POINT1: FMOD_DSP_CHANNELMIX_OUTPUT = 4;
 pub const FMOD_DSP_CHANNELMIX_OUTPUT_ALL7POINT1: FMOD_DSP_CHANNELMIX_OUTPUT = 5;
 pub const FMOD_DSP_CHANNELMIX_OUTPUT_ALLLFE: FMOD_DSP_CHANNELMIX_OUTPUT = 6;
 pub const FMOD_DSP_CHANNELMIX_OUTPUT_ALL7POINT1POINT4: FMOD_DSP_CHANNELMIX_OUTPUT = 7;
-pub type FMOD_DSP_CHANNELMIX_OUTPUT = ::std::ffi::c_int;
 pub const FMOD_DSP_CHANNELMIX_OUTPUTGROUPING: FMOD_DSP_CHANNELMIX = 0;
 pub const FMOD_DSP_CHANNELMIX_GAIN_CH0: FMOD_DSP_CHANNELMIX = 1;
 pub const FMOD_DSP_CHANNELMIX_GAIN_CH1: FMOD_DSP_CHANNELMIX = 2;
@@ -1414,17 +2064,14 @@ pub const FMOD_DSP_CHANNELMIX_OUTPUT_CH28: FMOD_DSP_CHANNELMIX = 61;
 pub const FMOD_DSP_CHANNELMIX_OUTPUT_CH29: FMOD_DSP_CHANNELMIX = 62;
 pub const FMOD_DSP_CHANNELMIX_OUTPUT_CH30: FMOD_DSP_CHANNELMIX = 63;
 pub const FMOD_DSP_CHANNELMIX_OUTPUT_CH31: FMOD_DSP_CHANNELMIX = 64;
-pub type FMOD_DSP_CHANNELMIX = ::std::ffi::c_int;
 pub const FMOD_DSP_TRANSCEIVER_SPEAKERMODE_AUTO: FMOD_DSP_TRANSCEIVER_SPEAKERMODE = -1;
 pub const FMOD_DSP_TRANSCEIVER_SPEAKERMODE_MONO: FMOD_DSP_TRANSCEIVER_SPEAKERMODE = 0;
 pub const FMOD_DSP_TRANSCEIVER_SPEAKERMODE_STEREO: FMOD_DSP_TRANSCEIVER_SPEAKERMODE = 1;
 pub const FMOD_DSP_TRANSCEIVER_SPEAKERMODE_SURROUND: FMOD_DSP_TRANSCEIVER_SPEAKERMODE = 2;
-pub type FMOD_DSP_TRANSCEIVER_SPEAKERMODE = ::std::ffi::c_int;
 pub const FMOD_DSP_TRANSCEIVER_TRANSMIT: FMOD_DSP_TRANSCEIVER = 0;
 pub const FMOD_DSP_TRANSCEIVER_GAIN: FMOD_DSP_TRANSCEIVER = 1;
 pub const FMOD_DSP_TRANSCEIVER_CHANNEL: FMOD_DSP_TRANSCEIVER = 2;
 pub const FMOD_DSP_TRANSCEIVER_TRANSMITSPEAKERMODE: FMOD_DSP_TRANSCEIVER = 3;
-pub type FMOD_DSP_TRANSCEIVER = ::std::ffi::c_int;
 pub const FMOD_DSP_OBJECTPAN_3D_POSITION: FMOD_DSP_OBJECTPAN = 0;
 pub const FMOD_DSP_OBJECTPAN_3D_ROLLOFF: FMOD_DSP_OBJECTPAN = 1;
 pub const FMOD_DSP_OBJECTPAN_3D_MIN_DISTANCE: FMOD_DSP_OBJECTPAN = 2;
@@ -1436,28 +2083,23 @@ pub const FMOD_DSP_OBJECTPAN_OVERALL_GAIN: FMOD_DSP_OBJECTPAN = 7;
 pub const FMOD_DSP_OBJECTPAN_OUTPUTGAIN: FMOD_DSP_OBJECTPAN = 8;
 pub const FMOD_DSP_OBJECTPAN_ATTENUATION_RANGE: FMOD_DSP_OBJECTPAN = 9;
 pub const FMOD_DSP_OBJECTPAN_OVERRIDE_RANGE: FMOD_DSP_OBJECTPAN = 10;
-pub type FMOD_DSP_OBJECTPAN = ::std::ffi::c_int;
 pub const FMOD_DSP_PROCESS_PERFORM: FMOD_DSP_PROCESS_OPERATION = 0;
 pub const FMOD_DSP_PROCESS_QUERY: FMOD_DSP_PROCESS_OPERATION = 1;
-pub type FMOD_DSP_PROCESS_OPERATION = ::std::ffi::c_int;
 pub const FMOD_DSP_PAN_SURROUND_DEFAULT: FMOD_DSP_PAN_SURROUND_FLAGS = 0;
 pub const FMOD_DSP_PAN_SURROUND_ROTATION_NOT_BIASED: FMOD_DSP_PAN_SURROUND_FLAGS = 1;
 pub const FMOD_DSP_PAN_SURROUND_FLAGS_FORCEINT: FMOD_DSP_PAN_SURROUND_FLAGS = 65536;
-pub type FMOD_DSP_PAN_SURROUND_FLAGS = ::std::ffi::c_int;
 pub const FMOD_DSP_PARAMETER_TYPE_FLOAT: FMOD_DSP_PARAMETER_TYPE = 0;
 pub const FMOD_DSP_PARAMETER_TYPE_INT: FMOD_DSP_PARAMETER_TYPE = 1;
 pub const FMOD_DSP_PARAMETER_TYPE_BOOL: FMOD_DSP_PARAMETER_TYPE = 2;
 pub const FMOD_DSP_PARAMETER_TYPE_DATA: FMOD_DSP_PARAMETER_TYPE = 3;
 pub const FMOD_DSP_PARAMETER_TYPE_MAX: FMOD_DSP_PARAMETER_TYPE = 4;
 pub const FMOD_DSP_PARAMETER_TYPE_FORCEINT: FMOD_DSP_PARAMETER_TYPE = 65536;
-pub type FMOD_DSP_PARAMETER_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_LINEAR: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = 0;
 pub const FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_AUTO: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = 1;
 pub const FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_PIECEWISE_LINEAR:
     FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = 2;
 pub const FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_FORCEINT: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE =
     65536;
-pub type FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = ::std::ffi::c_int;
 pub const FMOD_DSP_PARAMETER_DATA_TYPE_USER: FMOD_DSP_PARAMETER_DATA_TYPE = 0;
 pub const FMOD_DSP_PARAMETER_DATA_TYPE_OVERALLGAIN: FMOD_DSP_PARAMETER_DATA_TYPE = -1;
 pub const FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES: FMOD_DSP_PARAMETER_DATA_TYPE = -2;
@@ -1465,348 +2107,6 @@ pub const FMOD_DSP_PARAMETER_DATA_TYPE_SIDECHAIN: FMOD_DSP_PARAMETER_DATA_TYPE =
 pub const FMOD_DSP_PARAMETER_DATA_TYPE_FFT: FMOD_DSP_PARAMETER_DATA_TYPE = -4;
 pub const FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI: FMOD_DSP_PARAMETER_DATA_TYPE = -5;
 pub const FMOD_DSP_PARAMETER_DATA_TYPE_ATTENUATION_RANGE: FMOD_DSP_PARAMETER_DATA_TYPE = -6;
-pub type FMOD_DSP_PARAMETER_DATA_TYPE = ::std::ffi::c_int;
-pub type FMOD_DSP_CREATE_CALLBACK =
-    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
-pub type FMOD_DSP_RELEASE_CALLBACK =
-    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
-pub type FMOD_DSP_RESET_CALLBACK =
-    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
-pub type FMOD_DSP_READ_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        inbuffer: *mut ::std::ffi::c_float,
-        outbuffer: *mut ::std::ffi::c_float,
-        length: ::std::ffi::c_uint,
-        inchannels: ::std::ffi::c_int,
-        outchannels: *mut ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_PROCESS_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        length: ::std::ffi::c_uint,
-        inbufferarray: *const FMOD_DSP_BUFFER_ARRAY,
-        outbufferarray: *mut FMOD_DSP_BUFFER_ARRAY,
-        inputsidle: FMOD_BOOL,
-        op: FMOD_DSP_PROCESS_OPERATION,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_SETPOSITION_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        pos: ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_SHOULDIPROCESS_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        inputsidle: FMOD_BOOL,
-        length: ::std::ffi::c_uint,
-        inmask: FMOD_CHANNELMASK,
-        inchannels: ::std::ffi::c_int,
-        speakermode: FMOD_SPEAKERMODE,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_SETPARAM_FLOAT_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        index: ::std::ffi::c_int,
-        value: ::std::ffi::c_float,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_SETPARAM_INT_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        index: ::std::ffi::c_int,
-        value: ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_SETPARAM_BOOL_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        index: ::std::ffi::c_int,
-        value: FMOD_BOOL,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_SETPARAM_DATA_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        index: ::std::ffi::c_int,
-        data: *mut ::std::ffi::c_void,
-        length: ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_GETPARAM_FLOAT_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        index: ::std::ffi::c_int,
-        value: *mut ::std::ffi::c_float,
-        valuestr: *mut ::std::ffi::c_char,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_GETPARAM_INT_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        index: ::std::ffi::c_int,
-        value: *mut ::std::ffi::c_int,
-        valuestr: *mut ::std::ffi::c_char,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_GETPARAM_BOOL_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        index: ::std::ffi::c_int,
-        value: *mut FMOD_BOOL,
-        valuestr: *mut ::std::ffi::c_char,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_GETPARAM_DATA_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        index: ::std::ffi::c_int,
-        data: *mut *mut ::std::ffi::c_void,
-        length: *mut ::std::ffi::c_uint,
-        valuestr: *mut ::std::ffi::c_char,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_SYSTEM_REGISTER_CALLBACK =
-    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
-pub type FMOD_DSP_SYSTEM_DEREGISTER_CALLBACK =
-    ::std::option::Option<unsafe extern "system" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
-pub type FMOD_DSP_SYSTEM_MIX_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        stage: ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_ALLOC_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        size: ::std::ffi::c_uint,
-        r#type: FMOD_MEMORY_TYPE,
-        sourcestr: *const ::std::ffi::c_char,
-    ) -> *mut ::std::ffi::c_void,
->;
-pub type FMOD_DSP_REALLOC_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        ptr: *mut ::std::ffi::c_void,
-        size: ::std::ffi::c_uint,
-        r#type: FMOD_MEMORY_TYPE,
-        sourcestr: *const ::std::ffi::c_char,
-    ) -> *mut ::std::ffi::c_void,
->;
-pub type FMOD_DSP_FREE_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        ptr: *mut ::std::ffi::c_void,
-        r#type: FMOD_MEMORY_TYPE,
-        sourcestr: *const ::std::ffi::c_char,
-    ),
->;
-pub type FMOD_DSP_LOG_FUNC = ::std::option::Option<
-    unsafe extern "C" fn(
-        level: FMOD_DEBUG_FLAGS,
-        file: *const ::std::ffi::c_char,
-        line: ::std::ffi::c_int,
-        function: *const ::std::ffi::c_char,
-        str_: *const ::std::ffi::c_char,
-        ...
-    ),
->;
-pub type FMOD_DSP_GETSAMPLERATE_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        rate: *mut ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_GETBLOCKSIZE_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        blocksize: *mut ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_GETSPEAKERMODE_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        speakermode_mixer: *mut FMOD_SPEAKERMODE,
-        speakermode_output: *mut FMOD_SPEAKERMODE,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_GETCLOCK_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        clock: *mut ::std::ffi::c_ulonglong,
-        offset: *mut ::std::ffi::c_uint,
-        length: *mut ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_GETLISTENERATTRIBUTES_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        numlisteners: *mut ::std::ffi::c_int,
-        attributes: *mut FMOD_3D_ATTRIBUTES,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_GETUSERDATA_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        userdata: *mut *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_DFT_FFTREAL_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        size: ::std::ffi::c_int,
-        signal: *const ::std::ffi::c_float,
-        dft: *mut FMOD_COMPLEX,
-        window: *const ::std::ffi::c_float,
-        signalhop: ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_DFT_IFFTREAL_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        size: ::std::ffi::c_int,
-        dft: *const FMOD_COMPLEX,
-        signal: *mut ::std::ffi::c_float,
-        window: *const ::std::ffi::c_float,
-        signalhop: ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_PAN_SUMMONOMATRIX_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        sourceSpeakerMode: FMOD_SPEAKERMODE,
-        lowFrequencyGain: ::std::ffi::c_float,
-        overallGain: ::std::ffi::c_float,
-        matrix: *mut ::std::ffi::c_float,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_PAN_SUMSTEREOMATRIX_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        sourceSpeakerMode: FMOD_SPEAKERMODE,
-        pan: ::std::ffi::c_float,
-        lowFrequencyGain: ::std::ffi::c_float,
-        overallGain: ::std::ffi::c_float,
-        matrixHop: ::std::ffi::c_int,
-        matrix: *mut ::std::ffi::c_float,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_PAN_SUMSURROUNDMATRIX_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        sourceSpeakerMode: FMOD_SPEAKERMODE,
-        targetSpeakerMode: FMOD_SPEAKERMODE,
-        direction: ::std::ffi::c_float,
-        extent: ::std::ffi::c_float,
-        rotation: ::std::ffi::c_float,
-        lowFrequencyGain: ::std::ffi::c_float,
-        overallGain: ::std::ffi::c_float,
-        matrixHop: ::std::ffi::c_int,
-        matrix: *mut ::std::ffi::c_float,
-        flags: FMOD_DSP_PAN_SURROUND_FLAGS,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_PAN_SUMMONOTOSURROUNDMATRIX_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        targetSpeakerMode: FMOD_SPEAKERMODE,
-        direction: ::std::ffi::c_float,
-        extent: ::std::ffi::c_float,
-        lowFrequencyGain: ::std::ffi::c_float,
-        overallGain: ::std::ffi::c_float,
-        matrixHop: ::std::ffi::c_int,
-        matrix: *mut ::std::ffi::c_float,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_PAN_SUMSTEREOTOSURROUNDMATRIX_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        targetSpeakerMode: FMOD_SPEAKERMODE,
-        direction: ::std::ffi::c_float,
-        extent: ::std::ffi::c_float,
-        rotation: ::std::ffi::c_float,
-        lowFrequencyGain: ::std::ffi::c_float,
-        overallGain: ::std::ffi::c_float,
-        matrixHop: ::std::ffi::c_int,
-        matrix: *mut ::std::ffi::c_float,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_DSP_PAN_GETROLLOFFGAIN_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        dsp_state: *mut FMOD_DSP_STATE,
-        rolloff: FMOD_DSP_PAN_3D_ROLLOFF_TYPE,
-        distance: ::std::ffi::c_float,
-        mindistance: ::std::ffi::c_float,
-        maxdistance: ::std::ffi::c_float,
-        gain: *mut ::std::ffi::c_float,
-    ) -> FMOD_RESULT,
->;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_BUFFER_ARRAY {
-    pub numbuffers: ::std::ffi::c_int,
-    pub buffernumchannels: *mut ::std::ffi::c_int,
-    pub bufferchannelmask: *mut FMOD_CHANNELMASK,
-    pub buffers: *mut *mut ::std::ffi::c_float,
-    pub speakermode: FMOD_SPEAKERMODE,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_COMPLEX {
-    pub real: ::std::ffi::c_float,
-    pub imag: ::std::ffi::c_float,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
-    pub numpoints: ::std::ffi::c_int,
-    pub pointparamvalues: *mut ::std::ffi::c_float,
-    pub pointpositions: *mut ::std::ffi::c_float,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_FLOAT_MAPPING {
-    pub r#type: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE,
-    pub piecewiselinearmapping: FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_DESC_FLOAT {
-    pub min: ::std::ffi::c_float,
-    pub max: ::std::ffi::c_float,
-    pub defaultval: ::std::ffi::c_float,
-    pub mapping: FMOD_DSP_PARAMETER_FLOAT_MAPPING,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_DESC_INT {
-    pub min: ::std::ffi::c_int,
-    pub max: ::std::ffi::c_int,
-    pub defaultval: ::std::ffi::c_int,
-    pub goestoinf: FMOD_BOOL,
-    pub valuenames: *const *const ::std::ffi::c_char,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_DESC_BOOL {
-    pub defaultval: FMOD_BOOL,
-    pub valuenames: *const *const ::std::ffi::c_char,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_DESC_DATA {
-    pub datatype: ::std::ffi::c_int,
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_DESC {
-    pub r#type: FMOD_DSP_PARAMETER_TYPE,
-    pub name: [::std::ffi::c_char; 16usize],
-    pub label: [::std::ffi::c_char; 16usize],
-    pub description: *const ::std::ffi::c_char,
-    pub payload: FMOD_DSP_PARAMETER_DESC_PAYLOAD,
-}
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union FMOD_DSP_PARAMETER_DESC_PAYLOAD {
@@ -1814,314 +2114,6 @@ pub union FMOD_DSP_PARAMETER_DESC_PAYLOAD {
     pub intdesc: FMOD_DSP_PARAMETER_DESC_INT,
     pub booldesc: FMOD_DSP_PARAMETER_DESC_BOOL,
     pub datadesc: FMOD_DSP_PARAMETER_DESC_DATA,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_OVERALLGAIN {
-    pub linear_gain: ::std::ffi::c_float,
-    pub linear_gain_additive: ::std::ffi::c_float,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_3DATTRIBUTES {
-    pub relative: FMOD_3D_ATTRIBUTES,
-    pub absolute: FMOD_3D_ATTRIBUTES,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
-    pub numlisteners: ::std::ffi::c_int,
-    pub relative: [FMOD_3D_ATTRIBUTES; 8usize],
-    pub weight: [::std::ffi::c_float; 8usize],
-    pub absolute: FMOD_3D_ATTRIBUTES,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
-    pub min: ::std::ffi::c_float,
-    pub max: ::std::ffi::c_float,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_SIDECHAIN {
-    pub sidechainenable: FMOD_BOOL,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_PARAMETER_FFT {
-    pub length: ::std::ffi::c_int,
-    pub numchannels: ::std::ffi::c_int,
-    pub spectrum: [*mut ::std::ffi::c_float; 32usize],
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_DESCRIPTION {
-    pub pluginsdkversion: ::std::ffi::c_uint,
-    pub name: [::std::ffi::c_char; 32usize],
-    pub version: ::std::ffi::c_uint,
-    pub numinputbuffers: ::std::ffi::c_int,
-    pub numoutputbuffers: ::std::ffi::c_int,
-    pub create: FMOD_DSP_CREATE_CALLBACK,
-    pub release: FMOD_DSP_RELEASE_CALLBACK,
-    pub reset: FMOD_DSP_RESET_CALLBACK,
-    pub read: FMOD_DSP_READ_CALLBACK,
-    pub process: FMOD_DSP_PROCESS_CALLBACK,
-    pub setposition: FMOD_DSP_SETPOSITION_CALLBACK,
-    pub numparameters: ::std::ffi::c_int,
-    pub paramdesc: *mut *mut FMOD_DSP_PARAMETER_DESC,
-    pub setparameterfloat: FMOD_DSP_SETPARAM_FLOAT_CALLBACK,
-    pub setparameterint: FMOD_DSP_SETPARAM_INT_CALLBACK,
-    pub setparameterbool: FMOD_DSP_SETPARAM_BOOL_CALLBACK,
-    pub setparameterdata: FMOD_DSP_SETPARAM_DATA_CALLBACK,
-    pub getparameterfloat: FMOD_DSP_GETPARAM_FLOAT_CALLBACK,
-    pub getparameterint: FMOD_DSP_GETPARAM_INT_CALLBACK,
-    pub getparameterbool: FMOD_DSP_GETPARAM_BOOL_CALLBACK,
-    pub getparameterdata: FMOD_DSP_GETPARAM_DATA_CALLBACK,
-    pub shouldiprocess: FMOD_DSP_SHOULDIPROCESS_CALLBACK,
-    pub userdata: *mut ::std::ffi::c_void,
-    pub sys_register: FMOD_DSP_SYSTEM_REGISTER_CALLBACK,
-    pub sys_deregister: FMOD_DSP_SYSTEM_DEREGISTER_CALLBACK,
-    pub sys_mix: FMOD_DSP_SYSTEM_MIX_CALLBACK,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_STATE_DFT_FUNCTIONS {
-    pub fftreal: FMOD_DSP_DFT_FFTREAL_FUNC,
-    pub inversefftreal: FMOD_DSP_DFT_IFFTREAL_FUNC,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_STATE_PAN_FUNCTIONS {
-    pub summonomatrix: FMOD_DSP_PAN_SUMMONOMATRIX_FUNC,
-    pub sumstereomatrix: FMOD_DSP_PAN_SUMSTEREOMATRIX_FUNC,
-    pub sumsurroundmatrix: FMOD_DSP_PAN_SUMSURROUNDMATRIX_FUNC,
-    pub summonotosurroundmatrix: FMOD_DSP_PAN_SUMMONOTOSURROUNDMATRIX_FUNC,
-    pub sumstereotosurroundmatrix: FMOD_DSP_PAN_SUMSTEREOTOSURROUNDMATRIX_FUNC,
-    pub getrolloffgain: FMOD_DSP_PAN_GETROLLOFFGAIN_FUNC,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_STATE_FUNCTIONS {
-    pub alloc: FMOD_DSP_ALLOC_FUNC,
-    pub realloc: FMOD_DSP_REALLOC_FUNC,
-    pub free: FMOD_DSP_FREE_FUNC,
-    pub getsamplerate: FMOD_DSP_GETSAMPLERATE_FUNC,
-    pub getblocksize: FMOD_DSP_GETBLOCKSIZE_FUNC,
-    pub dft: *mut FMOD_DSP_STATE_DFT_FUNCTIONS,
-    pub pan: *mut FMOD_DSP_STATE_PAN_FUNCTIONS,
-    pub getspeakermode: FMOD_DSP_GETSPEAKERMODE_FUNC,
-    pub getclock: FMOD_DSP_GETCLOCK_FUNC,
-    pub getlistenerattributes: FMOD_DSP_GETLISTENERATTRIBUTES_FUNC,
-    pub log: FMOD_DSP_LOG_FUNC,
-    pub getuserdata: FMOD_DSP_GETUSERDATA_FUNC,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_STATE {
-    pub instance: *mut ::std::ffi::c_void,
-    pub plugindata: *mut ::std::ffi::c_void,
-    pub channelmask: FMOD_CHANNELMASK,
-    pub source_speakermode: FMOD_SPEAKERMODE,
-    pub sidechaindata: *mut ::std::ffi::c_float,
-    pub sidechainchannels: ::std::ffi::c_int,
-    pub functions: *mut FMOD_DSP_STATE_FUNCTIONS,
-    pub systemobject: ::std::ffi::c_int,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_DSP_METERING_INFO {
-    pub numsamples: ::std::ffi::c_int,
-    pub peaklevel: [::std::ffi::c_float; 32usize],
-    pub rmslevel: [::std::ffi::c_float; 32usize],
-    pub numchannels: ::std::ffi::c_short,
-}
-pub type FMOD_OUTPUT_METHOD = ::std::ffi::c_uint;
-pub type FMOD_OUTPUT_GETNUMDRIVERS_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        numdrivers: *mut ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_GETDRIVERINFO_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        id: ::std::ffi::c_int,
-        name: *mut ::std::ffi::c_char,
-        namelen: ::std::ffi::c_int,
-        guid: *mut FMOD_GUID,
-        systemrate: *mut ::std::ffi::c_int,
-        speakermode: *mut FMOD_SPEAKERMODE,
-        speakermodechannels: *mut ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_INIT_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        selecteddriver: ::std::ffi::c_int,
-        flags: FMOD_INITFLAGS,
-        outputrate: *mut ::std::ffi::c_int,
-        speakermode: *mut FMOD_SPEAKERMODE,
-        speakermodechannels: *mut ::std::ffi::c_int,
-        outputformat: *mut FMOD_SOUND_FORMAT,
-        dspbufferlength: ::std::ffi::c_int,
-        dspnumbuffers: *mut ::std::ffi::c_int,
-        dspnumadditionalbuffers: *mut ::std::ffi::c_int,
-        extradriverdata: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_START_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_STOP_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_CLOSE_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_UPDATE_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_GETHANDLE_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        handle: *mut *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_MIXER_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_OBJECT3DGETINFO_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        maxhardwareobjects: *mut ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_OBJECT3DALLOC_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        object3d: *mut *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_OBJECT3DFREE_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        object3d: *mut ::std::ffi::c_void,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_OBJECT3DUPDATE_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        object3d: *mut ::std::ffi::c_void,
-        info: *const FMOD_OUTPUT_OBJECT3DINFO,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_OPENPORT_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        portType: FMOD_PORT_TYPE,
-        portIndex: FMOD_PORT_INDEX,
-        portId: *mut ::std::ffi::c_int,
-        portRate: *mut ::std::ffi::c_int,
-        portChannels: *mut ::std::ffi::c_int,
-        portFormat: *mut FMOD_SOUND_FORMAT,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_CLOSEPORT_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        portId: ::std::ffi::c_int,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_DEVICELISTCHANGED_CALLBACK = ::std::option::Option<
-    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_READFROMMIXER_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        buffer: *mut ::std::ffi::c_void,
-        length: ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_COPYPORT_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        output_state: *mut FMOD_OUTPUT_STATE,
-        portId: ::std::ffi::c_int,
-        buffer: *mut ::std::ffi::c_void,
-        length: ::std::ffi::c_uint,
-    ) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_REQUESTRESET_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT,
->;
-pub type FMOD_OUTPUT_ALLOC_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        size: ::std::ffi::c_uint,
-        align: ::std::ffi::c_uint,
-        file: *const ::std::ffi::c_char,
-        line: ::std::ffi::c_int,
-    ) -> *mut ::std::ffi::c_void,
->;
-pub type FMOD_OUTPUT_FREE_FUNC = ::std::option::Option<
-    unsafe extern "system" fn(
-        ptr: *mut ::std::ffi::c_void,
-        file: *const ::std::ffi::c_char,
-        line: ::std::ffi::c_int,
-    ),
->;
-pub type FMOD_OUTPUT_LOG_FUNC = ::std::option::Option<
-    unsafe extern "C" fn(
-        level: FMOD_DEBUG_FLAGS,
-        file: *const ::std::ffi::c_char,
-        line: ::std::ffi::c_int,
-        function: *const ::std::ffi::c_char,
-        string: *const ::std::ffi::c_char,
-        ...
-    ),
->;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_OUTPUT_DESCRIPTION {
-    pub apiversion: ::std::ffi::c_uint,
-    pub name: *const ::std::ffi::c_char,
-    pub version: ::std::ffi::c_uint,
-    pub method: FMOD_OUTPUT_METHOD,
-    pub getnumdrivers: FMOD_OUTPUT_GETNUMDRIVERS_CALLBACK,
-    pub getdriverinfo: FMOD_OUTPUT_GETDRIVERINFO_CALLBACK,
-    pub init: FMOD_OUTPUT_INIT_CALLBACK,
-    pub start: FMOD_OUTPUT_START_CALLBACK,
-    pub stop: FMOD_OUTPUT_STOP_CALLBACK,
-    pub close: FMOD_OUTPUT_CLOSE_CALLBACK,
-    pub update: FMOD_OUTPUT_UPDATE_CALLBACK,
-    pub gethandle: FMOD_OUTPUT_GETHANDLE_CALLBACK,
-    pub mixer: FMOD_OUTPUT_MIXER_CALLBACK,
-    pub object3dgetinfo: FMOD_OUTPUT_OBJECT3DGETINFO_CALLBACK,
-    pub object3dalloc: FMOD_OUTPUT_OBJECT3DALLOC_CALLBACK,
-    pub object3dfree: FMOD_OUTPUT_OBJECT3DFREE_CALLBACK,
-    pub object3dupdate: FMOD_OUTPUT_OBJECT3DUPDATE_CALLBACK,
-    pub openport: FMOD_OUTPUT_OPENPORT_CALLBACK,
-    pub closeport: FMOD_OUTPUT_CLOSEPORT_CALLBACK,
-    pub devicelistchanged: FMOD_OUTPUT_DEVICELISTCHANGED_CALLBACK,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_OUTPUT_STATE {
-    pub plugindata: *mut ::std::ffi::c_void,
-    pub readfrommixer: FMOD_OUTPUT_READFROMMIXER_FUNC,
-    pub alloc: FMOD_OUTPUT_ALLOC_FUNC,
-    pub free: FMOD_OUTPUT_FREE_FUNC,
-    pub log: FMOD_OUTPUT_LOG_FUNC,
-    pub copyport: FMOD_OUTPUT_COPYPORT_FUNC,
-    pub requestreset: FMOD_OUTPUT_REQUESTRESET_FUNC,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_OUTPUT_OBJECT3DINFO {
-    pub buffer: *mut ::std::ffi::c_float,
-    pub bufferlength: ::std::ffi::c_uint,
-    pub position: FMOD_VECTOR,
-    pub gain: ::std::ffi::c_float,
-    pub spread: ::std::ffi::c_float,
-    pub priority: ::std::ffi::c_float,
 }
 extern "system" {
     pub fn FMOD_Memory_Initialize(
@@ -3896,3 +3888,4 @@ pub const FMOD_AUDIOQUEUE_CODECPOLICY_SOFTWAREONLY: FMOD_AUDIOQUEUE_CODECPOLICY 
 pub const FMOD_AUDIOQUEUE_CODECPOLICY_HARDWAREONLY: FMOD_AUDIOQUEUE_CODECPOLICY = 2;
 pub const FMOD_AUDIOQUEUE_CODECPOLICY_FORCEINT: FMOD_AUDIOQUEUE_CODECPOLICY = 65536;
 pub type FMOD_AUDIOQUEUE_CODECPOLICY = ::std::os::raw::c_int;
+

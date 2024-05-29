@@ -5,13 +5,14 @@
   --no-convert-floats
   --no-prepend-enum-name
   --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2024. */"
+  --sort-semantically
+  --merge-extern-blocks
   # blocklist fmod-core-sys items
   --allowlist-file fmod_studio.h
   --allowlist-file fmod_studio_common.h
   --allowlist-item FMOD_STUDIO_.* # I don't know why this is needed now /shrug
   # in a union, so needs to be allowlisted
   --allowlist-type FMOD_BOOL
-  --merge-extern-blocks
   # re-add derives skipped due to blocklisting
   --with-derive-custom FMOD_STUDIO_BANK_INFO=Debug,Copy,Clone
   --with-derive-custom FMOD_STUDIO_PARAMETER_DESCRIPTION=Debug,Copy,Clone
