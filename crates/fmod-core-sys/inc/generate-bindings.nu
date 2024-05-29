@@ -3,7 +3,7 @@
   --ctypes-prefix ::std::ffi
   --no-convert-floats
   --no-prepend-enum-name
-  --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2023. */"
+  --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2024. */"
   --merge-extern-blocks
 | str replace -a  'extern "C"' 'extern "system"'
 | str replace -ar '(?s)extern "system" (fn\([^)]*\.\.\.[^)]*\))' 'extern "C" $1'

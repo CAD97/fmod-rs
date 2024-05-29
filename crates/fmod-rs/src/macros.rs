@@ -893,18 +893,25 @@ macro_rules! fmod_struct {
         #![fmod_no_pod, fmod_no_default]
         $(#[$meta:meta])*
         $vis:vis struct $Name:ident$(<$lt:lifetime>)? = $Raw:ident {
-            $($body:tt)*
+            $(
+                $(#[$field_meta:meta])*
+                $field_vis:vis $field:ident: $field_ty:ty $(= $raw_field:ident)?,
+            )*
         }
     } => {
         #[repr(C)]
         $(#[$meta])*
         #[derive(Debug, Clone, Copy, PartialEq)]
         pub struct $Name$(<$lt>)? {
-            $($body)*
+            $(
+                $(#[$field_meta])*
+                $field_vis $field: $field_ty,
+            )*
         }
 
         static_assert!(::std::mem::size_of::<$Name>() == ::std::mem::size_of::<$Raw>());
         static_assert!(::std::mem::align_of::<$Name>() == ::std::mem::align_of::<$Raw>());
+        $($(static_assert!(::std::mem::offset_of!($Name, $field) == ::std::mem::offset_of!($Raw, $raw_field));)?)*
 
         impl$(<$lt>)? $Name$(<$lt>)? {
             raw! {

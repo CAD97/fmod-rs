@@ -377,7 +377,7 @@ impl System {
     pub fn set_3d_rolloff_callback(&self, callback: Option<Rolloff3dCallback>) -> Result {
         ffi!(FMOD_System_Set3DRolloffCallback(
             self.as_raw(),
-            mem::transmute(callback),
+            mem::transmute::<Option<Rolloff3dCallback>, FMOD_3D_ROLLOFF_CALLBACK>(callback),
         ))?;
         Ok(())
     }
@@ -412,61 +412,61 @@ fmod_struct! {
     pub struct AdvancedSettings = FMOD_ADVANCEDSETTINGS {
         /// Size of this structure. Must be set to `size_of::<Self>()`.
         #[default(mem::size_of::<Self>() as i32)]
-        size: i32,
+        size: i32 = cbSize,
         /// Maximum MPEG Sounds created as [Mode::CreateCompressedSample].
         /// <dl>
         /// <dt>Default</dt><dd>32</dd>
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
-        pub max_mpeg_codecs: i32,
+        pub max_mpeg_codecs: i32 = maxMPEGCodecs,
         /// Maximum IMA-ADPCM Sounds created as [Mode::CreateCompressedSample].
         /// <dl>
         /// <dt>Default</dt><dd>32</dd>
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
-        pub max_adpcm_codecs: i32,
+        pub max_adpcm_codecs: i32 = maxADPCMCodecs,
         /// Maximum XMA Sounds created as [Mode::CreateCompressedSample].
         /// <dl>
         /// <dt>Default</dt><dd>32</dd>
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
-        pub max_xma_codecs: i32,
+        pub max_xma_codecs: i32 = maxXMACodecs,
         /// Maximum Vorbis Sounds created as [Mode::CreateCompressedSample].
         /// <dl>
         /// <dt>Default</dt><dd>32</dd>
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
-        pub max_vorbix_codecs: i32,
+        pub max_vorbix_codecs: i32 = maxVorbisCodecs,
         /// Maximum AT9 Sounds created as [Mode::CreateCompressedSample].
         /// <dl>
         /// <dt>Default</dt><dd>32</dd>
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
-        pub max_at9_codecs: i32,
+        pub max_at9_codecs: i32 = maxAT9Codecs,
         /// Maximum FADPCM Sounds created as [Mode::CreateCompressedSample].
         /// <dl>
         /// <dt>Default</dt><dd>32</dd>
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
-        pub max_fadpcm_codecs: i32,
+        pub max_fadpcm_codecs: i32 = maxFADPCMCodecs,
         /// Deprecated.
         #[deprecated]
-        max_pcm_codecs: i32,
+        max_pcm_codecs: i32 = maxPCMCodecs,
         /// Number of elements in `asio_speaker_list` on input, number of elements
         /// in `asio_channel_list` on output.
         /// <dl>
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
-        asio_num_channels: i32,
+        asio_num_channels: i32 = ASIONumChannels,
         /// Read only list of strings representing ASIO channel names, count is
         /// defined by `asio_num_channels`. Only valid after [System::init].
         #[default(ptr::null_mut())]
-        asio_channel_list: *mut *mut c_char,
+        asio_channel_list: *mut *mut c_char = ASIOChannelList,
         /// List of speakers that represent each ASIO channel used for remapping,
         /// count is defined by `asio_num_channels`. Use [Speaker::None] to indicate
         /// no output for a given speaker.
         #[default(ptr::null_mut())]
-        asio_speaker_list: *mut FMOD_SPEAKER,
+        asio_speaker_list: *mut FMOD_SPEAKER = ASIOSpeakerList,
         /// For use with [InitFlags::Vol0BecomesVirtual], [Channel]s with audibility
         /// below this will become virtual. See the [Virtual Voices] guide for more
         /// information.
@@ -476,27 +476,27 @@ fmod_struct! {
         /// <dt>Units</dt><dd>Linear</dd>
         /// <dt>Default</dt><dd>0</dd>
         /// </dl>
-        pub vol_0_virtual_vol: f32,
+        pub vol_0_virtual_vol: f32 = vol0virtualvol,
         /// For use with Streams, the default size of the double buffer.
         /// <dl>
         /// <dt>Units</dt><dd>Milliseconds</dd>
         /// <dt>Default</dt><dd>400</dd>
         /// <dt>Range</dt><dd>[0, 30000]</dd>
         /// </dl>
-        pub default_decode_buffer_size: u32,
+        pub default_decode_buffer_size: u32 = defaultDecodeBufferSize,
         /// For use with [InitFlags::ProfileEnable], specify the port to listen on
         /// for connections by FMOD Studio or FMOD Profiler.
         /// <dl>
         /// <dt>Default</dt><dd>9264</dd>
         /// </dl>
-        pub profile_port: u16,
+        pub profile_port: u16 = profilePort,
         /// For use with [Geometry], the maximum time it takes for a [Channel] to
         /// fade to the new volume level when its occlusion changes.
         /// <dl>
         /// <dt>Units</dt><dd>Milliseconds</dd>
         /// <dt>Default</dt><dd>500</dd>
         /// </dl>
-        pub geometry_max_fade_time: u32,
+        pub geometry_max_fade_time: u32 = geometryMaxFadeTime,
         /// For use with [InitFlags::ChannelDistanceFilter], the default center
         /// frequency for the distance filtering effect.
         /// <dl>
@@ -504,12 +504,12 @@ fmod_struct! {
         /// <dt>Default</dt><dd>1500</dd>
         /// <dt>Range</dt><dd>[10, 22050]</dd>
         /// </dl>
-        pub distance_filter_center_freq: f32,
+        pub distance_filter_center_freq: f32 = distanceFilterCenterFreq,
         /// For use with [Reverb3D], selects which global reverb instance to use.
         /// <dl>
         /// <dt>Range</dt><dd>[0, MAX_INSTANCES]</dd>
         /// </dl>
-        pub reverb_3d_instance: i32,
+        pub reverb_3d_instance: i32 = reverb3Dinstance,
         /// Number of intermediate mixing buffers in the 'DSP buffer pool'. Each
         /// buffer in bytes will be `buffer_length` (See [System::get_dsp_buffer_size])
         /// × `size_of::<f32>()` × output mode speaker count (See [SpeakerMode]).
@@ -517,11 +517,11 @@ fmod_struct! {
         /// <dl>
         /// <dt>Default</dt><dd>8</dd>
         /// </dl>
-        pub dsp_buffer_pool_size: i32,
+        pub dsp_buffer_pool_size: i32 = DSPBufferPoolSize,
         /// Resampling method used by [Channel]s.
-        pub resampler_method: DspResampler,
+        pub resampler_method: DspResampler = resamplerMethod,
         /// Seed value to initialize the internal random number generator.
-        pub random_seed: u32,
+        pub random_seed: u32 = randomSeed,
         /// Maximum number of CPU threads to use for [DspType::Convolutionreverb]
         /// effect. 1 = effect is entirely processed inside the [ThreadType::Mixer]
         /// thread. 2 and 3 offloads different parts of the convolution processing
@@ -531,13 +531,25 @@ fmod_struct! {
         /// <dt>Default</dt><dd>3</dd>
         /// <dt>Range</dt><dd>[0, 3]</dd>
         /// </dl>
-        pub max_convolution_threads: i32,
+        pub max_convolution_threads: i32 = maxConvolutionThreads,
         /// Maximum Opus Sounds created as [Mode::CreateCompressedSample].
         /// <dl>
         /// <dt>Default</dt><dd>32</dd>
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
-        pub max_opus_codecs: i32,
+        pub max_opus_codecs: i32 = maxOpusCodecs,
+        /// Maximum Spatial Objects that can be reserved per FMOD system.
+        /// [`OutputType::Audio3D`] is a special case where multiple FMOD systems
+        /// are not allowed. See the [Object based approach] section of the
+        /// [Spatial Audio] white paper. A value of -1 means no Spatial Objects
+        /// will be reserved. A value of 0 means all available Spatial Objects
+        /// will be reserved. Any other value means it will reserve that many
+        /// Spatial Objects.
+        /// <dl>
+        /// <dt>Default</dt><dd>0</dd>
+        /// <dt>Range</dt><dd>[-1, 65535]</dd>
+        /// </dl>
+        pub max_spatial_objects: i32 = maxSpatialObjects,
     }
 }
 

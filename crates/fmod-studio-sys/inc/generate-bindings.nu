@@ -4,10 +4,11 @@
   --ctypes-prefix ::std::ffi
   --no-convert-floats
   --no-prepend-enum-name
-  --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2023. */"
+  --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2024. */"
   # blocklist fmod-core-sys items
   --allowlist-file fmod_studio.h
-  --allowlist-file ./fmod_studio_common.h
+  --allowlist-file fmod_studio_common.h
+  --allowlist-item FMOD_STUDIO_.* # I don't know why this is needed now /shrug
   # in a union, so needs to be allowlisted
   --allowlist-type FMOD_BOOL
   --merge-extern-blocks

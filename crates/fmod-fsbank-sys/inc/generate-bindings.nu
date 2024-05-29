@@ -1,6 +1,6 @@
 (bindgen fsbank.h
   --no-prepend-enum-name
-  --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2023. */"
+  --raw-line "/* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2024. */"
 | str replace -a  'extern "C"' 'extern "system"'
 | str replace -a  'type_' 'r#type'
 | str replace -a  '__bindgen_anon_1' 'payload'

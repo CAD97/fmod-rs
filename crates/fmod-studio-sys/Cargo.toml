@@ -1,8 +1,8 @@
 [package]
 name = "fmod-studio-sys"
-version = "2.19.0+2.02.19-137979"
+version = "2.22.0+2.02.22-142841"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.77"
 license-file = "LICENSE.txt"
 links = "fmodstudio"
 
@@ -21,7 +21,7 @@ include = [
 ]
 
 [dependencies]
-fmod-core-sys = { version = "=2.19.0", path = "../fmod-core-sys" }
+fmod-core-sys = { version = "=2.22.0", path = "../fmod-core-sys" }
 
 [build-dependencies]
 build-rs = "0.1.2"

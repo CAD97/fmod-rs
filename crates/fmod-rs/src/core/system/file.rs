@@ -63,21 +63,21 @@ impl System {
     /// # Asynchrony notes
     ///
     /// - It is recommended to consult the 'async_io' example for reference
-    /// implementation. There is also a tutorial on the subject,
-    /// [Asynchronous I/O](https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-asynchronous-io.html).
+    ///   implementation. There is also a tutorial on the subject,
+    ///   [Asynchronous I/O](https://fmod.com/resources/documentation-api?version=2.02&page=white-papers-asynchronous-io.html).
     /// - [`AsyncFileSystem::read`] allows the user to return immediately before
-    /// the data is ready. FMOD will either wait internally (see note below
-    /// about thread safety), or continuously check in the streamer until data
-    /// arrives. It is the user's responsibility to provide data in time in the
-    /// stream case, or the stream may stutter. Data starvation can be detected
-    /// with [Sound::get_open_state].
+    ///   the data is ready. FMOD will either wait internally (see note below
+    ///   about thread safety), or continuously check in the streamer until data
+    ///   arrives. It is the user's responsibility to provide data in time in the
+    ///   stream case, or the stream may stutter. Data starvation can be detected
+    ///   with [Sound::get_open_state].
     /// - **Important:** If [`AsyncFileSystem::read`] is processed in the main
-    /// thread, then it will hang the application, because FMOD will wait
-    /// internally until data is ready, and the main thread will not be able to
-    /// supply the data. For this reason the user's file access should normally
-    /// be from a separate thread.
+    ///   thread, then it will hang the application, because FMOD will wait
+    ///   internally until data is ready, and the main thread will not be able to
+    ///   supply the data. For this reason the user's file access should normally
+    ///   be from a separate thread.
     /// - [AsyncFileSystem::cancel] must either service or prevent an async read
-    /// issued previously via [AsyncFileSystem::read] before returning.
+    ///   issued previously via [AsyncFileSystem::read] before returning.
     pub fn set_file_system_async<FS: file::AsyncFileSystem>(&self, block_align: i32) -> Result {
         ffi!(FMOD_System_SetFileSystem(
             self.as_raw(),
