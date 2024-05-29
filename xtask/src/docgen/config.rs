@@ -13,14 +13,6 @@ pub struct Config {
 }
 
 #[derive(knuffel::Decode)]
-pub struct ReplaceType {
-    #[knuffel(argument, str)]
-    pub from: String,
-    #[knuffel(argument, str)]
-    pub to: String,
-}
-
-#[derive(knuffel::Decode)]
 pub struct ReplaceRegex {
     #[knuffel(argument, str)]
     pub from: Regex,

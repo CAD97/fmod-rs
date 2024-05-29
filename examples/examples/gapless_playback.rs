@@ -1,6 +1,6 @@
 /*============================================================================*/
 //! Gapless Playback Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2024.
 //!
 //! This example shows how to schedule channel playback into the future with
 //! sample accuracy. Use several scheduled channels to synchronize 2 or more
@@ -166,7 +166,7 @@ fn main() -> anyhow::Result<()> {
 
             example.draw("==================================================");
             example.draw("Gapless Playback example.");
-            example.draw("Copyright (c) Firelight Technologies 2004-2023.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2024.");
             example.draw("==================================================");
             example.draw("");
             example.draw(format_args!(

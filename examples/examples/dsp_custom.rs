@@ -3,7 +3,7 @@
 
 /*============================================================================*/
 //! Custom DSP Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2024.
 //!
 //! This example shows how to add a user created DSP callback to process audio
 //! data. The read callback is executed at runtime, and can be added anywhere in

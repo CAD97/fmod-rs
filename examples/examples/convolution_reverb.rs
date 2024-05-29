@@ -1,7 +1,7 @@
 #![allow(unused)] // has todo!s
 /*============================================================================*/
 //! Convolution Reverb Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2024.
 //!
 //! This example shows how to set up a convolution reverb DSP as a global
 //! DSP unit that can be routed into by multiple seperate channels.
@@ -90,7 +90,7 @@ fn main() -> anyhow::Result<()> {
         // Create a send connection between the channel head and the reverb unit
         let channel_head = unsafe { channel.get_dsp_head()? };
         let reverb_connection =
-            reverb_unit.add_input(&channel_head, fmod::DspConnectionType::Send)?;
+            reverb_unit.add_input(channel_head, fmod::DspConnectionType::Send)?;
         let reverb_connection = unsafe { reverb_connection.as_ref() };
 
         channel.set_paused(false)?;
@@ -121,7 +121,7 @@ fn main() -> anyhow::Result<()> {
 
             example.draw("==================================================");
             example.draw("Convolution Example.");
-            example.draw("Copyright (c) Firelight Technologies 2004-2023.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2024.");
             example.draw("==================================================");
             example.draw(format_args!(
                 "Press {} and {} to change dry mix",

@@ -1,7 +1,7 @@
 #![allow(deprecated)]
 /*============================================================================*/
 //! Effects Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2024.
 //!
 //! This example shows how to apply some of the built in software effects to sounds
 //! by applying them to the master channel group. All software sounds played here
@@ -84,7 +84,7 @@ fn main() -> anyhow::Result<()> {
 
             example.draw("==================================================");
             example.draw("Effects Example.");
-            example.draw("Copyright (c) Firelight Technologies 2004-2023.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2024.");
             example.draw("==================================================");
             example.draw("");
             example.draw(format_args!(

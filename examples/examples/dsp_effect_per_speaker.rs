@@ -1,6 +1,6 @@
 /*============================================================================*/
 //! DSP Effect Per Speaker Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2024.
 //!
 //! This example shows how to manipulate a DSP network and as an example, creates 2
 //! DSP effects, splitting a single sound into 2 audio paths, which it then filters
@@ -68,7 +68,7 @@ fn main() -> anyhow::Result<()> {
         // Now disconnect channeldsp head from wavetable to look like this.
         //
         // [DSPHEAD]             [DSPCHANNELMIXER]<------------[CHANNEL HEAD]<------------[WAVETABLE - DRUMLOOP.WAV]
-        dsp_head.disconnect_from_input(&dsp_channel_mixer)?;
+        dsp_head.disconnect_from_input(dsp_channel_mixer)?;
 
         // Now connect the 2 effects to channeldsp head.
         // Store the 2 connections this makes so we can set their matrix later.
@@ -92,8 +92,8 @@ fn main() -> anyhow::Result<()> {
         // [DSPHEAD]             [DSPCHANNELMIXER]<------------[CHANNEL HEAD]<------------[WAVETABLE - DRUMLOOP.WAV]
         //         \y          /
         //          [DSPHIGHPASS]
-        dsp_lowpass.add_input(&dsp_channel_mixer, fmod::DspConnectionType::Standard)?;
-        dsp_highpass.add_input(&dsp_channel_mixer, fmod::DspConnectionType::Standard)?;
+        dsp_lowpass.add_input(dsp_channel_mixer, fmod::DspConnectionType::Standard)?;
+        dsp_highpass.add_input(dsp_channel_mixer, fmod::DspConnectionType::Standard)?;
         // ignore connections - we don't care about them
 
         // Now the drumloop will be twice as loud, because it is being split into 2, then recombined at the end.
@@ -160,7 +160,7 @@ fn main() -> anyhow::Result<()> {
 
             example.draw("==================================================");
             example.draw("DSP Effect Per Speaker Example.");
-            example.draw("Copyright (c) Firelight Technologies 2004-2023.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2024.");
             example.draw("==================================================");
             example.draw("");
             example.draw(format_args!(

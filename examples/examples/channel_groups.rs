@@ -1,6 +1,6 @@
 /*============================================================================*/
 //! Channel Groups Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2024.
 //!
 //! This example shows how to put channels into channel groups, so that you can
 //! affect a group of channels at a time instead of just one.
@@ -71,7 +71,7 @@ fn main() -> anyhow::Result<()> {
 
             example.draw("==================================================");
             example.draw("Channel Groups Example.");
-            example.draw("Copyright (c) Firelight Technologies 2004-2023.");
+            example.draw("Copyright (c) Firelight Technologies 2004-2024.");
             example.draw("==================================================");
             example.draw("");
             example.draw("Group A : drumloop.wav, jaguar.wav, swish.wav");

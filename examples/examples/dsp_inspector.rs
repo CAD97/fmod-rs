@@ -3,7 +3,7 @@
 
 /*============================================================================*/
 //! Plug-in Inspector Example
-//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2023.
+//! Copyright (c), Firelight Technologies Pty, Ltd 2004-2024.
 //!
 //! This example shows how to enumerate loaded plug-ins and their parameters.
 //!
