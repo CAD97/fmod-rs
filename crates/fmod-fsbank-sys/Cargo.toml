@@ -21,13 +21,5 @@ include = [
 ]
 
 [dependencies]
-fmod-core-sys = { version = "=2.22.0", path = "../fmod-core-sys", optional = true }
-
-[build-dependencies]
-build-rs = "0.1.2"
-
-[features]
-link-search = []
-
-# NOT PUBLIC API
-__fmod-core-sys = ["dep:fmod-core-sys"]
+fmod-core-sys = { version = "=2.22.0", path = "../fmod-core-sys" }
+# TODO: make this dependency edge optional again

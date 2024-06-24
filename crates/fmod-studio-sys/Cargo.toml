@@ -22,9 +22,3 @@ include = [
 
 [dependencies]
 fmod-core-sys = { version = "=2.22.0", path = "../fmod-core-sys" }
-
-[build-dependencies]
-build-rs = "0.1.2"
-
-[features]
-link-search = []

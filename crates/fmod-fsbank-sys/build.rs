@@ -1,53 +1,26 @@
-use std::env;
+use std::{env, path::PathBuf};
 
 fn main() {
-    build::rerun_if_changed("build.rs");
+    println!("cargo::rerun-if-changed=build.rs");
 
-    link_lib();
-    if cfg!(feature = "link-search") {
-        link_search();
-    }
-}
-
-fn link_lib() {
-    let windows = build::cargo_cfg_target_os() == "windows";
-    let lib = match windows {
-        true => "fsbank_vc",
-        false => "fsbank",
+    let inc: PathBuf = env::var("DEP_FMOD_INC").unwrap().into();
+    let lib: PathBuf = env::var("DEP_FMOD_LIB").unwrap().into();
+    let remap = |p| match p == "core" {
+        true => PathBuf::from("fsbank"),
+        false => PathBuf::from(p),
     };
 
-    build::rustc_link_lib(lib);
-}
+    let inc: PathBuf = inc.iter().map(remap).collect();
+    let lib: PathBuf = lib.iter().map(remap).collect();
 
-fn link_search() {
-    if cfg!(windows) {
-        link_search_windows();
-    } else {
-        panic!("failed to guess conventional FMOD Studio API path for this host");
-    }
-}
-
-fn link_search_windows() {
-    let arch = build::cargo_cfg_target_arch();
-    let os = build::cargo_cfg_target_os();
-
-    let program_files = env::var("ProgramFiles(x86)").expect("failed to get ProgramFiles(x86)");
-    let (fmod_os, lib_dir) = match (&*os, &*arch) {
-        ("windows", "x86_64") => ("Windows", "x64"),
-        ("windows", "x86") => ("Windows", "x86"),
-        ("linux", "arm") => ("Linux", "arm"),
-        ("linux", "aarch64") => ("Linux", "arm64"),
-        ("linux", "x86") => ("Linux", "x86"),
-        ("linux", "x86_64") => ("Linux", "x86_64"),
-        ("macos", _) => ("Mac", ""),
-        _ => {
-            panic!("failed to guess conventional FMOD Studio API path for this target");
-        },
+    let vendor = &*env::var("CARGO_CFG_TARGET_VENDOR").unwrap();
+    let obj = match vendor {
+        "pc" => "fsbank_vc",
+        _ => "fsbank",
     };
 
-    let link_dir = format!(
-        "{program_files}\\FMOD SoundSystem\\FMOD Studio API {fmod_os}\\api\\fsbank\\lib\\{lib_dir}"
-    );
-    build::rerun_if_changed(&*link_dir);
-    build::rustc_link_search(&*link_dir);
+    println!("cargo::metadata=inc={}", inc.display());
+    println!("cargo::metadata=lib={}", lib.display());
+    println!("cargo::rustc-link-lib={}", obj);
+    println!("cargo::rustc-link-search={}", lib.display());
 }

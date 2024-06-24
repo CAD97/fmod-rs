@@ -20,7 +20,7 @@ default = ["core", "log"]
 #! ## Feature flags
 
 ## Enable the FMOD Core API.
-core = ["dep:fmod-core-sys", "fmod-fsbank-sys?/__fmod-core-sys"]
+core = ["dep:fmod-core-sys"]
 
 ## Enable the FMOD Studio API.
 studio = ["dep:fmod-studio-sys", "core"]
@@ -37,15 +37,6 @@ mint = ["dep:mint"]
 ## Enable access to the raw FMOD API calls.
 raw = []
 
-## Automatically attempt to guess the FMOD Studio API installation path. Will
-## panic the build if the conventional path is not known for this host+target
-## and the link configuration is not manually specified for `fmod`/`fmodstudio`.
-link-search = [
-    "fmod-core-sys?/link-search",
-    "fmod-fsbank-sys?/link-search",
-    "fmod-studio-sys?/link-search",
-]
-
 #! ### Experimental feature flags
 #!
 #! These features can change public API and can change at any time. Be warned!
@@ -58,24 +49,24 @@ link-search = [
 unstable = []
 
 [dependencies]
-fmod-core-sys = { version = "2.19.0", path = "../fmod-core-sys", optional = true }
-fmod-fsbank-sys = { version = "2.19.0", path = "../fmod-fsbank-sys", optional = true }
-fmod-studio-sys = { version = "2.19.0", path = "../fmod-studio-sys", optional = true }
+fmod-core-sys = { version = "2.22.0", path = "../fmod-core-sys", optional = true }
+fmod-fsbank-sys = { version = "2.22.0", path = "../fmod-fsbank-sys", optional = true }
+fmod-studio-sys = { version = "2.22.0", path = "../fmod-studio-sys", optional = true }
 
-bytemuck = { version = "1.13.1", features = [
+bytemuck = { version = "1.16.1", features = [
     "derive",
     "extern_crate_std",
     "min_const_generics",
 ] }
-cstr8 = "0.1.2"
+cstr8 = "0.1.4"
 cool_asserts = "2.0.3"
-document-features = "0.2.7"
-parking_lot = "0.12.1"
-paste = "1.0.14"
+document-features = "0.2.8"
+parking_lot = "0.12.3"
+paste = "1.0.15"
 seq-macro = "0.3.5"
 smart-default = "0.7.1"
 
-log = { version = "0.4.19", optional = true }
+log = { version = "0.4.21", optional = true }
 mint = { version = "0.5.9", optional = true }
 
 [build-dependencies]

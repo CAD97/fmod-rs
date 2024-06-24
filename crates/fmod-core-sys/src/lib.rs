@@ -35,7 +35,7 @@ pub const unsafe fn FMOD_ErrorString(errcode: FMOD_RESULT) -> *const std::ffi::c
         FMOD_ERR_HTTP_TIMEOUT =>              c"The HTTP request timed out.",
         FMOD_ERR_INITIALIZATION =>            c"FMOD was not initialized correctly to support this function.",
         FMOD_ERR_INITIALIZED =>               c"Cannot call this command after System::init.",
-        FMOD_ERR_INTERNAL =>                  c"An error occured in the FMOD system. Use the logging version of FMOD for more information.",
+        FMOD_ERR_INTERNAL =>                  c"An error occurred in the FMOD system. Use the logging version of FMOD for more information.",
         FMOD_ERR_INVALID_FLOAT =>             c"Value passed in was a NaN, Inf or denormalized float.",
         FMOD_ERR_INVALID_HANDLE =>            c"An invalid object handle was used.",
         FMOD_ERR_INVALID_PARAM =>             c"An invalid parameter was passed to this function.",
