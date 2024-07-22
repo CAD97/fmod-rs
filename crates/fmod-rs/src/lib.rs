@@ -44,6 +44,7 @@ format into your tools and development pipelines, use the [fsbank] module.
 //! module.
 //!
 #![doc = ::document_features::document_features!()]
+#![allow(rustdoc::redundant_explicit_links)]
 
 #[macro_use]
 pub(crate) mod macros;

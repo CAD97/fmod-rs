@@ -10,6 +10,7 @@ use {
 // guaranteed that the C pointers and the C++ pointers are interchangeable, so
 // this is likely a safe assumption, but it would be more correct to create new
 // C ABI functions that take FMOD_CHANNELCONTROL and call into the C++ API.
+// Decompiling the DLL strongly suggests that this is indeed a sound assumption.
 
 /// # DSP chain configuration
 impl ChannelControl {
@@ -23,7 +24,8 @@ impl ChannelControl {
     /// Adds a DSP unit to the specified index in the DSP chain.
     ///
     /// If `dsp` is already added to an existing object it will be removed and
-    /// then added to this object.
+    /// then added to this object. Releasing the DSP unit without first removing
+    /// it from the network will error with [`Error::DspInUse`].
     ///
     /// For detailed information on FMOD's DSP network, read the
     /// [DSP Architecture and Usage] white paper.
@@ -41,7 +43,11 @@ impl ChannelControl {
     }
 
     /// Removes the specified DSP unit from the DSP chain.
-    pub fn remove_dsp(&self, dsp: &Dsp) -> Result {
+    ///
+    /// # Safety
+    ///
+    /// Dsp references retrieved via `get_dsp` must not outlive their [`Dsp`].
+    pub unsafe fn remove_dsp(&self, dsp: &Dsp) -> Result {
         ffi!(FMOD_Channel_RemoveDSP(self.as_raw() as _, dsp.as_raw()))?;
         Ok(())
     }
@@ -54,19 +60,19 @@ impl ChannelControl {
     }
 
     /// Retrieves the DSP unit at the specified index in the DSP chain.
-    pub unsafe fn get_dsp(&self, index: i32) -> Result<&Dsp> {
+    pub fn get_dsp(&self, index: i32) -> Result<&Dsp> {
         let mut dsp = ptr::null_mut();
         ffi!(FMOD_Channel_GetDSP(self.as_raw() as _, index, &mut dsp))?;
-        Ok(Dsp::from_raw(dsp))
+        Ok(unsafe { Dsp::from_raw(dsp) })
     }
 
     /// Retrieves the DSP unit at the head of the DSP chain.
-    pub unsafe fn get_dsp_head(&self) -> Result<&Dsp> {
+    pub fn get_dsp_head(&self) -> Result<&Dsp> {
         self.get_dsp(Self::DSP_HEAD)
     }
 
     /// Retrieves the DSP unit at the tail of the DSP chain.
-    pub unsafe fn get_dsp_tail(&self) -> Result<&Dsp> {
+    pub fn get_dsp_tail(&self) -> Result<&Dsp> {
         self.get_dsp(Self::DSP_TAIL)
     }
 

@@ -26,7 +26,16 @@ macro_rules! ix {
     };
 }
 
-macro_rules! group_syntax { ($($tt:tt)*) => ($($tt)*) }
+macro_rules! cfg_match {
+    () => {};
+    (_ => { $($tt:tt)* } $(,)?) => { $($tt)* };
+    (($cfg:meta) => { $($tt:tt)* } $(, $($rest:tt)*)?) => {
+        #[cfg($cfg)]
+        cfg_match! { _ => { $($tt)* } }
+        $(#[cfg(not($cfg))]
+        cfg_match! { $($rest)* })?
+    }
+}
 
 macro_rules! whoops {
     {
@@ -34,6 +43,7 @@ macro_rules! whoops {
     } => {{
         #[cfg(feature = "log")]
         ::log::error!($($args)*);
+        // NB: always syntax verify $($args)*
         if cfg!(debug_assertions) {
             use ::std::io::prelude::*;
             let _ = writeln!(::std::io::stderr(), $($args)*);
@@ -52,19 +62,20 @@ macro_rules! opaque_type {
         $(#[$meta:meta])*
         $vis:vis struct $Name:ident $(;)?
     } => {
-        #[cfg(not(feature = "unstable"))]
-        $(#[$meta])*
-        $vis struct $Name {
-            _data: ::std::cell::Cell<[u8; 0]>,
-            _marker: ::std::marker::PhantomData<(*mut u8, std::marker::PhantomPinned)>,
-        }
-
-        #[cfg(feature = "unstable")]
-        #[allow(unused_doc_comments)] // vvvvvv
-        #[doc(cfg(all()))] // doesn't actually require cfg(feature = "unstable")
-        extern {
-            $(#[$meta])*
-            $vis type $Name;
+        cfg_match! {
+            (feature = "unstable") => {
+                extern {
+                    $(#[$meta])*
+                    $vis type $Name;
+                }
+            },
+            _ => {
+                $(#[$meta])*
+                $vis struct $Name {
+                    _data: ::std::cell::Cell<[u8; 0]>,
+                    _marker: ::std::marker::PhantomData<(*mut u8, std::marker::PhantomPinned)>,
+                }
+            }
         }
     };
 }
@@ -674,7 +685,7 @@ macro_rules! fmod_enum {
 
         static_assert! {
             [$($Name::$Variant),*].len() == ($Name::RAW_RANGE.end - $Name::RAW_RANGE.start) as usize,
-            "fmod_enum! is missing some variant(s)",
+            concat!("fmod_enum! ", stringify!($Raw), " is missing some variant(s) in ", file!()),
         }
 
         impl ::fmod::effect::DspParamType for $Name {

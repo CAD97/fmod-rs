@@ -1,7 +1,7 @@
 use {
     fmod::{raw::*, *},
     parking_lot::RwLockUpgradableReadGuard,
-    std::ptr,
+    std::{hint::unreachable_unchecked, ptr},
 };
 
 /// # Lifetime management.
@@ -117,7 +117,19 @@ impl System {
     /// [ghost-cell]: https://lib.rs/crates/ghost-cell
     /// [qcell's `LCell`]: https://lib.rs/crates/qcell
     pub unsafe fn new_unchecked() -> Result<Handle<'static, Self>> {
-        let mut system_count = GLOBAL_SYSTEM_STATE.write();
+        cfg_match! {
+            (debug_assertions) => {
+                let Some(mut system_count) = GLOBAL_SYSTEM_STATE.try_write() else {
+                    // NB: will assert_unsafe_precondition!(false)
+                    unreachable_unchecked()
+                };
+            },
+            _ => {
+                let mut system_count = unsafe {
+                    &mut *GLOBAL_SYSTEM_STATE.data_ptr()
+                };
+            }
+        }
         Self::new_inner(&mut system_count)
     }
 
@@ -136,7 +148,7 @@ impl System {
     /// succeed, otherwise they will return [Error::Uninitialized]. Some can
     /// only be called before initialization. These are:
     ///
-    /// - [Memory_Initialize]
+    /// - [memory::initialize](memory::initialize_alloc)
     /// - [System::set_software_format]
     /// - [System::set_software_channels]
     /// - [System::set_dsp_buffer_size]

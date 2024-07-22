@@ -21,7 +21,7 @@ use {
 /// internally. This is useful for determining a fixed memory size to make
 /// FMOD work within for fixed memory machines such as consoles.
 ///
-/// Note that if using [memory::initialize], the memory usage will be
+/// Note that if using [memory::initialize_pool], the memory usage will be
 /// slightly higher than without it, as FMOD has to have a small amount of
 /// memory overhead to manage the available memory.
 pub fn get_stats(blocking: bool) -> Result<Stats> {
@@ -48,7 +48,7 @@ pub struct Stats {
     /// Currently allocated memory at time of call.
     pub current_alloced: i32,
     /// Maximum allocated memory since [System::init] or
-    /// [memory::initialize].
+    /// [memory::initialize](memory::initialize_alloc).
     pub max_alloced: i32,
 }
 
@@ -269,8 +269,8 @@ fmod_flags! {
 /// situations, required just to satisfy the Rust middleman.
 ///
 /// In most cases, you should prefer leaving the defaults (FMOD will use the
-/// system allocator) or one of the other [`memory::initialize`] variants
-/// which don't require this overhead.
+/// system allocator) or another memory source, such as [`initialize_pool],
+/// which doesn't impose this overhead.
 pub enum AllocViaRust {}
 
 unsafe impl AllocCallback for AllocViaRust {
