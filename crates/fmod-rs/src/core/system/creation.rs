@@ -114,15 +114,6 @@ impl System {
         mode: Mode,
         info: CreateSoundEx<'_>,
     ) -> Result<Handle<'_, Sound>> {
-        if mode & (Mode::OpenUser | Mode::OpenMemory | Mode::OpenMemoryPoint | Mode::OpenRaw)
-            == Mode::default()
-        {
-            whoops!(
-                "System::create_sound called with standard mode {mode:?}; use create_sound instead"
-            );
-            yeet!(Error::InvalidParam);
-        }
-
         let mut sound = ptr::null_mut();
         ffi!(FMOD_System_CreateSound(
             self.as_raw(),

@@ -53,12 +53,27 @@ impl Buttons {
             _ => "Unknown",
         }
     }
+
+    fn translate(vkey: KeyCode) -> Self {
+        match vkey {
+            KeyCode::Char('1') => Buttons::Action1,
+            KeyCode::Char('2') => Buttons::Action2,
+            KeyCode::Char('3') => Buttons::Action3,
+            KeyCode::Char('4') => Buttons::Action4,
+            KeyCode::Left => Buttons::Left,
+            KeyCode::Right => Buttons::Right,
+            KeyCode::Up => Buttons::Up,
+            KeyCode::Down => Buttons::Down,
+            KeyCode::Char(' ') => Buttons::More,
+            KeyCode::Esc => Buttons::Quit,
+            _ => Buttons::empty(),
+        }
+    }
 }
 
 pub struct Example {
     pressed: Buttons,
     down: Buttons,
-    paused: bool,
     buffer: String,
     ypos: usize,
     _guard: tracing_appender::non_blocking::WorkerGuard,
@@ -91,7 +106,6 @@ impl Example {
         Ok(Example {
             pressed: Buttons::empty(),
             down: Buttons::empty(),
-            paused: false,
             buffer: String::with_capacity(((NUM_COLUMNS + 1) * NUM_ROWS) as usize),
             ypos: 0,
             _guard,
@@ -115,35 +129,23 @@ impl Drop for Example {
 
 impl Example {
     pub fn update(&mut self) -> Result<()> {
-        let mut new_buttons = Buttons::empty();
+        let prev_buttons = self.down;
         while event::poll(Duration::ZERO)? {
             if let Event::Key(event) = event::read()? {
-                match event.code {
-                    KeyCode::Char('1') => new_buttons |= Buttons::Action1,
-                    KeyCode::Char('2') => new_buttons |= Buttons::Action2,
-                    KeyCode::Char('3') => new_buttons |= Buttons::Action3,
-                    KeyCode::Char('4') => new_buttons |= Buttons::Action4,
-                    KeyCode::Left => new_buttons |= Buttons::Left,
-                    KeyCode::Right => new_buttons |= Buttons::Right,
-                    KeyCode::Up => new_buttons |= Buttons::Up,
-                    KeyCode::Down => new_buttons |= Buttons::Down,
-                    KeyCode::Char(' ') => new_buttons |= Buttons::More,
-                    KeyCode::Esc => new_buttons |= Buttons::Quit,
-                    KeyCode::F(1) => self.paused = !self.paused,
+                match event.kind {
+                    event::KeyEventKind::Press => self.down |= Buttons::translate(event.code),
+                    event::KeyEventKind::Release => self.down &= !Buttons::translate(event.code),
                     _ => (),
                 }
             }
         }
-        self.pressed = (self.down ^ new_buttons) & new_buttons;
-        self.down = new_buttons;
-        if !self.paused {
-            execute!(
-                stdout(),
-                terminal::Clear(terminal::ClearType::Purge),
-                cursor::MoveTo(0, 0),
-                style::Print(&self.buffer),
-            )?;
-        }
+        self.pressed = (prev_buttons ^ self.down) & self.down;
+        execute!(
+            stdout(),
+            terminal::Clear(terminal::ClearType::Purge),
+            cursor::MoveTo(0, 0),
+            style::Print(&self.buffer),
+        )?;
         self.buffer.clear();
         self.ypos = 0;
         Ok(())

@@ -17,6 +17,7 @@ fmod-core-sys = { version = "2.22.0", path = "../crates/fmod-core-sys" } # for $
 
 [dev-dependencies]
 once_cell = "1.19.0"
+rand = "0.8.5"
 
 [build-dependencies]
 fs_extra = "1.3.0"
