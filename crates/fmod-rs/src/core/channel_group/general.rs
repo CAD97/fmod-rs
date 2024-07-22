@@ -11,6 +11,12 @@ impl Deref for ChannelGroup {
     }
 }
 
+impl AsRef<ChannelControl> for ChannelGroup {
+    fn as_ref(&self) -> &ChannelControl {
+        self.deref()
+    }
+}
+
 /// # General.
 impl ChannelGroup {
     /// Retrieves the name set when the group was created.

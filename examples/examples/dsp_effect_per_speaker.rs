@@ -12,7 +12,7 @@
 //!
 //! For more speakers:
 //!
-//!  * Use System::setSoftwareFormat
+//!  * Use System::set_software_format
 //!  * Create more effects, currently 2 for stereo (lowpass and highpass), create one
 //!    per speaker.
 //!  * Under the 'Now connect the 2 effects to channeldsp head.' section, connect
@@ -62,7 +62,7 @@ fn main() -> anyhow::Result<()> {
         //
         // [DSPHEAD]<------------[DSPCHANNELMIXER]<------------[CHANNEL HEAD]<------------[WAVETABLE - DRUMLOOP.WAV]
         let master_group = system.get_master_channel_group()?;
-        let dsp_head = unsafe { master_group.get_dsp_head()? };
+        let dsp_head = master_group.get_dsp_head()?;
         let (dsp_channel_mixer, _) = dsp_head.get_input(0)?;
 
         // Now disconnect channeldsp head from wavetable to look like this.

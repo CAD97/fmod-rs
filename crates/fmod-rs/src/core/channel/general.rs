@@ -11,6 +11,12 @@ impl Deref for Channel {
     }
 }
 
+impl AsRef<ChannelControl> for Channel {
+    fn as_ref(&self) -> &ChannelControl {
+        self.deref()
+    }
+}
+
 // General.
 impl Channel {
     /// Sets the callback for Channel level notifications.

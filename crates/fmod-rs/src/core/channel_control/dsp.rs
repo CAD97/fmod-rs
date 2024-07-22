@@ -107,6 +107,16 @@ impl ChannelControl {
     }
 }
 
+impl<C: ?Sized + Resource> Handle<'_, C>
+where
+    C: AsRef<ChannelControl>,
+{
+    /// Removes the specified DSP unit from the DSP chain.
+    pub fn remove_dsp(&mut self, dsp: &Dsp) -> Result {
+        unsafe { self.as_ref().remove_dsp(dsp) }
+    }
+}
+
 raw! {
     fmod_typedef! {
         /// References to built in DSP positions that reside in a Channel or ChannelGroup DSP chain.

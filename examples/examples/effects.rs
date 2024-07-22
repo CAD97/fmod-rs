@@ -123,10 +123,12 @@ fn main() -> anyhow::Result<()> {
 
         // Shut down
         // TODO: sans remove_dsp, dropping the DSPs will cause a panic
-        master_group.remove_dsp(&dsp_lowpass)?;
-        master_group.remove_dsp(&dsp_highpass)?;
-        master_group.remove_dsp(&dsp_echo)?;
-        master_group.remove_dsp(&dsp_flange)?;
+        unsafe {
+            master_group.remove_dsp(&dsp_lowpass)?;
+            master_group.remove_dsp(&dsp_highpass)?;
+            master_group.remove_dsp(&dsp_echo)?;
+            master_group.remove_dsp(&dsp_flange)?;
+        }
 
         dsp_lowpass.release()?;
         dsp_highpass.release()?;
