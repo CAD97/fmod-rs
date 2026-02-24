@@ -13,7 +13,7 @@ tracing = "0.1.40"
 tracing-appender = "0.2.3"
 tracing-panic = "0.1.2"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-fmod-core-sys = { version = "2.3.5-ea", path = "../crates/fmod-core-sys" } # for $DEP_FMOD_API
+# fmod-core-sys = { version = "2.3.5-ea", path = "../crates/fmod-core-sys" } # for $DEP_FMOD_API
 
 [dev-dependencies]
 once_cell = "1.19.0"

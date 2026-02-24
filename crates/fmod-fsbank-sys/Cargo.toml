@@ -1,8 +1,8 @@
 [package]
 name = "fmod-fsbank-sys"
-version = "2.3.5-ea+2.03.05-148280"
-edition = "2021"
-rust-version = "1.77"
+version = "1.0.0"
+edition.workspace = true
+rust-version.workspace = true
 license-file = "LICENSE.txt"
 links = "fsbank"
 
@@ -11,15 +11,12 @@ repository = "https://github.com/CAD97/fmod-rs"
 keywords = ["gamedev", "audio", "sound", "fmod", "adaptive audio"]
 categories = ["external-ffi-bindings", "game-development", "multimedia::audio"]
 
-include = [
-    "/inc/bindings.rs",
-    "/src/lib.rs",
-    "/build.rs",
-    "/Cargo.toml",
-    "/LICENSE.txt",
-    "/README.md",
-]
-
 [dependencies]
-fmod-core-sys = { version = "=2.3.5-ea", path = "../fmod-core-sys" }
-# TODO: make this dependency edge optional again
+fmod-core-sys.workspace = true # WEIRD: this is unused other than DEP_FMOD_*
+
+[build-dependencies]
+build-rs.workspace = true
+regex.workspace = true
+
+[target.'cfg(windows)'.build-dependencies]
+winreg.workspace = true

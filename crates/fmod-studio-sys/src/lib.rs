@@ -3,5 +3,5 @@
 
 use fmod_core_sys::*;
 
-include!("inc/fmod_studio_common.rs");
-include!("inc/fmod_studio.rs");
+include!(concat!(env!("OUT_DIR"), "/fmod_studio.rs"));
+include!(concat!(env!("OUT_DIR"), "/fmod_studio_common.rs"));

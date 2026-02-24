@@ -49,9 +49,9 @@ raw = []
 unstable = []
 
 [dependencies]
-fmod-core-sys = { version = "2.3.5-ea", path = "../fmod-core-sys", optional = true }
-fmod-fsbank-sys = { version = "2.3.5-ea", path = "../fmod-fsbank-sys", optional = true }
-fmod-studio-sys = { version = "2.3.5-ea", path = "../fmod-studio-sys", optional = true }
+fmod-core-sys = { workspace = true, optional = true }
+fmod-fsbank-sys = { workspace = true, optional = true }
+fmod-studio-sys = { workspace = true, optional = true }
 
 bytemuck = { version = "1.16.1", features = [
     "derive",

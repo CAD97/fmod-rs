@@ -1,94 +1,171 @@
-use std::{env, path::PathBuf};
+use build_rs::{input::*, output::*};
+
+mod transpile;
+use transpile::transpile;
 
 fn main() {
-    println!("cargo::rerun-if-changed=build.rs");
-    println!("cargo::metadata=version=2.02.22");
+    rerun_if_changed("build.rs");
 
-    let Some([api, inc, lib]) = find_fmod() else {
-        report_missing_fmod();
+    let [api, inc, lib] = fmod_path();
+
+    metadata("api", &api);
+    metadata("inc", &inc);
+    metadata("lib", &lib);
+
+    rustc_link_search(&lib);
+    rerun_if_changed(&lib);
+    rustc_link_lib(&fmod_lib());
+
+    link_extra();
+
+    #[rustfmt::skip]
+    {
+        transpile(&inc, "fmod.h", &[]);
+        transpile(&inc, "fmod_codec.h", &[
+            (r"pub type FMOD_CODEC_(STATE|WAVEFORMAT).*?\n", ""), // nonopaque
+            ]);
+        transpile(&inc, "fmod_common.h", &[
+            (r"FMOD_BUILDNUMBER: ::core::ffi::c_int", "FMOD_BUILDNUMBER: ::core::ffi::c_uint"),
+            (r"pub type FMOD_ASYNCREADINFO.*?\n", ""), // nonopaque
+        ]);
+        transpile(&inc, "fmod_dsp.h", &[
+            (r"pub type FMOD_(DSP_(STATE|BUFFER_ARRAY)|COMPLEX).*?\n", ""), // nonopaque
+        ]);
+        transpile(&inc, "fmod_dsp_effects.h", &[]);
+        transpile(&inc, "fmod_errors.h", &[]);
+        transpile(&inc, "fmod_output.h", &[
+            (r"pub type FMOD_OUTPUT_(STATE|OBJECT3DINFO).*?\n", ""), // nonopaque
+        ]);
     };
 
-    let vendor = &*env::var("CARGO_CFG_TARGET_VENDOR").unwrap();
-    let profile = &*env::var("PROFILE").unwrap();
-    let obj = match (vendor, profile) {
-        ("pc", "debug") => "fmodL_vc",
-        ("pc", "release") => "fmod_vc",
-        (_, "debug") => "fmodL",
-        (_, "release") => "fmod",
-        _ => unreachable!("unexpected $PROFILE"),
-    };
+    if cargo_cfg_target_vendor() == "uwp" {
+        transpile(&inc, "fmod_uwp.h", &[]);
+    }
 
-    println!("cargo::metadata=api={}", api.display());
-    println!("cargo::metadata=inc={}", inc.display());
-    println!("cargo::metadata=lib={}", lib.display());
-    println!("cargo::rustc-link-lib={}", obj);
-    println!("cargo::rustc-link-search={}", lib.display());
+    if cargo_cfg_target_os() == "ios" {
+        transpile(&inc, "fmod_ios.h", &[]);
+    }
 }
 
-fn find_fmod() -> Option<[PathBuf; 3]> {
-    let vendor = &*env::var("CARGO_CFG_TARGET_VENDOR").ok()?;
-    match vendor {
-        "pc" => find_fmod_win(),
-        "uwp" => find_fmod_uwp(),
-        _ => None,
+fn fmod_path() -> [String; 3] {
+    let [api, inc, lib] = if let Some(api) = dep_metadata("fmod", "api") {
+        let inc = api.clone() + "/core/inc";
+        let lib = api.clone() + "/core/lib/" + fmod_arch();
+        [api, inc, lib]
+    } else {
+        match &*cargo_cfg_target_vendor() {
+            "pc" => win::find_fmod_pc(),
+            "uwp" => win::find_fmod_uwp(),
+            // TODO: look for "well-known" paths on other platforms?
+            _ => None,
+        }
+        .unwrap_or_else(report_missing_fmod)
+    };
+    let inc = dep_metadata("fmod", "inc").unwrap_or(inc);
+    let lib = dep_metadata("fmod", "lib").unwrap_or(lib);
+    [api, inc, lib]
+}
+
+fn fmod_arch() -> &'static str {
+    let arch = cargo_cfg_target_arch();
+    let vendor = cargo_cfg_target_vendor();
+    let os = cargo_cfg_target_os();
+    match (&*arch, &*vendor, &*os) {
+        ("i686", "pc", "windows") => "x86",
+        ("x86_64", "pc", "windows") => "x64",
+        ("aarch64", "pc", "windows") => "arm64",
+        ("i686", "uwp", "windows") => "x86",
+        ("x86_64", "uwp", "windows") => "x64",
+        ("aarch64", "uwp", "windows") => "arm",
+        (_, "apple", _) => ".",
+        ("i686", _, "linux") => "x86",
+        ("x86_64", _, "linux") => "x86_64",
+        ("armv7", _, "linux") => "arm",
+        ("aarch64", _, "linux") => "arm64",
+        ("armv7", _, "android") => "armeabi-v7a",
+        ("aarch64", _, "android") => "arm64-v8a",
+        ("i686", _, "android") => "x86",
+        ("x86_64", _, "android") => "x86_64",
+        ("wasm32", _, "emscripten") => "w32",
+        _ => panic!("unknown/unsupported FMOD platform {}", target()),
+    }
+}
+
+fn fmod_lib() -> String {
+    _ = fmod_arch(); // ensure valid platform
+    let vendor = cargo_cfg_target_vendor();
+    let arch = cargo_cfg_target_arch();
+    let profile = profile();
+    let atomics = cargo_cfg_target_feature().contains(&"atomics".to_string());
+    match (&*arch, &*vendor, &*profile) {
+        ("x86_64", "pc", "debug") => "fmodL_vc",
+        ("x86_64", "pc", "release") => "fmod_vc",
+        ("wasm32", _, "debug") if atomics => "fmodPL",
+        ("wasm32", _, "release") if atomics => "fmodP_reduced",
+        ("wasm32", _, "release") => "fmod_reduced",
+        (_, _, "debug") => "fmodL",
+        (_, _, "release") => "fmod",
+        _ => unreachable!("unexpected $PROFILE"),
+    }
+    .to_string()
+}
+
+fn link_extra() {
+    if cargo_cfg_target_vendor() == "apple" {
+        match &*cargo_cfg_target_os() {
+            "ios" | "tvos" | "visionos" => {
+                rustc_link_lib_kind("framework", "AudioToolbox");
+                rustc_link_lib_kind("framework", "CoreAudio");
+            },
+            _ => {},
+        }
     }
 }
 
 #[cfg(windows)]
-fn fmod_from_registry(key: &str) -> Option<PathBuf> {
-    winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER)
-        .open_subkey(key)
-        .ok()?
-        .get_value::<String, _>("")
-        .ok()
-        .map(PathBuf::from)
-}
+mod win {
+    use super::*;
+    use winreg::{RegKey, enums::*};
 
-#[cfg(windows)]
-fn find_fmod_win() -> Option<[PathBuf; 3]> {
-    let fmod = fmod_from_registry(r"Software\FMOD Studio API Windows")?;
-    let arch = match &*env::var("CARGO_CFG_TARGET_ARCH").ok()? {
-        "i686" => "x86",
-        "x86_64" => "x64",
-        "aarch64" => "arm64",
-        _ => return None,
-    };
+    fn from_registry(key: &str) -> Option<String> {
+        RegKey::predef(HKEY_CURRENT_USER)
+            .open_subkey(key)
+            .ok()?
+            .get_value::<String, _>("")
+            .ok()
+    }
 
-    Some([
-        fmod.join("api"),
-        fmod.join("api/core/inc"),
-        fmod.join("api/core/lib").join(arch),
-    ])
-}
+    pub fn find_fmod_pc() -> Option<[String; 3]> {
+        let fmod_dir = from_registry(r"Software\FMOD Studio API Windows")?;
+        Some([
+            fmod_dir.clone() + "/api",
+            fmod_dir.clone() + "/api/core/inc",
+            fmod_dir.clone() + "/api/core/lib/" + fmod_arch(),
+        ])
+    }
 
-#[cfg(windows)]
-fn find_fmod_uwp() -> Option<[PathBuf; 3]> {
-    let fmod = fmod_from_registry(r"Software\FMOD Studio API Universal Windows Platform")?;
-    let arch = match &*env::var("CARGO_CFG_TARGET_ARCH").ok()? {
-        "i686" => "x86",
-        "x86_64" => "x64",
-        "aarch64" => "arm",
-        _ => return None,
-    };
-
-    Some([
-        fmod.join("api"),
-        fmod.join("api/core/inc"),
-        fmod.join("api/core/lib").join(arch),
-    ])
+    pub fn find_fmod_uwp() -> Option<[String; 3]> {
+        let fmod_dir = from_registry(r"Software\FMOD Studio API Universal Windows Platform")?;
+        Some([
+            fmod_dir.clone() + "/api",
+            fmod_dir.clone() + "/api/core/inc",
+            fmod_dir.clone() + "/api/core/lib/" + fmod_arch(),
+        ])
+    }
 }
 
 #[cfg(not(windows))]
-fn find_fmod_win() -> Option<[PathBuf; 3]> {
-    None
+mod win {
+    pub fn find_fmod_pc() -> Option<[String; 3]> {
+        None
+    }
+
+    pub fn find_fmod_uwp() -> Option<[String; 3]> {
+        None
+    }
 }
 
-#[cfg(not(windows))]
-fn find_fmod_uwp() -> Option<[PathBuf; 3]> {
-    None
-}
-
-fn report_missing_fmod() -> ! {
+fn report_missing_fmod<T>() -> T {
     panic!(
         r#"
 Failed to locate FMOD Engine installation. <https://www.fmod.com/download#fmodengine>

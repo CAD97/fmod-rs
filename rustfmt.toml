@@ -1,4 +1,4 @@
-edition = "2021"
+edition = "2024"
 
 match_arm_leading_pipes = "Preserve"
 match_block_trailing_comma = true

@@ -1,3 +1,16 @@
 [workspace]
 members = ["crates/*", "examples", "xtask"]
 resolver = "2"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.93.1"
+
+[workspace.dependencies]
+fmod-core-sys = { version = "1.0.0", path = "crates/fmod-core-sys" }
+fmod-studio-sys = { version = "1.0.0", path = "crates/fmod-studio-sys" }
+fmod-fsbank-sys = { version = "1.0.0", path = "crates/fmod-fsbank-sys" }
+
+build-rs = "0.3.3"
+regex = "1.12.3"
+winreg = "0.15.0"  # use winapi version for faster compile
