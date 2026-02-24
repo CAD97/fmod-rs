@@ -1,6 +1,6 @@
 [package]
 name = "fmod-fsbank-sys"
-version = "2.22.0+2.02.22-142841"
+version = "2.3.5-ea+2.03.05-148280"
 edition = "2021"
 rust-version = "1.77"
 license-file = "LICENSE.txt"
@@ -21,5 +21,5 @@ include = [
 ]
 
 [dependencies]
-fmod-core-sys = { version = "=2.22.0", path = "../fmod-core-sys" }
+fmod-core-sys = { version = "=2.3.5-ea", path = "../fmod-core-sys" }
 # TODO: make this dependency edge optional again

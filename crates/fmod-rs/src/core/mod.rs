@@ -11,8 +11,7 @@ pub mod common {
 
     pub use self::{general::*, mix::*};
 }
-
-pub mod effect;
+pub use self::common::*;
 
 fmod_class! {
     /// Management object from which all resources are created and played.
@@ -30,7 +29,8 @@ fmod_class! {
     /// Create with [`System::create_sound`] or [System::create_stream].
     class Sound = FMOD_SOUND;
 
-    mod format, default, relationship, data, music, synchronization, general, ios;
+    mod format, default, relationship, data, music, synchronization, general;
+    // mod ios;
 }
 
 fmod_class! {
@@ -70,8 +70,49 @@ fmod_class! {
     ///
     /// Create with [`System::create_dsp`], [`System::create_dsp_by_type`] or [`System::create_dsp_by_plugin`].
     class Dsp = FMOD_DSP;
+}
 
-    mod connections, parameters, channel, metering, processing, general, effect;
+/// The Digital Signal Processor is one node within a graph that transforms input audio signals to an output stream.
+///
+/// Create with [`System::create_dsp`], [`System::create_dsp_by_type`] or [`System::create_dsp_by_plugin`].
+pub mod dsp {
+    pub use super::Dsp;
+
+    mod channel;
+    mod connections;
+    mod general;
+    mod metering;
+    mod parameters;
+    mod processing;
+
+    /// These are the parameters for controlling [digital signal processors].
+    ///
+    /// Effects are categorized in each description for performance as:
+    ///
+    /// - **low overhead** - Can be used freely without much CPU impact.
+    /// - **medium overhead** - Use carefully with a medium CPU impact.
+    /// - **high overhead** - Use sparingly due to high CPU cost.
+    ///
+    /// Always use the FMOD Studio Profiler to determine the CPU impact of effects
+    /// in your project.
+    pub mod effect {
+        mod parameters;
+        mod types;
+
+        pub use self::{parameters::*, types::*};
+    }
+
+    #[allow(unused_imports)]
+    pub use self::{
+        channel::*, connections::*, effect::*, general::*, metering::*, parameters::*,
+        processing::*,
+    };
+}
+pub use self::dsp::{
+    CpuDurations, DspCallback, DspInfo, DspParam, DspParamMut, DspParamValue, DspType, WetDryMix,
+};
+raw! {
+    pub use self::dsp::DspCallbackType;
 }
 
 fmod_class! {
@@ -107,5 +148,3 @@ fmod_class! {
 
     mod general;
 }
-
-pub use self::common::*;

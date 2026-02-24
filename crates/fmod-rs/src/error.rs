@@ -264,15 +264,13 @@ impl fmt::Display for Error {
 
 raw! {
     /// Extension trait for <code>Result&lt;(), [Error]&gt;</code>.
+    #[allow(private_bounds)]
     pub trait ResultExt: Sealed {
         fn into_raw(self) -> FMOD_RESULT;
     }
 }
 
-use sealed::Sealed;
-mod sealed {
-    pub trait Sealed {}
-}
+trait Sealed {}
 
 impl Sealed for Result {}
 // not using the generic defaults here results in a better doc experience
@@ -307,7 +305,7 @@ impl From<Error> for io::Error {
             | Error::Unimplemented
             | Error::Unsupported => io::ErrorKind::Unsupported.into(),
             | Error::HttpTimeout | Error::EventLiveUpdateTimeout => io::ErrorKind::TimedOut.into(),
-            err => io::Error::new(io::ErrorKind::Other, err),
+            err => io::Error::other(err),
         }
     }
 }

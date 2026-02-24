@@ -269,7 +269,7 @@ impl SampleDataLock<'_> {
     }
 }
 
-impl<'a> Drop for SampleDataLock<'a> {
+impl Drop for SampleDataLock<'_> {
     fn drop(&mut self) {
         match unsafe { self.sound.unlock(self.part1, self.part2) } {
             Ok(()) => (),

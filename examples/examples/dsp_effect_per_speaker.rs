@@ -48,13 +48,13 @@ fn main() -> anyhow::Result<()> {
         let channel = system.play_sound(&sound, None)?;
 
         // Create the DSP effects.
-        let dsp_lowpass = system.create_dsp_by_type(fmod::DspType::Lowpass)?;
-        dsp_lowpass.set_parameter(fmod::effect::Lowpass::Cutoff, 1000.0)?;
-        dsp_lowpass.set_parameter(fmod::effect::Lowpass::Resonance, 4.0)?;
+        let mut dsp_lowpass = system.create_dsp_by_type(fmod::DspType::Lowpass)?;
+        dsp_lowpass.set_parameter(fmod::dsp::Lowpass::Cutoff, 1000.0)?;
+        dsp_lowpass.set_parameter(fmod::dsp::Lowpass::Resonance, 4.0)?;
 
-        let dsp_highpass = system.create_dsp_by_type(fmod::DspType::Highpass)?;
-        dsp_highpass.set_parameter(fmod::effect::Highpass::Cutoff, 4000.0)?;
-        dsp_highpass.set_parameter(fmod::effect::Highpass::Resonance, 4.0)?;
+        let mut dsp_highpass = system.create_dsp_by_type(fmod::DspType::Highpass)?;
+        dsp_highpass.set_parameter(fmod::dsp::Highpass::Cutoff, 4000.0)?;
+        dsp_highpass.set_parameter(fmod::dsp::Highpass::Resonance, 4.0)?;
 
         // Connect up the DSP network
         // When a sound is played, a subnetwork is set up in the DSP network which looks like this.

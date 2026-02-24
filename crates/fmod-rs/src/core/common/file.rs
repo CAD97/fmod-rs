@@ -81,7 +81,7 @@ pub struct FileBuffer<'a> {
     written: &'a mut u32,
 }
 
-impl<'a> FileBuffer<'a> {
+impl FileBuffer<'_> {
     /// The total capacity of the buffer.
     pub fn capacity(&self) -> usize {
         self.buffer.len()
@@ -148,7 +148,7 @@ impl<'a> FileBuffer<'a> {
     }
 }
 
-impl<'a> Write for FileBuffer<'a> {
+impl Write for FileBuffer<'_> {
     fn write(&mut self, data: &[u8]) -> io::Result<usize> {
         unsafe {
             let data = &*(data as *const [u8] as *const [MaybeUninit<u8>]);

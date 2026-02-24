@@ -1,10 +1,12 @@
 macro_rules! static_assert {
     ($cond:expr $(,)?) => {
         #[allow(deprecated)]
+        #[allow(clippy::manual_range_contains)]
         const _: () = { ::std::assert!($cond) };
     };
     ($cond:expr, $msg:expr $(,)?) => {
         #[allow(deprecated)]
+        #[allow(clippy::manual_range_contains)]
         const _: () = { ::std::assert!($cond, $msg) };
     };
 }
@@ -43,13 +45,14 @@ macro_rules! whoops {
     } => {{
         #[cfg(feature = "log")]
         ::log::error!($($args)*);
-        // NB: always syntax verify $($args)*
+        // NB: always syntax verify $args
         if cfg!(debug_assertions) {
             use ::std::io::prelude::*;
             let _ = writeln!(::std::io::stderr(), $($args)*);
         }
     }};
     ($($args:tt)*) => {{
+        // NB: assume panics get logged, don't double log
         if cfg!(debug_assertions) && !::std::thread::panicking() {
             panic!($($args)*);
         }
@@ -64,7 +67,7 @@ macro_rules! opaque_type {
     } => {
         cfg_match! {
             (feature = "unstable") => {
-                extern {
+                extern "C" {
                     $(#[$meta])*
                     $vis type $Name;
                 }
@@ -202,22 +205,23 @@ macro_rules! fmod_class {
             pub struct $Name;
         }
 
-        unsafe impl Send for $Name {}
-        unsafe impl Sync for $Name {}
+        unsafe impl ::std::marker::Send for $Name {}
+        unsafe impl ::std::marker::Sync for $Name {}
         impl ::std::panic::UnwindSafe for $Name {}
         impl ::std::panic::RefUnwindSafe for $Name {}
-        impl ::fmod::Sealed for $Name {}
+        impl ::fmod::handle::Sealed for $Name {}
         unsafe impl ::fmod::Resource for $Name {
             type Raw = $Raw;
 
-            unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self {
-                debug_assert!(!this.is_null());
-                &*(this as *mut Self)
+            #[inline(always)]
+            fn cast_from_raw(this: *mut Self::Raw) -> *mut Self {
+                this as *mut Self
             }
 
+            #[inline]
             #[allow(clippy::redundant_closure_call)]
             unsafe fn release(this: *mut Self::Raw) -> fmod::Result {
-                ::std::ptr::drop_in_place(Self::from_raw(this) as *const Self as *mut Self);
+                ::std::ptr::drop_in_place(Self::cast_from_raw(this));
                 ffi!(($release)(this))?;
                 Ok(())
             }
@@ -225,7 +229,7 @@ macro_rules! fmod_class {
 
         impl ::std::fmt::Debug for $Name {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                write!(f, concat!($prefix, stringify!($Name), "({:p})"), self)
+                write!(f, concat!($prefix, stringify!($Name), "({:p})"), ::fmod::Resource::as_raw(self))
             }
         }
     };
@@ -239,6 +243,7 @@ macro_rules! fmod_class {
         }
 
         mod $($module:ident),+;
+        $($rest:tt)*
     } => {
         fmod_class! {
             #[doc = $doc]
@@ -258,7 +263,9 @@ macro_rules! fmod_class {
                 pub use /*self::*/{
                     $($module::*,)+
                 };
+                $($rest:tt)*
             }
+            #[allow(unused_imports)]
             pub use self::[<$Name:snake>]::*;
         }
     };
@@ -371,6 +378,8 @@ macro_rules! fmod_flags {
         #[repr(transparent)]
         #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         #[derive(::bytemuck::Pod, ::bytemuck::Zeroable)]
+        #[derive(::zerocopy::FromBytes, ::zerocopy::IntoBytes)]
+        #[derive(::zerocopy::KnownLayout, ::zerocopy::Immutable)]
         $vis struct $Name {
             raw: $Raw,
         }
@@ -426,14 +435,14 @@ macro_rules! fmod_flags {
 
             /// Check whether *all* flags of the argument are set.
             pub fn is_set(self, variant: Self) -> bool {
-                self & variant == variant
+                (self & variant) == variant
             }
         }
 
         fmod_flags_ops!($Name: std::ops::BitAnd bitand & std::ops::BitAndAssign bitand_assign);
-        fmod_flags_ops!($Name: std::ops::BitOr bitor | std::ops::BitOrAssign bitor_assign);
+        fmod_flags_ops!($Name: std::ops::BitOr  bitor  | std::ops::BitOrAssign  bitor_assign );
         fmod_flags_ops!($Name: std::ops::BitXor bitxor ^ std::ops::BitXorAssign bitxor_assign);
-        fmod_flags_ops!($Name: std::ops::Not not !);
+        fmod_flags_ops!($Name: std::ops::Not    not    !);
 
         #[allow(deprecated)]
         impl ::std::fmt::Debug for $Name {
@@ -618,6 +627,8 @@ macro_rules! fmod_enum {
         #[non_exhaustive]
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
         #[derive(::bytemuck::NoUninit)]
+        #[derive(::zerocopy::TryFromBytes, ::zerocopy::IntoBytes)]
+        #[derive(::zerocopy::KnownLayout, ::zerocopy::Immutable)]
         $vis enum $Name {
             $(
                 $(#[$($vmeta)*])*
@@ -625,6 +636,7 @@ macro_rules! fmod_enum {
             )*
         }
 
+        #[allow(clippy::manual_range_contains)]
         impl $Name {
             raw! {
                 pub const RAW_RANGE: ::std::ops::Range<i32> = $MIN..$MAX;
@@ -679,28 +691,15 @@ macro_rules! fmod_enum {
         }
 
         $(
-            static_assert!($Name::$Variant.into_raw() < $Name::RAW_RANGE.end);
-            static_assert!($Name::$Variant.into_raw() >= $Name::RAW_RANGE.start);
+            static_assert!($Name::RAW_RANGE.start <= $Name::$Variant.into_raw() && $Name::$Variant.into_raw() < $Name::RAW_RANGE.end);
         )*
+
+        static_assert!($Name::RAW_RANGE.start <= 0 && 0 < $Name::RAW_RANGE.end);
+        assert_type_eq!($Raw, i32);
 
         static_assert! {
             [$($Name::$Variant),*].len() == ($Name::RAW_RANGE.end - $Name::RAW_RANGE.start) as usize,
             concat!("fmod_enum! ", stringify!($Raw), " is missing some variant(s) in ", file!()),
-        }
-
-        impl ::fmod::effect::DspParamType for $Name {
-            fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
-                dsp.set_parameter::<$Raw>(index, value.into_raw())
-            }
-
-            // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-            //     let value = dsp.get_parameter::<$Raw>(index)?;
-            //     Self::try_from_raw(value)
-            // }
-
-            fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
-                <$Raw>::get_dsp_parameter_string(dsp, index, bytes)
-            }
         }
 
         unsafe impl ::bytemuck::Zeroable for $Name {}
@@ -712,11 +711,12 @@ macro_rules! fmod_enum {
             const MIN_VALUE: $Raw = $MIN;
         }
 
+        #[allow(clippy::manual_range_contains)]
         unsafe impl ::bytemuck::CheckedBitPattern for $Name {
             type Bits = $Raw;
 
-            fn is_valid_bit_pattern(bits: &$Raw) -> bool {
-                $MIN <= *bits && *bits < $MAX
+            fn is_valid_bit_pattern(&bits: &$Raw) -> bool {
+                $MIN <= bits && bits < $MAX
             }
         }
     };
@@ -734,6 +734,8 @@ macro_rules! fmod_typedef {
         #[repr(transparent)]
         #[derive(Clone, Copy, PartialEq, Eq, Hash)]
         #[derive(::bytemuck::Pod, ::bytemuck::Zeroable)]
+        #[derive(::zerocopy::FromBytes, ::zerocopy::IntoBytes)]
+        #[derive(::zerocopy::KnownLayout, ::zerocopy::Immutable)]
         $vis struct $Name {
             raw: $Raw,
         }
@@ -864,23 +866,10 @@ macro_rules! fmod_struct {
             #![fmod_no_pod, fmod_no_default]
             $(#[$meta])*
             #[derive(::bytemuck::Pod, ::bytemuck::Zeroable)]
+            #[derive(::zerocopy::FromBytes, ::zerocopy::IntoBytes)]
+            #[derive(::zerocopy::Immutable)]
             $vis struct $Name = $Raw {
                 $($body)*
-            }
-        }
-
-        impl ::fmod::effect::DspParamType for $Name {
-            fn set_dsp_parameter(dsp: &Dsp, index: i32, value: &Self) -> Result {
-                <[u8; ::std::mem::size_of::<Self>()]>::set_dsp_parameter(dsp, index, ::bytemuck::cast_ref(value))
-            }
-
-            // fn get_dsp_parameter(dsp: &Dsp, index: i32) -> Result<Self> {
-            //     let value = <[u8; ::std::mem::size_of::<Self>()]>::get_dsp_parameter(dsp, index)?;
-            //     Ok(::bytemuck::cast(value))
-            // }
-
-            fn get_dsp_parameter_string<'a>(dsp: &Dsp, index: i32, bytes: &'a mut [u8]) -> Result<&'a str> {
-                <[u8; ::std::mem::size_of::<Self>()]>::get_dsp_parameter_string(dsp, index, bytes)
             }
         }
     };
@@ -913,6 +902,7 @@ macro_rules! fmod_struct {
         #[repr(C)]
         $(#[$meta])*
         #[derive(Debug, Clone, Copy, PartialEq)]
+        #[derive(::zerocopy::KnownLayout)]
         pub struct $Name$(<$lt>)? {
             $(
                 $(#[$field_meta])*
@@ -956,5 +946,18 @@ macro_rules! fmod_struct {
                 }
             }
         }
+    };
+}
+
+#[allow(clippy::missing_safety_doc)]
+unsafe trait TEq<U: ?Sized> {}
+unsafe impl<T: ?Sized> TEq<T> for T {}
+
+#[allow(dead_code, private_bounds)]
+pub(crate) fn assert_type_eq<A: TEq<B>, B>() {}
+
+macro_rules! assert_type_eq {
+    ($A:ty, $B:ty) => {
+        const _: fn() = ::fmod::macros::assert_type_eq::<$A, $B>;
     };
 }

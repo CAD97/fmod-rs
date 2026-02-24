@@ -62,6 +62,6 @@ impl Sound {
             self.as_raw(),
             &mut parent_sound,
         ))?;
-        Ok(unsafe { Sound::from_raw_opt(parent_sound) })
+        Ok(unsafe { Sound::try_from_raw(parent_sound) })
     }
 }

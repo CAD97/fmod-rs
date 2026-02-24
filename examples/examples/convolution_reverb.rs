@@ -56,7 +56,7 @@ fn main() -> anyhow::Result<()> {
         let main_group = system.create_channel_group(fmod::cstr8!("main"))?;
 
         // Create the convultion DSP unit and set it as the tail of the channel group
-        let reverb_unit = system.create_dsp_by_type(fmod::DspType::ConvolutionReverb)?;
+        let mut reverb_unit = system.create_dsp_by_type(fmod::DspType::ConvolutionReverb)?;
         reverb_group.push_dsp(&reverb_unit)?;
         // let reverb_unit = fmod::Handle::leak(reverb_unit);
 
@@ -68,12 +68,12 @@ fn main() -> anyhow::Result<()> {
         )?;
 
         // 🦀 FMOD.rs provides a helper for reading IR sounds
-        let ir_data = fmod::effect::ConvolutionReverb::ImpulseResponse::from_sound(&ir_sound)?;
-        reverb_unit.set_parameter(fmod::effect::ConvolutionReverb::Ir, &*ir_data)?;
+        let ir_data = fmod::dsp::ConvolutionReverb::ImpulseResponse::read_from_sound(&ir_sound)?;
+        reverb_unit.set_parameter(fmod::dsp::ConvolutionReverb::ParamIr, &*ir_data)?;
 
         // Don't pass any dry signal from the reverb unit, instead take the dry part
         // of the mix from the main signal path
-        reverb_unit.set_parameter(fmod::effect::ConvolutionReverb::Dry, -80.0)?;
+        reverb_unit.set_parameter(fmod::dsp::ConvolutionReverb::ParamDry, -80.0)?;
 
         // We can now free our copy of the IR data and release the sound object, the reverb unit
         // has created it's internal data

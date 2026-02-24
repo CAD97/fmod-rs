@@ -95,15 +95,15 @@ Failed to locate FMOD Engine installation. <https://www.fmod.com/download#fmoden
 To manually specify the location of FMOD Engine, use a build script override.
 <https://doc.rust-lang.org/cargo/reference/build-scripts.html#overriding-build-scripts>
 
-   [target.x86_64-pc-windows-msvc.fmod]
-   # linker configuration
-   rustc-link-lib = ["fmod_vc"]
-   rustc-link-search = ["C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64"]
-   # library metadata
-   api = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api"
-   inc = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc"
-   lib = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64"
-   version = "2.02.22"
+    [target.x86_64-pc-windows-msvc.fmod]
+    # linker configuration
+    rustc-link-lib = ["fmod_vc"]
+    rustc-link-search = ["C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64"]
+    # library metadata
+    api = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api"
+    inc = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc"
+    lib = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64"
+    version = "2.03.05"
 "#
     );
 }

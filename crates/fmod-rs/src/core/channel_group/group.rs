@@ -19,7 +19,7 @@ impl ChannelGroup {
             /* propagate_dsp_clock */ true as _,
             &mut connection,
         ))?;
-        Ok(unsafe { DspConnection::from_raw_opt(connection) }.map(Into::into))
+        Ok(unsafe { DspConnection::try_from_raw(connection) }.map(Into::into))
     }
 
     /// Adds a ChannelGroup as an input to this group.
@@ -41,7 +41,7 @@ impl ChannelGroup {
             /* propagate_dsp_clock */ false as _,
             &mut connection,
         ))?;
-        Ok(unsafe { DspConnection::from_raw_opt(connection) }.map(Into::into))
+        Ok(unsafe { DspConnection::try_from_raw(connection) }.map(Into::into))
     }
 
     /// Retrieves the number of ChannelGroups that feed into this group.

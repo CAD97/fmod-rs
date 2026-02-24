@@ -260,8 +260,8 @@ fmod_struct! {
 pub struct PortIndex(NonZeroU64);
 
 impl PortIndex {
-    /// Flag to indicate the intended controller is associated with a VR headset.
-    pub const VR_CONTROLLER_MASK: u64 = FMOD_PORT_INDEX_FLAG_VR_CONTROLLER;
+    // /// Flag to indicate the intended controller is associated with a VR headset.
+    // pub const VR_CONTROLLER_MASK: u64 = FMOD_PORT_INDEX_FLAG_VR_CONTROLLER;
 
     /// Creates a new port index.
     ///
@@ -269,25 +269,25 @@ impl PortIndex {
     ///
     /// Panics if the index is zero or has any flag bits set (the top 4 bits).
     pub const fn new(index: u64) -> Self {
-        assert!(0 < index && index < Self::VR_CONTROLLER_MASK);
+        assert!(0 < index);
         Self(unsafe { NonZeroU64::new_unchecked(index) })
     }
 
     /// Creates a new port index, flagged for association with a VR headset.
-    pub const fn new_vr(mut index: u64) -> Self {
+    pub const fn new_vr(index: u64) -> Self {
         let _ = Self::new(index);
-        index |= Self::VR_CONTROLLER_MASK;
+        // index |= Self::VR_CONTROLLER_MASK;
         Self(unsafe { NonZeroU64::new_unchecked(index) })
     }
 
-    /// Retrieves if this port is associated with a VR headset.
-    pub const fn is_vr(self) -> bool {
-        (self.0.get() & Self::VR_CONTROLLER_MASK) != 0
-    }
+    // /// Retrieves if this port is associated with a VR headset.
+    // pub const fn is_vr(self) -> bool {
+    //     (self.0.get() & Self::VR_CONTROLLER_MASK) != 0
+    // }
 
     /// Retrieves the untagged index value.
     pub const fn get(self) -> u64 {
-        self.0.get() & (Self::VR_CONTROLLER_MASK - 1)
+        self.0.get() // & (Self::VR_CONTROLLER_MASK - 1)
     }
 }
 
@@ -339,6 +339,10 @@ fmod_enum! {
         Vibration      = FMOD_PORT_TYPE_VIBRATION,
         /// Auxiliary output port. Use `None` as the port index.
         Aux            = FMOD_PORT_TYPE_AUX,
+        /// Passthrough output port. Use `None` as the port index.
+        Passthrough    = FMOD_PORT_TYPE_PASSTHROUGH,
+        /// VR Controller vibration. Use platform specific user ID of desired user as port index.
+        VrVibration    = FMOD_PORT_TYPE_VR_VIBRATION,
     }
 }
 

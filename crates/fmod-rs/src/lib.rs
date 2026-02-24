@@ -61,8 +61,8 @@ pub mod platform;
 #[cfg(feature = "studio")]
 pub mod studio;
 
-mod error;
-mod handle;
+pub(crate) mod error;
+pub(crate) mod handle;
 pub(crate) mod utils;
 
 // deliberate glob import ambiguity with self::core::* mods
@@ -70,14 +70,13 @@ pub(crate) mod utils;
 use _glob_prevention::*;
 mod _glob_prevention {
     pub mod common {}
-    // pub mod effect {}
     pub mod system {}
     pub mod sound {}
     pub mod channel_control {}
     pub mod channel {}
     pub mod channel_group {}
     pub mod sound_group {}
-    pub mod dsp {}
+    // allow fmod::dsp to be exported
     pub mod dsp_connection {}
     pub mod geometry {}
     pub mod reverb3d {}

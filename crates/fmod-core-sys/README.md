@@ -15,7 +15,7 @@ In application use, it is recommended to pin a specific version of this crate.
 FMOD checks that the header version matches the dynamic library version, so if
 an unsupported runtime version mismatch occurs, FMOD should fail to initialize.
 
-This version's vendored headers are for FMOD Engine 2.02.22 (build 142841). If
+This version's vendored headers are for FMOD Engine 2.03.05 (build 148280). If
 you need a version which isn't published, open a GitHub issue requesting it.
 
 ## Linking
@@ -39,11 +39,12 @@ rustc-link-search = ["C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Wi
 api = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api"
 inc = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc"
 lib = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64"
-version = "2.02.22"
+version = "2.03.05"
 ```
 
 The listed `version` must match this crate's vendored header version in order
-for everything to work as intended. A mismatch may result in arbitrary issues.
+for everything to work as intended. A mismatch may result in arbitrary issues,
+up to and including unsoundness and undefined behavior.
 
 ### Windows Note
 

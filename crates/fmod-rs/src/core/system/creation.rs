@@ -687,11 +687,11 @@ impl<'a> CreateSoundEx<'a> {
         self
     }
 
-    /// Hardware / software decoding policy for [`SoundType::AudioQueue`].
-    pub fn audio_queue_policy(mut self, policy: AudioQueueCodecPolicy) -> Self {
-        self.info.audioqueuepolicy = policy.into_raw() as u32;
-        self
-    }
+    // /// Hardware / software decoding policy for [`SoundType::AudioQueue`].
+    // pub fn audio_queue_policy(mut self, policy: AudioQueueCodecPolicy) -> Self {
+    //     self.info.audioqueuepolicy = policy.into_raw() as u32;
+    //     self
+    // }
 
     /// Mixer granularity for [SoundType::Midi] sounds, smaller numbers give a
     /// more accurate reproduction at the cost of higher CPU usage.

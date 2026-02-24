@@ -282,7 +282,7 @@ pub(crate) unsafe extern "system" fn system_callback<C: SystemCallback>(
         SystemCallbackType::Error => {
             C::error(system, ErrorInfo::from_raw_ref(&*(commanddata1.cast())))
         },
-        SystemCallbackType::MidMix => C::mid_mix(system),
+        // SystemCallbackType::MidMix => C::mid_mix(system),
         SystemCallbackType::ThreadDestroyed => {
             let thread = commanddata1 as SystemThreadHandle;
             let name = CStr::from_ptr(commanddata2.cast()).to_string_lossy();
@@ -452,8 +452,8 @@ fmod_flags! {
         PostMix                = FMOD_SYSTEM_CALLBACK_POSTMIX,
         /// Called directly when an API function returns an error, including delayed async functions.
         Error                  = FMOD_SYSTEM_CALLBACK_ERROR,
-        /// Called from the mixer thread after clocks have been updated before the main mix occurs.
-        MidMix                 = FMOD_SYSTEM_CALLBACK_MIDMIX,
+        // /// Called from the mixer thread after clocks have been updated before the main mix occurs.
+        // MidMix                 = FMOD_SYSTEM_CALLBACK_MIDMIX,
         /// Called from the game thread when a thread is destroyed.
         ThreadDestroyed        = FMOD_SYSTEM_CALLBACK_THREADDESTROYED,
         /// Called at start of [System::update] from the main (calling) thread when set from the Core API or Studio API in synchronous mode, and from the Studio Update Thread when in default / async mode.

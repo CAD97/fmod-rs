@@ -2,6 +2,7 @@ use {
     crate::utils::{decode_sbcd_u16, decode_sbcd_u8},
     fmod::{raw::*, *},
     smart_default::SmartDefault,
+    std::num::NonZero,
 };
 
 fmod_struct! {
@@ -29,6 +30,8 @@ fmod_struct! {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, SmartDefault)]
 #[derive(::bytemuck::Pod, ::bytemuck::Zeroable)]
+#[derive(::zerocopy::FromBytes, ::zerocopy::IntoBytes)]
+#[derive(::zerocopy::KnownLayout, ::zerocopy::Immutable)]
 pub struct Orientation3d {
     /// Forwards orientation, must be of unit length (1.0) and perpendicular to `up`.
     #[default(Vector::Z)]
@@ -236,7 +239,7 @@ pub const MAX_SYSTEMS: usize = FMOD_MAX_SYSTEMS as usize;
 
 /// Current FMOD version number.
 #[doc = concat!("(", env!("FMOD_VERSION"), ")")]
-pub const VERSION: Version = Version::from_raw(raw::FMOD_VERSION);
+pub const VERSION: Version = Version::from_raw(raw::FMOD_VERSION).with_build(raw::FMOD_BUILDNUMBER);
 
 /// FMOD version number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -247,6 +250,8 @@ pub struct Version {
     pub major: u8,
     /// Minor version.
     pub minor: u8,
+    /// Build version.
+    pub build: Option<NonZero<u32>>,
 }
 
 impl Version {
@@ -256,6 +261,15 @@ impl Version {
             product,
             major,
             minor,
+            build: None,
+        }
+    }
+
+    /// Creates a new version tuple.
+    pub const fn with_build(self, build: u32) -> Version {
+        Version {
+            build: NonZero::new(build),
+            ..self
         }
     }
 
@@ -266,6 +280,7 @@ impl Version {
                 product: decode_sbcd_u16(((raw & 0xFFFF0000) >> 16) as u16),
                 major: decode_sbcd_u8(((raw & 0x0000FF00) >> 8) as u8),
                 minor: decode_sbcd_u8(((raw & 0x000000FF) >> 0) as u8),
+                build: None,
             }
         }
     }

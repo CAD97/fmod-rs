@@ -2,8 +2,9 @@ use {
     parking_lot::RwLock,
     std::{
         fmt,
+        marker::PhantomData,
         mem::ManuallyDrop,
-        ops::Deref,
+        ops::{Deref, DerefMut},
         panic::{RefUnwindSafe, UnwindSafe},
         ptr,
     },
@@ -21,28 +22,50 @@ pub(crate) static GLOBAL_SYSTEM_STATE: RwLock<usize> = RwLock::new(0);
 
 #[allow(clippy::missing_safety_doc)]
 /// FMOD resources managed by a [Handle].
+#[allow(private_bounds)]
 pub unsafe trait Resource: fmt::Debug + Sealed {
+    #[allow(missing_docs)]
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(feature = "unstable", doc(cfg(raw)))]
-    #[allow(missing_docs)]
     type Raw;
 
+    #[inline(always)]
+    #[allow(missing_docs)]
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(feature = "unstable", doc(cfg(raw)))]
-    #[allow(missing_docs)]
     fn as_raw(&self) -> *mut Self::Raw {
-        self as *const Self as *const Self::Raw as *mut Self::Raw
+        self as *const Self as *mut Self::Raw
     }
 
-    #[cfg_attr(not(feature = "raw"), doc(hidden))]
-    #[cfg_attr(feature = "unstable", doc(cfg(raw)))]
-    #[allow(missing_docs)]
-    unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self;
+    #[doc(hidden)]
+    fn cast_from_raw(this: *mut Self::Raw) -> *mut Self;
 
+    #[track_caller]
+    #[inline(always)]
+    #[allow(missing_docs)]
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(feature = "unstable", doc(cfg(raw)))]
+    unsafe fn from_raw<'a>(this: *mut Self::Raw) -> &'a Self {
+        debug_assert!(!this.is_null());
+        &*Self::cast_from_raw(this)
+    }
+
+    #[track_caller]
+    #[inline(always)]
     #[allow(missing_docs)]
-    unsafe fn from_raw_opt<'a>(this: *mut Self::Raw) -> Option<&'a Self> {
+    #[cfg_attr(not(feature = "raw"), doc(hidden))]
+    #[cfg_attr(feature = "unstable", doc(cfg(raw)))]
+    unsafe fn from_raw_mut<'a>(this: *mut Self::Raw) -> &'a mut Self {
+        debug_assert!(!this.is_null());
+        &mut *Self::cast_from_raw(this)
+    }
+
+    #[track_caller]
+    #[inline(always)]
+    #[allow(missing_docs)]
+    #[cfg_attr(not(feature = "raw"), doc(hidden))]
+    #[cfg_attr(feature = "unstable", doc(cfg(raw)))]
+    unsafe fn try_from_raw<'a>(this: *mut Self::Raw) -> Option<&'a Self> {
         if this.is_null() {
             None
         } else {
@@ -50,22 +73,33 @@ pub unsafe trait Resource: fmt::Debug + Sealed {
         }
     }
 
+    #[track_caller]
+    #[inline(always)]
+    #[allow(missing_docs)]
     #[cfg_attr(not(feature = "raw"), doc(hidden))]
     #[cfg_attr(feature = "unstable", doc(cfg(raw)))]
+    unsafe fn try_from_raw_mut<'a>(this: *mut Self::Raw) -> Option<&'a mut Self> {
+        if this.is_null() {
+            None
+        } else {
+            Some(Self::from_raw_mut(this))
+        }
+    }
+
     #[allow(missing_docs)]
+    #[cfg_attr(not(feature = "raw"), doc(hidden))]
+    #[cfg_attr(feature = "unstable", doc(cfg(raw)))]
     unsafe fn release(this: *mut Self::Raw) -> fmod::Result;
 }
 
-pub(crate) use sealed::Sealed;
-mod sealed {
-    pub trait Sealed {}
-}
+pub(crate) trait Sealed {}
 
 /// An owning handle to an FMOD resource.
 ///
 /// When this handle is dropped, the underlying FMOD resource is released.
 pub struct Handle<'a, T: ?Sized + Resource> {
-    raw: &'a T::Raw,
+    raw: ptr::NonNull<T::Raw>,
+    _phantom: PhantomData<&'a T>,
 }
 
 unsafe impl<T: ?Sized + Resource> Send for Handle<'_, T> where T: Send {}
@@ -99,7 +133,7 @@ impl<'a, T: ?Sized + Resource> Handle<'a, T> {
     raw! {
         #[allow(clippy::missing_safety_doc)]
         pub unsafe fn from_raw(raw: *mut T::Raw) -> Self {
-            Self { raw: &*raw }
+            Self { raw: ptr::NonNull::new_unchecked(raw), _phantom: PhantomData }
         }
     }
 
@@ -137,36 +171,22 @@ impl<'a, T: ?Sized + Resource> Handle<'a, T> {
     }
 }
 
-// Using references is scary to me, but required for ergonomics, and almost
-// every other FFI binding does it with opaque types, so it's necessarily okay
-// in practice. The theoretical problem is twofold:
-//  1. Rust references under Stacked Borrows 2021 only hold pointer provenance
-//     for exactly as many bytes as mem::size_of_val. These are 1-ZSTs for the
-//     type system, so in theory a reference has provenance over no memory, and
-//     later trying to use that memory (say, by telling FMOD it's a valid ptr)
-//     is thus UB. Luckily, this might be relaxed to allow using unsized tails.
-//  2. Rust references have _strong_ guarantees about uniqueness and mutability.
-//     Manifesting &T claims that nobody else will change the value, and &mut T
-//     claims that nobody else even has a pointer to the value (that is used).
-//     C++ has no such rules, and FMOD doesn't even provide `const` annotation
-//     to tell us what can change things; these are truly fully opaque handles.
-// Both of these issues are dismissible for the same core reason:
-//     FFI is hard, especially between languages with different memory models.
-// In this case, we never actually alias the memory managed on the C++ side
-// (our pointee types are ZSTs, as previously mentioned), so Rust doesn't claim
-// provenance over any actual memory that the C++ side thinks it has access to.
-// We take the ~~coward's~~ simple way out: we deal almost exclusively in &T,
-// and rely on the FFI barrier to keep us safe.
-
 impl<T: ?Sized + Resource> Deref for Handle<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
-        unsafe { T::from_raw(self.raw as *const _ as *mut _) }
+        unsafe { T::from_raw(self.raw.as_ptr()) }
+    }
+}
+
+impl<T: ?Sized + Resource> DerefMut for Handle<'_, T> {
+    fn deref_mut(&mut self) -> &mut T {
+        unsafe { T::from_raw_mut(self.raw.as_ptr()) }
     }
 }
 
 /// Extension trait for <code>Option&lt;[Handle]&gt;</code>.
+#[allow(private_bounds)]
 pub trait HandleExt<T: ?Sized + Resource>: Sealed {
     /// Manually release this FMOD resource.
     ///
@@ -188,23 +208,18 @@ pub trait HandleExt<T: ?Sized + Resource>: Sealed {
 impl<T: ?Sized + Resource> Sealed for Option<Handle<'_, T>> {}
 impl<T: ?Sized + Resource> HandleExt<T> for Option<Handle<'_, T>> {
     fn release(&mut self) -> fmod::Result {
-        let result = match self {
-            Some(this) => unsafe { T::release(this.as_raw()) },
+        let this = match self {
+            Some(this) => this.as_raw(),
             None => yeet!(fmod::Error::InvalidHandle),
         };
-        if result.is_ok() {
-            let this = ManuallyDrop::new(self.take().unwrap());
-            #[cfg(feature = "log")]
-            log::trace!("Released {this:?}");
-        };
-        result
+        unsafe { T::release(this) }?;
+        #[cfg(feature = "log")]
+        log::trace!("Released {this:?}");
+        Ok(())
     }
 
     fn into_raw(self) -> *mut T::Raw {
-        match self {
-            Some(this) => this.into_raw(),
-            None => ptr::null_mut(),
-        }
+        self.map(Handle::into_raw).unwrap_or_else(ptr::null_mut)
     }
 
     unsafe fn from_raw(raw: *mut T::Raw) -> Self {

@@ -5,14 +5,19 @@ use {
 
 /// # Information.
 impl System {
-    /// Retrieves the FMOD version number.
+    /// Retrieves the FMOD version and build number.
     ///
     /// Compare against `fmod::VERSION` to make sure header and runtime library
     /// versions match.
     pub fn get_version(&self) -> Result<Version> {
         let mut version = 0;
-        ffi!(FMOD_System_GetVersion(self.as_raw(), &mut version))?;
-        Ok(Version::from_raw(version))
+        let mut build_number = 0;
+        ffi!(FMOD_System_GetVersion(
+            self.as_raw(),
+            &mut version,
+            &mut build_number,
+        ))?;
+        Ok(Version::from_raw(version).with_build(build_number))
     }
 
     /// Retrieves an output type specific internal native interface.

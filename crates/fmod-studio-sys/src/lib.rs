@@ -1,10 +1,7 @@
-#![allow(
-    deref_nullptr,
-    non_upper_case_globals,
-    non_camel_case_types,
-    non_snake_case
-)]
+#![allow(nonstandard_style, unused_parens, clippy::needless_return)]
+#![allow(clippy::missing_safety_doc, clippy::unnecessary_cast)]
 
 use fmod_core_sys::*;
 
-include!("../inc/bindings.rs");
+include!("inc/fmod_studio_common.rs");
+include!("inc/fmod_studio.rs");

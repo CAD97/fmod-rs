@@ -436,7 +436,7 @@ fmod_struct! {
         /// <dt>Default</dt><dd>32</dd>
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
-        pub max_vorbix_codecs: i32 = maxVorbisCodecs,
+        pub max_vorbis_codecs: i32 = maxVorbisCodecs,
         /// Maximum AT9 Sounds created as [Mode::CreateCompressedSample].
         /// <dl>
         /// <dt>Default</dt><dd>32</dd>
@@ -449,9 +449,12 @@ fmod_struct! {
         /// <dt>Range</dt><dd>[0, 256]</dd>
         /// </dl>
         pub max_fadpcm_codecs: i32 = maxFADPCMCodecs,
-        /// Deprecated.
-        #[deprecated]
-        max_pcm_codecs: i32 = maxPCMCodecs,
+        /// Maximum Opus Sounds created as [Mode::CreateCompressedSample].
+        /// <dl>
+        /// <dt>Default</dt><dd>32</dd>
+        /// <dt>Range</dt><dd>[0, 256]</dd>
+        /// </dl>
+        pub max_opus_codecs: i32 = maxOpusCodecs,
         /// Number of elements in `asio_speaker_list` on input, number of elements
         /// in `asio_channel_list` on output.
         /// <dl>
@@ -532,12 +535,6 @@ fmod_struct! {
         /// <dt>Range</dt><dd>[0, 3]</dd>
         /// </dl>
         pub max_convolution_threads: i32 = maxConvolutionThreads,
-        /// Maximum Opus Sounds created as [Mode::CreateCompressedSample].
-        /// <dl>
-        /// <dt>Default</dt><dd>32</dd>
-        /// <dt>Range</dt><dd>[0, 256]</dd>
-        /// </dl>
-        pub max_opus_codecs: i32 = maxOpusCodecs,
         /// Maximum Spatial Objects that can be reserved per FMOD system.
         /// [`OutputType::Audio3D`] is a special case where multiple FMOD systems
         /// are not allowed. See the [Object based approach] section of the

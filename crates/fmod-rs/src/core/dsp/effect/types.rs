@@ -1,4 +1,8 @@
-use fmod::{raw::*, *};
+use {
+    fmod::{raw::*, *},
+    std::{mem::MaybeUninit, ptr, slice},
+    zerocopy::{FromBytes, Immutable, IntoBytes},
+};
 
 fmod_enum! {
     /// DSP types.
@@ -87,10 +91,6 @@ fmod_enum! {
         ///
         /// [Effect reference - Chorus]: https://fmod.com/resources/documentation-api?version=2.02&page=effects-reference.html#chorus
         Chorus            = FMOD_DSP_TYPE_CHORUS,
-        /// Allows the use of Steinberg VST plugins.
-        VstPlugin         = FMOD_DSP_TYPE_VSTPLUGIN,
-        /// Allows the use of Nullsoft Winamp plugins.
-        WinampPlugin      = FMOD_DSP_TYPE_WINAMPPLUGIN,
         /// Produces an echo on the sound and fades out at the desired rate as
         /// is used in Impulse Tracker. See [DspItEcho] for parameter
         /// information, [Effect reference - IT Echo] for overview.
@@ -128,9 +128,6 @@ fmod_enum! {
         ///
         /// [Effect reference - Tremolo]: https://fmod.com/resources/documentation-api?version=2.02&page=effects-reference.html#tremolo
         Tremolo           = FMOD_DSP_TYPE_TREMOLO,
-        /// Unsupported / Deprecated.
-        #[deprecated(note = "This filter is unsupported and will be removed in a future release.")]
-        LadspaPlugin      = FMOD_DSP_TYPE_LADSPAPLUGIN,
         /// Sends a copy of the signal to a return DSP anywhere in the DSP tree.
         /// See [DspSend] for parameter information, [Effect reference - Send]
         /// for overview.
@@ -169,13 +166,6 @@ fmod_enum! {
         Fft               = FMOD_DSP_TYPE_FFT,
         /// Analyzes the loudness and true peak of the signal.
         LoudnessMeter     = FMOD_DSP_TYPE_LOUDNESS_METER,
-        /// Tracks the envelope of the input/sidechain signal. Deprecated and
-        /// will be removed in a future release. See [DspEnvelopeFollower] for
-        /// parameter information, [Effect reference - Envelope Follower] for
-        /// overview.
-        ///
-        /// [Effect reference - Envelope Follower]: https://fmod.com/resources/documentation-api?version=2.02&page=effects-reference.html#envelope-follower
-        EnvelopeFollower  = FMOD_DSP_TYPE_ENVELOPEFOLLOWER,
         /// Convolution reverb. See [DspConvolutionReverb] for parameter
         /// information, [Effect reference - Convolution Reverb] for overview.
         ///
@@ -208,152 +198,225 @@ fmod_enum! {
         /// Five band parametric equalizer. See [DspMultibandEq] for parameter
         /// information, [Effect reference - Multiband Equalizer] for overview.
         MultibandEq       = FMOD_DSP_TYPE_MULTIBAND_EQ,
+        /// Three-band parametric equalizer. See [DspMultibandEq] for parameter
+        /// information, [Effect reference - Multiband Equalizer] for overview.
+        MultibandDynamics = FMOD_DSP_TYPE_MULTIBAND_DYNAMICS,
     }
 }
 
-fmod_enum! {
-    /// Channel Mix DSP parameter types.
-    ///
-    /// For [DspChannelMix::OutputGrouping], this value will set the output
-    /// speaker format for the DSP which determines the number of output
-    /// channels.
-    ///
-    /// For input channels mapped to an output channel in excess of the number
-    /// of output channels, it will instead be mapped to the modulo of that
-    /// channel index. Eg if there are 4 output channels, the input channel
-    /// mapped to output channel index 5 will be mapped to index 1.
-    pub enum DspChannelMix: FMOD_DSP_CHANNELMIX
-    where const { self <= FMOD_DSP_CHANNELMIX_OUTPUT_CH31 }
+/// A parameter index for a DSP effect.
+pub trait DspParam: Into<i32> {
+    /// The type of data this parameter is expecting.
+    type Value: ?Sized + DspParamValue;
+    /// The type of DSP this parameter is for. Mostly informational.
+    const KIND: DspType;
+}
+
+/// A parameter index for a DSP effect that can be set.
+pub trait DspParamMut: DspParam {}
+
+#[allow(clippy::missing_safety_doc)]
+pub(super) trait Sealed {}
+
+/// Values that can be set for DSP parameters.
+#[allow(private_bounds)]
+#[allow(clippy::missing_safety_doc)]
+pub unsafe trait DspParamValue: Sealed {
+    #[doc(hidden)]
+    unsafe fn set_dsp_parameter_unchecked(dsp: &Dsp, index: i32, value: &Self) -> Result;
+
+    #[doc(hidden)]
+    unsafe fn get_dsp_parameter_unchecked(dsp: &Dsp, index: i32) -> Result<Self>
+    where
+        Self: Sized,
     {
-        /// Channel mix output grouping.
-        OutputGrouping = FMOD_DSP_CHANNELMIX_OUTPUTGROUPING,
-        /// Channel #0 gain.
-        GainCh0        = FMOD_DSP_CHANNELMIX_GAIN_CH0,
-        /// Channel #1 gain.
-        GainCh1        = FMOD_DSP_CHANNELMIX_GAIN_CH1,
-        /// Channel #2 gain.
-        GainCh2        = FMOD_DSP_CHANNELMIX_GAIN_CH2,
-        /// Channel #3 gain.
-        GainCh3        = FMOD_DSP_CHANNELMIX_GAIN_CH3,
-        /// Channel #4 gain.
-        GainCh4        = FMOD_DSP_CHANNELMIX_GAIN_CH4,
-        /// Channel #5 gain.
-        GainCh5        = FMOD_DSP_CHANNELMIX_GAIN_CH5,
-        /// Channel #6 gain.
-        GainCh6        = FMOD_DSP_CHANNELMIX_GAIN_CH6,
-        /// Channel #7 gain.
-        GainCh7        = FMOD_DSP_CHANNELMIX_GAIN_CH7,
-        /// Channel #8 gain.
-        GainCh8        = FMOD_DSP_CHANNELMIX_GAIN_CH8,
-        /// Channel #9 gain.
-        GainCh9        = FMOD_DSP_CHANNELMIX_GAIN_CH9,
-        /// Channel #10 gain.
-        GainCh10       = FMOD_DSP_CHANNELMIX_GAIN_CH10,
-        /// Channel #11 gain.
-        GainCh11       = FMOD_DSP_CHANNELMIX_GAIN_CH11,
-        /// Channel #12 gain.
-        GainCh12       = FMOD_DSP_CHANNELMIX_GAIN_CH12,
-        /// Channel #13 gain.
-        GainCh13       = FMOD_DSP_CHANNELMIX_GAIN_CH13,
-        /// Channel #14 gain.
-        GainCh14       = FMOD_DSP_CHANNELMIX_GAIN_CH14,
-        /// Channel #15 gain.
-        GainCh15       = FMOD_DSP_CHANNELMIX_GAIN_CH15,
-        /// Channel #16 gain.
-        GainCh16       = FMOD_DSP_CHANNELMIX_GAIN_CH16,
-        /// Channel #17 gain.
-        GainCh17       = FMOD_DSP_CHANNELMIX_GAIN_CH17,
-        /// Channel #18 gain.
-        GainCh18       = FMOD_DSP_CHANNELMIX_GAIN_CH18,
-        /// Channel #19 gain.
-        GainCh19       = FMOD_DSP_CHANNELMIX_GAIN_CH19,
-        /// Channel #20 gain.
-        GainCh20       = FMOD_DSP_CHANNELMIX_GAIN_CH20,
-        /// Channel #21 gain.
-        GainCh21       = FMOD_DSP_CHANNELMIX_GAIN_CH21,
-        /// Channel #22 gain.
-        GainCh22       = FMOD_DSP_CHANNELMIX_GAIN_CH22,
-        /// Channel #23 gain.
-        GainCh23       = FMOD_DSP_CHANNELMIX_GAIN_CH23,
-        /// Channel #24 gain.
-        GainCh24       = FMOD_DSP_CHANNELMIX_GAIN_CH24,
-        /// Channel #25 gain.
-        GainCh25       = FMOD_DSP_CHANNELMIX_GAIN_CH25,
-        /// Channel #26 gain.
-        GainCh26       = FMOD_DSP_CHANNELMIX_GAIN_CH26,
-        /// Channel #27 gain.
-        GainCh27       = FMOD_DSP_CHANNELMIX_GAIN_CH27,
-        /// Channel #28 gain.
-        GainCh28       = FMOD_DSP_CHANNELMIX_GAIN_CH28,
-        /// Channel #29 gain.
-        GainCh29       = FMOD_DSP_CHANNELMIX_GAIN_CH29,
-        /// Channel #30 gain.
-        GainCh30       = FMOD_DSP_CHANNELMIX_GAIN_CH30,
-        /// Channel #31 gain.
-        GainCh31       = FMOD_DSP_CHANNELMIX_GAIN_CH31,
-        /// Output channel for Input channel #0
-        OutputCh0      = FMOD_DSP_CHANNELMIX_OUTPUT_CH0,
-        /// Output channel for Input channel #1
-        OutputCh1      = FMOD_DSP_CHANNELMIX_OUTPUT_CH1,
-        /// Output channel for Input channel #2
-        OutputCh2      = FMOD_DSP_CHANNELMIX_OUTPUT_CH2,
-        /// Output channel for Input channel #3
-        OutputCh3      = FMOD_DSP_CHANNELMIX_OUTPUT_CH3,
-        /// Output channel for Input channel #4
-        OutputCh4      = FMOD_DSP_CHANNELMIX_OUTPUT_CH4,
-        /// Output channel for Input channel #5
-        OutputCh5      = FMOD_DSP_CHANNELMIX_OUTPUT_CH5,
-        /// Output channel for Input channel #6
-        OutputCh6      = FMOD_DSP_CHANNELMIX_OUTPUT_CH6,
-        /// Output channel for Input channel #7
-        OutputCh7      = FMOD_DSP_CHANNELMIX_OUTPUT_CH7,
-        /// Output channel for Input channel #8
-        OutputCh8      = FMOD_DSP_CHANNELMIX_OUTPUT_CH8,
-        /// Output channel for Input channel #9
-        OutputCh9      = FMOD_DSP_CHANNELMIX_OUTPUT_CH9,
-        /// Output channel for Input channel #10
-        OutputCh10     = FMOD_DSP_CHANNELMIX_OUTPUT_CH10,
-        /// Output channel for Input channel #11
-        OutputCh11     = FMOD_DSP_CHANNELMIX_OUTPUT_CH11,
-        /// Output channel for Input channel #12
-        OutputCh12     = FMOD_DSP_CHANNELMIX_OUTPUT_CH12,
-        /// Output channel for Input channel #13
-        OutputCh13     = FMOD_DSP_CHANNELMIX_OUTPUT_CH13,
-        /// Output channel for Input channel #14
-        OutputCh14     = FMOD_DSP_CHANNELMIX_OUTPUT_CH14,
-        /// Output channel for Input channel #15
-        OutputCh15     = FMOD_DSP_CHANNELMIX_OUTPUT_CH15,
-        /// Output channel for Input channel #16
-        OutputCh16     = FMOD_DSP_CHANNELMIX_OUTPUT_CH16,
-        /// Output channel for Input channel #17
-        OutputCh17     = FMOD_DSP_CHANNELMIX_OUTPUT_CH17,
-        /// Output channel for Input channel #18
-        OutputCh18     = FMOD_DSP_CHANNELMIX_OUTPUT_CH18,
-        /// Output channel for Input channel #19
-        OutputCh19     = FMOD_DSP_CHANNELMIX_OUTPUT_CH19,
-        /// Output channel for Input channel #20
-        OutputCh20     = FMOD_DSP_CHANNELMIX_OUTPUT_CH20,
-        /// Output channel for Input channel #21
-        OutputCh21     = FMOD_DSP_CHANNELMIX_OUTPUT_CH21,
-        /// Output channel for Input channel #22
-        OutputCh22     = FMOD_DSP_CHANNELMIX_OUTPUT_CH22,
-        /// Output channel for Input channel #23
-        OutputCh23     = FMOD_DSP_CHANNELMIX_OUTPUT_CH23,
-        /// Output channel for Input channel #24
-        OutputCh24     = FMOD_DSP_CHANNELMIX_OUTPUT_CH24,
-        /// Output channel for Input channel #25
-        OutputCh25     = FMOD_DSP_CHANNELMIX_OUTPUT_CH25,
-        /// Output channel for Input channel #26
-        OutputCh26     = FMOD_DSP_CHANNELMIX_OUTPUT_CH26,
-        /// Output channel for Input channel #27
-        OutputCh27     = FMOD_DSP_CHANNELMIX_OUTPUT_CH27,
-        /// Output channel for Input channel #28
-        OutputCh28     = FMOD_DSP_CHANNELMIX_OUTPUT_CH28,
-        /// Output channel for Input channel #29
-        OutputCh29     = FMOD_DSP_CHANNELMIX_OUTPUT_CH29,
-        /// Output channel for Input channel #30
-        OutputCh30     = FMOD_DSP_CHANNELMIX_OUTPUT_CH30,
-        /// Output channel for Input channel #31
-        OutputCh31     = FMOD_DSP_CHANNELMIX_OUTPUT_CH31,
+        let _ = (dsp, index);
+        const { unreachable!() }
+    }
+
+    #[doc(hidden)]
+    unsafe fn get_dsp_parameter_string_unchecked(
+        dsp: &Dsp,
+        index: i32,
+        buf: &mut [MaybeUninit<u8>],
+    ) -> Result;
+}
+
+impl Sealed for bool {}
+unsafe impl DspParamValue for bool {
+    unsafe fn set_dsp_parameter_unchecked(dsp: &Dsp, index: i32, value: &bool) -> Result {
+        ffi!(FMOD_DSP_SetParameterBool(
+            dsp.as_raw(),
+            index,
+            *value as FMOD_BOOL,
+        ))?;
+        Ok(())
+    }
+
+    unsafe fn get_dsp_parameter_unchecked(dsp: &Dsp, index: i32) -> Result<bool> {
+        let mut value = FMOD_BOOL::default();
+        ffi!(FMOD_DSP_GetParameterBool(
+            dsp.as_raw(),
+            index,
+            &mut value,
+            ptr::null_mut(),
+            0,
+        ))?;
+        Ok(value != 0)
+    }
+
+    unsafe fn get_dsp_parameter_string_unchecked(
+        dsp: &Dsp,
+        index: i32,
+        bytes: &mut [MaybeUninit<u8>],
+    ) -> Result {
+        ffi!(FMOD_DSP_GetParameterBool(
+            dsp.as_raw(),
+            index,
+            ptr::null_mut(),
+            bytes.as_mut_ptr().cast(),
+            bytes.len() as i32,
+        ))?;
+        Ok(())
     }
 }
+
+impl Sealed for i32 {}
+unsafe impl DspParamValue for i32 {
+    unsafe fn set_dsp_parameter_unchecked(dsp: &Dsp, index: i32, value: &i32) -> Result {
+        ffi!(FMOD_DSP_SetParameterInt(dsp.as_raw(), index, *value))?;
+        Ok(())
+    }
+
+    unsafe fn get_dsp_parameter_unchecked(dsp: &Dsp, index: i32) -> Result<i32> {
+        let mut value = 0;
+        ffi!(FMOD_DSP_GetParameterInt(
+            dsp.as_raw(),
+            index,
+            &mut value,
+            ptr::null_mut(),
+            0,
+        ))?;
+        Ok(value)
+    }
+
+    unsafe fn get_dsp_parameter_string_unchecked(
+        dsp: &Dsp,
+        index: i32,
+        bytes: &mut [MaybeUninit<u8>],
+    ) -> Result {
+        ffi!(FMOD_DSP_GetParameterInt(
+            dsp.as_raw(),
+            index,
+            ptr::null_mut(),
+            bytes.as_mut_ptr().cast(),
+            bytes.len() as i32,
+        ))?;
+        Ok(())
+    }
+}
+
+impl Sealed for f32 {}
+unsafe impl DspParamValue for f32 {
+    unsafe fn set_dsp_parameter_unchecked(dsp: &Dsp, index: i32, value: &f32) -> Result {
+        ffi!(FMOD_DSP_SetParameterFloat(dsp.as_raw(), index, *value))?;
+        Ok(())
+    }
+
+    unsafe fn get_dsp_parameter_unchecked(dsp: &Dsp, index: i32) -> Result<f32> {
+        let mut value = 0.0;
+        ffi!(FMOD_DSP_GetParameterFloat(
+            dsp.as_raw(),
+            index,
+            &mut value,
+            ptr::null_mut(),
+            0,
+        ))?;
+        Ok(value)
+    }
+
+    unsafe fn get_dsp_parameter_string_unchecked(
+        dsp: &Dsp,
+        index: i32,
+        bytes: &mut [MaybeUninit<u8>],
+    ) -> Result {
+        ffi!(FMOD_DSP_GetParameterFloat(
+            dsp.as_raw(),
+            index,
+            ptr::null_mut(),
+            bytes.as_mut_ptr().cast(),
+            bytes.len() as i32,
+        ))?;
+        Ok(())
+    }
+}
+
+/// Byte data values that can be set for DSP parameters.
+///
+/// Implementing this trait gives a blanket impl of [`DspParamValue`], and can
+/// be done for any type which is representationally just byte data, validated
+/// by [zerocopy]'s derives for [`FromBytes`], [`IntoBytes`], and [`Immutable`].
+pub trait DspDataParamValue: DspParamValue + FromBytes + IntoBytes + Immutable {}
+
+impl<T: ?Sized + DspDataParamValue> Sealed for T {}
+unsafe impl<T: ?Sized + DspDataParamValue> DspParamValue for T {
+    unsafe fn set_dsp_parameter_unchecked(dsp: &Dsp, index: i32, value: &T) -> Result {
+        let bytes = value.as_bytes();
+        ffi!(FMOD_DSP_SetParameterData(
+            dsp.as_raw(),
+            index,
+            bytes.as_ptr().cast_mut().cast(),
+            bytes.len() as _,
+        ))?;
+        Ok(())
+    }
+
+    unsafe fn get_dsp_parameter_unchecked(dsp: &Dsp, index: i32) -> Result<T>
+    where
+        T: Sized,
+    {
+        let mut data = ptr::null_mut();
+        let mut len = 0;
+        ffi!(FMOD_DSP_GetParameterData(
+            dsp.as_raw(),
+            index,
+            &mut data,
+            &mut len,
+            ptr::null_mut(),
+            0,
+        ))?;
+        let bytes = unsafe { slice::from_raw_parts(data.cast(), len as _) };
+        T::read_from_bytes(bytes).map_err(|_| Error::InvalidParam)
+    }
+
+    unsafe fn get_dsp_parameter_string_unchecked(
+        dsp: &Dsp,
+        index: i32,
+        bytes: &mut [MaybeUninit<u8>],
+    ) -> Result {
+        ffi!(FMOD_DSP_GetParameterData(
+            dsp.as_raw(),
+            index,
+            ptr::null_mut(),
+            ptr::null_mut(),
+            bytes.as_mut_ptr().cast(),
+            bytes.len() as _,
+        ))?;
+        Ok(())
+    }
+}
+
+impl<const N: usize> DspDataParamValue for [u8; N] {}
+impl<const N: usize> DspDataParamValue for [i8; N] {}
+impl<const N: usize> DspDataParamValue for [u16; N] {}
+impl<const N: usize> DspDataParamValue for [i16; N] {}
+impl<const N: usize> DspDataParamValue for [u32; N] {}
+impl<const N: usize> DspDataParamValue for [i32; N] {}
+impl<const N: usize> DspDataParamValue for [f32; N] {}
+impl DspDataParamValue for [u8] {}
+impl DspDataParamValue for [i8] {}
+impl DspDataParamValue for [u16] {}
+impl DspDataParamValue for [i16] {}
+impl DspDataParamValue for [u32] {}
+impl DspDataParamValue for [i32] {}
+impl DspDataParamValue for [f32] {}

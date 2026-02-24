@@ -1,5 +1,6 @@
 use {
-    fmod::{effect::*, raw::*, *},
+    fmod::utils::fmod_get_string,
+    fmod::{raw::*, *},
     std::borrow::Borrow,
 };
 
@@ -18,31 +19,46 @@ impl Dsp {
     }
 
     /// Sets a DSP parameter by index.
-    pub fn set_parameter<T: ?Sized + DspParamType>(
-        &self,
-        index: impl DspParam<T>,
-        value: impl Borrow<T>,
+    pub fn set_parameter<P: DspParamMut>(
+        &mut self,
+        index: P,
+        value: impl Borrow<P::Value>,
     ) -> Result {
-        T::set_dsp_parameter(self, index.into(), value.borrow())
+        unsafe { self.set_parameter_unchecked(index, value.borrow()) }
     }
 
-    // /// Retrieves a DSP parameter by index.
-    // pub fn get_parameter<T: DspParamType>(&self, index: impl DspParam<T>) -> Result<T> {
-    //     T::get_dsp_parameter(self, index.into())
-    // }
+    /// Sets a DSP parameter by index.
+    ///
+    /// # Safety
+    ///
+    /// Calls must be synchronized to not race with [`get_parameter`] or [`get_parameter_string`].
+    pub unsafe fn set_parameter_unchecked<T: ?Sized + DspParamValue>(
+        &self,
+        index: impl Into<i32>,
+        value: &T,
+    ) -> Result {
+        unsafe { T::set_dsp_parameter_unchecked(self, index.into(), value) }
+    }
+
+    /// Retrieves a DSP parameter by index.
+    pub fn get_parameter<P: DspParam>(&self, index: P) -> Result<P::Value>
+    where
+        P::Value: Sized,
+    {
+        unsafe { P::Value::get_dsp_parameter_unchecked(self, index.into()) }
+    }
 
     /// Retrieves the string representation of a DSP parameter by index.
-    pub fn get_parameter_string<T: ?Sized + DspParamType>(
-        &self,
-        index: impl DspParam<T>,
-        string: &mut String,
-    ) -> Result {
-        string.clear();
-        let mut bytes = [0; FMOD_DSP_GETPARAM_VALUESTR_LENGTH as usize];
-        *string += T::get_dsp_parameter_string(self, index.into(), &mut bytes)?;
-        Ok(())
+    pub fn get_parameter_string<P: DspParam>(&self, index: P) -> Result<String> {
+        let index = index.into();
+        let mut s = String::new();
+        unsafe {
+            fmod_get_string(&mut s, move |buf| {
+                P::Value::get_dsp_parameter_string_unchecked(self, index, buf)
+            })?;
+        }
+        Ok(s)
     }
 
-    // set_data_parameter, get_data_parameter, get_data_parameter_string
     // get_parameter_info
 }

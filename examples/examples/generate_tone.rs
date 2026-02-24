@@ -20,8 +20,8 @@ fn main() -> anyhow::Result<()> {
         system.init(32, fmod::InitFlags::Normal)?;
 
         // Create an oscillator DSP units for the tone.
-        let dsp = system.create_dsp_by_type(fmod::DspType::Oscillator)?;
-        dsp.set_parameter(fmod::effect::Oscillator::Rate, 440.0)?; // Musical note 'A'
+        let mut dsp = system.create_dsp_by_type(fmod::DspType::Oscillator)?;
+        dsp.set_parameter(fmod::dsp::Oscillator::Rate, 440.0)?; // Musical note 'A'
 
         // Main loop
         let mut channel = None::<&fmod::Channel>;
@@ -38,8 +38,8 @@ fn main() -> anyhow::Result<()> {
                 channel = Some(chan);
                 chan.set_volume(0.5)?;
                 dsp.set_parameter(
-                    fmod::effect::Oscillator::Type,
-                    fmod::effect::Oscillator::Waveform::Sine,
+                    fmod::dsp::Oscillator::Type,
+                    fmod::dsp::Oscillator::Waveform::Sine,
                 )?;
                 chan.set_paused(false)?;
             }
@@ -53,8 +53,8 @@ fn main() -> anyhow::Result<()> {
                 channel = Some(chan);
                 chan.set_volume(0.5)?;
                 dsp.set_parameter(
-                    fmod::effect::Oscillator::Type,
-                    fmod::effect::Oscillator::Waveform::Square,
+                    fmod::dsp::Oscillator::Type,
+                    fmod::dsp::Oscillator::Waveform::Square,
                 )?;
                 chan.set_paused(false)?;
             }
@@ -68,8 +68,8 @@ fn main() -> anyhow::Result<()> {
                 channel = Some(chan);
                 chan.set_volume(0.5)?;
                 dsp.set_parameter(
-                    fmod::effect::Oscillator::Type,
-                    fmod::effect::Oscillator::Waveform::SawUp,
+                    fmod::dsp::Oscillator::Type,
+                    fmod::dsp::Oscillator::Waveform::SawUp,
                 )?;
                 chan.set_paused(false)?;
             }
@@ -83,8 +83,8 @@ fn main() -> anyhow::Result<()> {
                 channel = Some(chan);
                 chan.set_volume(0.5)?;
                 dsp.set_parameter(
-                    fmod::effect::Oscillator::Type,
-                    fmod::effect::Oscillator::Waveform::Triangle,
+                    fmod::dsp::Oscillator::Type,
+                    fmod::dsp::Oscillator::Waveform::Triangle,
                 )?;
                 chan.set_paused(false)?;
             }

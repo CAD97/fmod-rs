@@ -20,7 +20,7 @@ impl Channel {
     pub fn get_current_sound(&self) -> Result<Option<&Sound>> {
         let mut sound = ptr::null_mut();
         ffi!(FMOD_Channel_GetCurrentSound(self.as_raw(), &mut sound))?;
-        Ok(unsafe { Sound::from_raw_opt(sound) })
+        Ok(unsafe { Sound::try_from_raw(sound) })
     }
 
     /// Retrieves the index of this object in the System Channel pool.

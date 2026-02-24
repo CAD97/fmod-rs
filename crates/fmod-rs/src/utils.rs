@@ -106,25 +106,12 @@ pub fn string_from_utf16be_lossy(v: &[u8]) -> String {
     }
 }
 
-pub fn string_extend_utf8_lossy(s: &mut String, mut v: &[u8]) {
+pub fn string_extend_utf8_lossy(s: &mut String, v: &[u8]) {
     s.reserve(v.len());
-    loop {
-        match std::str::from_utf8(v) {
-            Ok(rest) => {
-                s.push_str(rest);
-                break;
-            },
-            Err(err) => {
-                let valid_up_to = err.valid_up_to();
-                let valid =
-                    unsafe { std::str::from_utf8_unchecked(v.get_unchecked(..valid_up_to)) };
-                s.push_str(valid);
-                s.push(char::REPLACEMENT_CHARACTER);
-                match err.error_len() {
-                    None => break,
-                    Some(len) => v = unsafe { v.get_unchecked(valid_up_to + len..) },
-                }
-            },
+    for chunk in v.utf8_chunks() {
+        s.push_str(chunk.valid());
+        if !chunk.invalid().is_empty() {
+            s.push(char::REPLACEMENT_CHARACTER);
         }
     }
 }
@@ -199,7 +186,7 @@ pub unsafe fn fmod_get_string(
         s.reserve(STACK_BUFFER_SIZE * 2);
     }
 
-    let buf = s.as_mut_vec();
+    let mut buf = mem::take(s).into_bytes();
     loop {
         // try again
         match retry(buf.spare_capacity_mut()) {
@@ -213,7 +200,6 @@ pub unsafe fn fmod_get_string(
     }
 
     // now we need to set the vector length and verify proper UTF-8
-    let mut buf = mem::take(s).into_bytes();
     buf.set_len(CStr::from_ptr(buf.as_ptr().cast()).to_bytes().len());
     *s = match String::from_utf8_lossy(&buf) {
         // valid, use the existing buffer
@@ -224,3 +210,33 @@ pub unsafe fn fmod_get_string(
 
     Ok(())
 }
+
+pub struct Const<const N: usize>;
+
+#[allow(clippy::missing_safety_doc)]
+pub(crate) unsafe trait LessThan<const N: usize> {}
+#[allow(clippy::missing_safety_doc)]
+pub(crate) unsafe trait LessThanOrEqual<const N: usize> {}
+
+unsafe impl<const N: usize> LessThanOrEqual<N> for Const<N> {}
+unsafe impl<const N: usize, const M: usize> LessThanOrEqual<M> for Const<N> where
+    Const<N>: LessThan<M>
+{
+}
+
+macro_rules! impl_lt {
+    ($N:literal, $M:literal $(,)?) => {
+        static_assert!($N < $M);
+        unsafe impl LessThan<$M> for Const<$N> {}
+    };
+    ($N:literal, $($M:literal),* $(,)?) => {
+        $(impl_lt!($N, $M);)*
+        impl_lt!($($M),*);
+    };
+}
+
+#[rustfmt::skip]
+impl_lt!(
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+);

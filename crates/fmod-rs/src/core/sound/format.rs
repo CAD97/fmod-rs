@@ -211,7 +211,7 @@ pub enum TagData<'a> {
 }
 
 #[allow(missing_docs)]
-impl<'a> TagData<'a> {
+impl TagData<'_> {
     pub fn as_binary(&self) -> Option<&[u8]> {
         match self {
             TagData::Binary(data) => Some(data),

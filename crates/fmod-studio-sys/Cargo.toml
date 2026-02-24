@@ -1,8 +1,8 @@
 [package]
 name = "fmod-studio-sys"
-version = "2.22.0+2.02.22-142841"
+version = "2.3.5-ea+2.03.05-148280"
 edition = "2021"
-rust-version = "1.77"
+rust-version = "1.84"
 license-file = "LICENSE.txt"
 links = "fmodstudio"
 
@@ -12,8 +12,8 @@ keywords = ["gamedev", "audio", "sound", "fmod", "adaptive audio"]
 categories = ["external-ffi-bindings", "game-development", "multimedia::audio"]
 
 include = [
-    "/inc/bindings.rs",
     "/src/lib.rs",
+    "/src/inc/*.rs",
     "/build.rs",
     "/Cargo.toml",
     "/LICENSE.txt",
@@ -21,4 +21,4 @@ include = [
 ]
 
 [dependencies]
-fmod-core-sys = { version = "=2.22.0", path = "../fmod-core-sys" }
+fmod-core-sys = { version = "=2.3.5-ea", path = "../fmod-core-sys" }

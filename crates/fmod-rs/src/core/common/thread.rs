@@ -86,40 +86,40 @@ fmod_flags! {
         // Platform agnostic thread groupings
         #[default]
         /// For a given thread use the default listed below, i.e. [ThreadType::Mixer] uses [ThreadAffinity::Mixer].
-        GroupDefault = FMOD_THREAD_AFFINITY_GROUP_DEFAULT as i64,
+        GroupDefault = FMOD_THREAD_AFFINITY_GROUP_DEFAULT,
         /// Grouping A is recommended to isolate the mixer thread [ThreadType::Mixer].
-        GroupA       = FMOD_THREAD_AFFINITY_GROUP_A as i64,
+        GroupA       = FMOD_THREAD_AFFINITY_GROUP_A,
         /// Grouping B is recommended to isolate the Studio update thread [ThreadType::StudioUpdate].
-        GroupB       = FMOD_THREAD_AFFINITY_GROUP_B as i64,
+        GroupB       = FMOD_THREAD_AFFINITY_GROUP_B,
         /// Grouping C is recommended for all remaining threads.
-        GroupC       = FMOD_THREAD_AFFINITY_GROUP_C as i64,
+        GroupC       = FMOD_THREAD_AFFINITY_GROUP_C,
         // Thread defaults
         /// Default affinity for [ThreadType::Mixer].
-        Mixer            = FMOD_THREAD_AFFINITY_MIXER as i64,
+        Mixer            = FMOD_THREAD_AFFINITY_MIXER,
         /// Default affinity for [ThreadType::Feeder].
-        Feeder           = FMOD_THREAD_AFFINITY_FEEDER as i64,
+        Feeder           = FMOD_THREAD_AFFINITY_FEEDER,
         /// Default affinity for [ThreadType::Stream].
-        Stream           = FMOD_THREAD_AFFINITY_STREAM as i64,
+        Stream           = FMOD_THREAD_AFFINITY_STREAM,
         /// Default affinity for [ThreadType::File].
-        File             = FMOD_THREAD_AFFINITY_FILE as i64,
+        File             = FMOD_THREAD_AFFINITY_FILE,
         /// Default affinity for [ThreadType::NonBlocking].
-        NonBlocking      = FMOD_THREAD_AFFINITY_NONBLOCKING as i64,
+        NonBlocking      = FMOD_THREAD_AFFINITY_NONBLOCKING,
         /// Default affinity for [ThreadType::Record].
-        Record           = FMOD_THREAD_AFFINITY_RECORD as i64,
+        Record           = FMOD_THREAD_AFFINITY_RECORD,
         /// Default affinity for [ThreadType::Geometry].
-        Geometry         = FMOD_THREAD_AFFINITY_GEOMETRY as i64,
+        Geometry         = FMOD_THREAD_AFFINITY_GEOMETRY,
         /// Default affinity for [ThreadType::Profiler].
-        Profiler         = FMOD_THREAD_AFFINITY_PROFILER as i64,
+        Profiler         = FMOD_THREAD_AFFINITY_PROFILER,
         /// Default affinity for [ThreadType::StudioUpdate].
-        StudioUpdate     = FMOD_THREAD_AFFINITY_STUDIO_UPDATE as i64,
+        StudioUpdate     = FMOD_THREAD_AFFINITY_STUDIO_UPDATE,
         /// Default affinity for [ThreadType::StudioLoadBank].
-        StudioLoadBank   = FMOD_THREAD_AFFINITY_STUDIO_LOAD_BANK as i64,
+        StudioLoadBank   = FMOD_THREAD_AFFINITY_STUDIO_LOAD_BANK,
         /// Default affinity for [ThreadType::StudioLoadSample].
-        StudioLoadSample = FMOD_THREAD_AFFINITY_STUDIO_LOAD_SAMPLE as i64,
+        StudioLoadSample = FMOD_THREAD_AFFINITY_STUDIO_LOAD_SAMPLE,
         /// Default affinity for [ThreadType::Convolution1].
-        Convolution1     = FMOD_THREAD_AFFINITY_CONVOLUTION1 as i64,
+        Convolution1     = FMOD_THREAD_AFFINITY_CONVOLUTION1,
         /// Default affinity for [ThreadType::Convolution2].
-        Convolution2     = FMOD_THREAD_AFFINITY_CONVOLUTION2 as i64,
+        Convolution2     = FMOD_THREAD_AFFINITY_CONVOLUTION2,
         // Core mask, valid up to 1 << 61
         /// Assign to all cores.
         CoreAll = 0,
@@ -188,7 +188,7 @@ fmod_typedef! {
         /// Lower bound of platform specific priority range.
         PlatformMin = FMOD_THREAD_PRIORITY_PLATFORM_MIN,
         /// Upper bound of platform specific priority range.
-        PlatformMax = FMOD_THREAD_PRIORITY_PLATFORM_MAX as i32,
+        PlatformMax = FMOD_THREAD_PRIORITY_PLATFORM_MAX,
         // Platform agnostic priorities, maps internally to platform specific value
         #[default]
         /// For a given thread use the default listed below, i.e. [ThreadType::Mixer] uses [ThreadPriority::Mixer].

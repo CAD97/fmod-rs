@@ -1,4 +1,5 @@
 use {
+    fmod::utils::{Const, LessThanOrEqual},
     fmod::*,
     std::{
         ops::{Index, IndexMut},
@@ -17,8 +18,8 @@ pub trait AsMixMatrix {
 
 impl<const IN: usize, const OUT: usize> AsMixMatrix for [[f32; IN]; OUT]
 where
-    __details::Const<IN>: __details::IsLessOrEqual<MAX_CHANNEL_WIDTH>,
-    __details::Const<OUT>: __details::IsLessOrEqual<MAX_CHANNEL_WIDTH>,
+    Const<IN>: LessThanOrEqual<MAX_CHANNEL_WIDTH>,
+    Const<OUT>: LessThanOrEqual<MAX_CHANNEL_WIDTH>,
 {
     fn as_mix_matrix(&self) -> &MixMatrix {
         MixMatrix::new_ref(slice_flatten(self), IN, OUT)
@@ -287,31 +288,6 @@ impl IndexMut<(Speaker, usize)> for MixMatrix {
         let in_speaker_mode = channel_count_to_mode(self.in_channels());
         let in_channel = speaker_to_channel(in_speaker, in_speaker_mode);
         &mut self[(in_channel, out_channel)]
-    }
-}
-
-mod __details {
-    pub struct Const<const N: usize>;
-    pub trait IsLessOrEqual<const N: usize> {}
-
-    macro_rules! is_lte {
-        ($max:literal; $($e:literal)*) => {$(
-            impl IsLessOrEqual<$max> for Const<$e> {}
-            static_assert!($e <= $max);
-        )*};
-    }
-
-    macro_rules! is_lte_impls {
-        {} => {};
-        {$front:literal $($rest:literal)*} => {
-            is_lte! { $front; $front $($rest)* }
-            is_lte_impls! { $($rest)* }
-        }
-    }
-
-    is_lte_impls! {
-        32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16
-        15 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
     }
 }
 
