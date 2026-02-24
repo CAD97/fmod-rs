@@ -18,15 +18,6 @@ by you alongside the binaries to run the FMOD Engine.
 The Rust code in this repository is licensed under MIT OR Apache-2.0, but this
 does not remove the requirement to comply with the FMOD license.
 
-<!-- Commented until the sponsor tier goes public with FMOD.rs publish
-Using these bindings is free under these licenses. However, if you do pay for
-an FMOD license, you are encouraged to [tip the developer][tip]. This helps pay
-for future support of FMOD.rs, gets you a proper commercial license without
-attribution requirement, and earns you prioritized private support for a year.
-
-[tip]: https://github.com/sponsors/CAD97/sponsorships?sponsor=CAD97&tier_id=NNNNNN
--->
-
 ## Providing the FMOD Engine
 
 In order to comply with the FMOD license, we do _not_ redistribute the FMOD

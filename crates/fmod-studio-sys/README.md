@@ -46,7 +46,9 @@ script of any direct dependents.
 
 ## Licensing
 
-The build code for this crate is licensed under [the MIT license][mit].
-The generated bindings inherit the FMOD end user license agreement (EULA).
+The build code for this crate is licensed under [The MIT License][mit] OR
+[the Apache license version 2.0][apache-2.0]. The generated bindings inherit
+FMOD's end user license agreement (EULA).
 
 [mit]: <https://opensource.org/license/mit>
+[apache-2.0]: <https://www.apache.org/licenses/LICENSE-2.0>

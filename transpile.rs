@@ -12,12 +12,13 @@
 //! avoid redistributing the FMOD headers, which is legally questionable, unlike
 //! redistributing the examples or a bindings library which links against FMOD.
 
-use build_rs::input::out_dir;
+use build_rs::{input::out_dir, output::rerun_if_changed};
 use regex::Regex;
 use std::{borrow::Cow, fs, path::Path, sync::LazyLock};
 
 pub fn transpile(inc: impl AsRef<Path>, header: &str, extra_fixup: &[(&str, &str)]) {
     let path = inc.as_ref().join(header);
+    rerun_if_changed(&path);
     let mut src = fs::read_to_string(&path)
         .unwrap_or_else(|_| panic!("read FMOD header file {}", path.display()));
 
