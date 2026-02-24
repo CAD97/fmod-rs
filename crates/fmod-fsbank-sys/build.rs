@@ -1,5 +1,5 @@
 use build_rs::{input::*, output::*};
-use std::path::PathBuf;
+use std::{fs, path::Path};
 
 mod transpile;
 use transpile::transpile;
@@ -7,40 +7,48 @@ use transpile::transpile;
 fn main() {
     rerun_if_changed("build.rs");
 
-    let api = PathBuf::from(dep_metadata("fmod", "api").unwrap());
-    let inc = PathBuf::from(dep_metadata("fmod", "inc").unwrap());
-    let lib = PathBuf::from(dep_metadata("fmod", "lib").unwrap());
+    let [inc, lib] = fsbank_path();
 
-    let remap = |p| match p == "core" {
-        true => PathBuf::from("fsbank"),
-        false => PathBuf::from(p),
-    };
-
-    let inc = if inc.starts_with("api") {
-        inc.iter().map(remap).collect()
-    } else {
-        api.join("fsbank/inc")
-    };
-    let lib = if lib.starts_with("api") {
-        lib.iter().map(remap).collect()
-    } else {
-        let arch = fmod_arch();
-        api.join("fsbank/lib").join(arch)
-    };
-
-    let inc: PathBuf = inc.iter().map(remap).collect();
-    let lib: PathBuf = lib.iter().map(remap).collect();
-
-    metadata("api", api.as_os_str().to_str().unwrap());
-    metadata("inc", inc.as_os_str().to_str().unwrap());
-    metadata("lib", lib.as_os_str().to_str().unwrap());
+    metadata("inc", &inc);
+    metadata("lib", &lib);
 
     rustc_link_search(&lib);
     rerun_if_changed(&lib);
-    rustc_link_lib(&fmod_lib());
+    rustc_link_lib(&fsbank_obj());
 
     transpile(&inc, "fsbank.h", &[]);
     transpile(&inc, "fsbank_errors.h", &[]);
+}
+
+fn fsbank_path() -> [String; 2] {
+    let inc = dep_metadata("fsbank", "inc").unwrap_or_else(|| {
+        let fmod_inc = dep_metadata("fmod", "inc").unwrap();
+        let inc = Path::new(&fmod_inc).join("../../fsbank/inc");
+        if fs::exists(&inc).unwrap_or_default() {
+            inc.to_str().unwrap().to_string()
+        } else {
+            fmod_inc
+        }
+    });
+
+    let lib = dep_metadata("fsbank", "lib").unwrap_or_else(|| {
+        let fmod_lib = dep_metadata("fmod", "lib").unwrap();
+        let expected_sibling = if cargo_cfg_target_vendor() == "apple" {
+            "../../fsbank/lib/"
+        } else {
+            "../../../fsbank/lib"
+        };
+        let lib = Path::new(&fmod_lib)
+            .join(expected_sibling)
+            .join(fmod_arch());
+        if fs::exists(&lib).unwrap_or_default() {
+            lib.to_str().unwrap().to_string()
+        } else {
+            fmod_lib
+        }
+    });
+
+    [inc, lib]
 }
 
 fn fmod_arch() -> &'static str {
@@ -68,42 +76,18 @@ fn fmod_arch() -> &'static str {
     }
 }
 
-fn fmod_lib() -> String {
-    _ = fmod_arch(); // ensure valid platform
+fn fsbank_obj() -> String {
+    if let Some(obj) = dep_metadata("fsbank", "obj") {
+        return obj;
+    }
+
     let vendor = cargo_cfg_target_vendor();
     let arch = cargo_cfg_target_arch();
-    match (&*arch, &*vendor) {
-        ("x86_64", "pc") => "fsbank_vc",
-        (_, _) => "fsbank",
+    let mut obj = "fsbank".to_string();
+
+    if vendor == "pc" && matches!(&*arch, "x86" | "x86_64") {
+        obj += "_vc";
     }
-    .to_string()
+
+    obj
 }
-
-/*
-use std::{env, path::PathBuf};
-
-fn main() {
-    println!("cargo::rerun-if-changed=build.rs");
-
-    let inc: PathBuf = env::var("DEP_FMOD_INC").unwrap().into();
-    let lib: PathBuf = env::var("DEP_FMOD_LIB").unwrap().into();
-    let remap = |p| match p == "core" {
-        true => PathBuf::from("fsbank"),
-        false => PathBuf::from(p),
-    };
-
-    let inc: PathBuf = inc.iter().map(remap).collect();
-    let lib: PathBuf = lib.iter().map(remap).collect();
-
-    let vendor = &*env::var("CARGO_CFG_TARGET_VENDOR").unwrap();
-    let obj = match vendor {
-        "pc" => "fsbank_vc",
-        _ => "fsbank",
-    };
-
-    println!("cargo::metadata=inc={}", inc.display());
-    println!("cargo::metadata=lib={}", lib.display());
-    println!("cargo::rustc-link-lib={}", obj);
-    println!("cargo::rustc-link-search={}", lib.display());
-}
-*/

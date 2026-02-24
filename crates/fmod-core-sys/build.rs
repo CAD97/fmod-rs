@@ -6,16 +6,14 @@ use transpile::transpile;
 fn main() {
     rerun_if_changed("build.rs");
 
-    let [api, inc, lib] = fmod_path();
+    let [inc, lib] = fmod_path();
 
-    metadata("api", &api);
     metadata("inc", &inc);
     metadata("lib", &lib);
 
     rustc_link_search(&lib);
     rerun_if_changed(&lib);
-    rustc_link_lib(&fmod_lib());
-
+    rustc_link_lib(&fmod_obj());
     link_extra();
 
     #[rustfmt::skip]
@@ -47,23 +45,27 @@ fn main() {
     }
 }
 
-fn fmod_path() -> [String; 3] {
-    let [api, inc, lib] = if let Some(api) = dep_metadata("fmod", "api") {
-        let inc = api.clone() + "/core/inc";
-        let lib = api.clone() + "/core/lib/" + fmod_arch();
-        [api, inc, lib]
-    } else {
-        match &*cargo_cfg_target_vendor() {
-            "pc" => win::find_fmod_pc(),
-            "uwp" => win::find_fmod_uwp(),
-            // TODO: look for "well-known" paths on other platforms?
-            _ => None,
-        }
-        .unwrap_or_else(report_missing_fmod)
-    };
-    let inc = dep_metadata("fmod", "inc").unwrap_or(inc);
-    let lib = dep_metadata("fmod", "lib").unwrap_or(lib);
-    [api, inc, lib]
+fn fmod_path() -> [String; 2] {
+    match (dep_metadata("fmod", "inc"), dep_metadata("fmod", "lib")) {
+        (Some(inc), Some(lib)) => [inc, lib],
+        (inc_override, lib_override) => {
+            let [inc, lib] = if let Some(api) = dep_metadata("fmod", "api") {
+                let inc = api.clone() + "/core/inc";
+                let lib = api.clone() + "/core/lib/" + fmod_arch();
+                [inc, lib]
+            } else {
+                match &*cargo_cfg_target_vendor() {
+                    "pc" => win::find_fmod_pc(),
+                    "uwp" => win::find_fmod_uwp(),
+                    // TODO: look for "well-known" paths on other platforms?
+                    _ => None,
+                }
+                .unwrap_or_else(report_missing_fmod)
+            };
+
+            [inc_override.unwrap_or(inc), lib_override.unwrap_or(lib)]
+        },
+    }
 }
 
 fn fmod_arch() -> &'static str {
@@ -86,28 +88,49 @@ fn fmod_arch() -> &'static str {
         ("aarch64", _, "android") => "arm64-v8a",
         ("i686", _, "android") => "x86",
         ("x86_64", _, "android") => "x86_64",
-        ("wasm32", _, "emscripten") => "w32",
+        ("wasm32", _, _) => "w32",
         _ => panic!("unknown/unsupported FMOD platform {}", target()),
     }
 }
 
-fn fmod_lib() -> String {
-    _ = fmod_arch(); // ensure valid platform
+fn fmod_obj() -> String {
+    if let Some(obj) = dep_metadata("fmod", "obj") {
+        return obj;
+    }
+
     let vendor = cargo_cfg_target_vendor();
     let arch = cargo_cfg_target_arch();
     let profile = profile();
     let atomics = cargo_cfg_target_feature().contains(&"atomics".to_string());
-    match (&*arch, &*vendor, &*profile) {
-        ("x86_64", "pc", "debug") => "fmodL_vc",
-        ("x86_64", "pc", "release") => "fmod_vc",
-        ("wasm32", _, "debug") if atomics => "fmodPL",
-        ("wasm32", _, "release") if atomics => "fmodP_reduced",
-        ("wasm32", _, "release") => "fmod_reduced",
-        (_, _, "debug") => "fmodL",
-        (_, _, "release") => "fmod",
+    let mut obj = match (&*arch, &*profile) {
+        ("wasm32", "debug") if atomics => "fmodPL",
+        ("wasm32", "release") if atomics => "fmodP_reduced",
+        ("wasm32", "release") => "fmod_reduced",
+        (_, "debug") => "fmodL",
+        (_, "release") => "fmod",
         _ => unreachable!("unexpected $PROFILE"),
     }
-    .to_string()
+    .to_string();
+
+    if vendor == "pc" && matches!(&*arch, "x86" | "x86_64") {
+        obj += "_vc";
+    }
+
+    if vendor == "apple" {
+        let sim = if cargo_cfg_target_abi().as_deref() == Some("sim") {
+            "simulator"
+        } else {
+            "os"
+        };
+        match &*cargo_cfg_target_os() {
+            "ios" => obj = obj + "_iphone" + sim,
+            "tvos" => obj = obj + "_appletv" + sim,
+            "visionos" => obj = obj + "_xr" + sim,
+            _ => {},
+        }
+    }
+
+    obj
 }
 
 fn link_extra() {
@@ -135,19 +158,17 @@ mod win {
             .ok()
     }
 
-    pub fn find_fmod_pc() -> Option<[String; 3]> {
+    pub fn find_fmod_pc() -> Option<[String; 2]> {
         let fmod_dir = from_registry(r"Software\FMOD Studio API Windows")?;
         Some([
-            fmod_dir.clone() + "/api",
             fmod_dir.clone() + "/api/core/inc",
             fmod_dir.clone() + "/api/core/lib/" + fmod_arch(),
         ])
     }
 
-    pub fn find_fmod_uwp() -> Option<[String; 3]> {
+    pub fn find_fmod_uwp() -> Option<[String; 2]> {
         let fmod_dir = from_registry(r"Software\FMOD Studio API Universal Windows Platform")?;
         Some([
-            fmod_dir.clone() + "/api",
             fmod_dir.clone() + "/api/core/inc",
             fmod_dir.clone() + "/api/core/lib/" + fmod_arch(),
         ])
@@ -156,11 +177,11 @@ mod win {
 
 #[cfg(not(windows))]
 mod win {
-    pub fn find_fmod_pc() -> Option<[String; 3]> {
+    pub fn find_fmod_pc() -> Option<[String; 2]> {
         None
     }
 
-    pub fn find_fmod_uwp() -> Option<[String; 3]> {
+    pub fn find_fmod_uwp() -> Option<[String; 2]> {
         None
     }
 }

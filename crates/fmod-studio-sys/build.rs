@@ -1,5 +1,5 @@
 use build_rs::{input::*, output::*};
-use std::path::PathBuf;
+use std::{fs, path::Path};
 
 mod transpile;
 use transpile::transpile;
@@ -7,42 +7,48 @@ use transpile::transpile;
 fn main() {
     rerun_if_changed("build.rs");
 
-    let api = PathBuf::from(dep_metadata("fmod", "api").unwrap());
-    let inc = PathBuf::from(dep_metadata("fmod", "inc").unwrap());
-    let lib = PathBuf::from(dep_metadata("fmod", "lib").unwrap());
+    let [inc, lib] = fmodstudio_path();
 
-    let remap = |p| match p == "core" {
-        true => PathBuf::from("studio"),
-        false => PathBuf::from(p),
-    };
-
-    let inc = if inc.starts_with("api") {
-        inc.iter().map(remap).collect()
-    } else {
-        api.join("studio/inc")
-    };
-    let lib = if lib.starts_with("api") {
-        lib.iter().map(remap).collect()
-    } else {
-        let arch = fmod_arch();
-        api.join("studio/lib").join(arch)
-    };
-
-    let inc: PathBuf = inc.iter().map(remap).collect();
-    let lib: PathBuf = lib.iter().map(remap).collect();
-
-    metadata("api", api.as_os_str().to_str().unwrap());
-    metadata("inc", inc.as_os_str().to_str().unwrap());
-    metadata("lib", lib.as_os_str().to_str().unwrap());
+    metadata("inc", &inc);
+    metadata("lib", &lib);
 
     rustc_link_search(&lib);
     rerun_if_changed(&lib);
-    rustc_link_lib(&fmod_lib());
-
-    link_extra();
+    rustc_link_lib(&fmodstudio_obj());
 
     transpile(&inc, "fmod_studio.h", &[]);
     transpile(&inc, "fmod_studio_common.h", &[]);
+}
+
+fn fmodstudio_path() -> [String; 2] {
+    let inc = dep_metadata("fmodstudio", "inc").unwrap_or_else(|| {
+        let fmod_inc = dep_metadata("fmod", "inc").unwrap();
+        let inc = Path::new(&fmod_inc).join("../../fmodstudio/inc");
+        if fs::exists(&inc).unwrap_or_default() {
+            inc.to_str().unwrap().to_string()
+        } else {
+            fmod_inc
+        }
+    });
+
+    let lib = dep_metadata("fmodstudio", "lib").unwrap_or_else(|| {
+        let fmod_lib = dep_metadata("fmod", "lib").unwrap();
+        let expected_sibling = if cargo_cfg_target_vendor() == "apple" {
+            "../../fmodstudio/lib/"
+        } else {
+            "../../../fmodstudio/lib"
+        };
+        let lib = Path::new(&fmod_lib)
+            .join(expected_sibling)
+            .join(fmod_arch());
+        if fs::exists(&lib).unwrap_or_default() {
+            lib.to_str().unwrap().to_string()
+        } else {
+            fmod_lib
+        }
+    });
+
+    [inc, lib]
 }
 
 fn fmod_arch() -> &'static str {
@@ -70,22 +76,28 @@ fn fmod_arch() -> &'static str {
     }
 }
 
-fn fmod_lib() -> String {
-    _ = fmod_arch(); // ensure valid platform
+fn fmodstudio_obj() -> String {
+    if let Some(obj) = dep_metadata("fmodstudio", "obj") {
+        return obj;
+    }
+
     let vendor = cargo_cfg_target_vendor();
     let arch = cargo_cfg_target_arch();
     let profile = profile();
     let atomics = cargo_cfg_target_feature().contains(&"atomics".to_string());
-    let mut dylib = match (&*arch, &*vendor, &*profile) {
-        ("x86_64", "pc", "debug") => "fmodstudioL_vc",
-        ("x86_64", "pc", "release") => "fmodstudio_vc",
-        ("wasm32", _, "debug") if atomics => "fmodstudioPL",
-        ("wasm32", _, "release") if atomics => "fmodstudioP",
-        (_, _, "debug") => "fmodstudioL",
-        (_, _, "release") => "fmodstudio",
+    let mut obj = match (&*arch, &*profile) {
+        ("wasm32", "debug") if atomics => "fmodstudioPL",
+        ("wasm32", "release") if atomics => "fmodstudioP",
+        (_, "debug") => "fmodstudioL",
+        (_, "release") => "fmodstudio",
         _ => unreachable!("unexpected $PROFILE"),
     }
     .to_string();
+
+    if vendor == "pc" && matches!(&*arch, "x86" | "x86_64") {
+        obj += "_vc";
+    }
+
     if vendor == "apple" {
         let sim = if cargo_cfg_target_abi().as_deref() == Some("sim") {
             "simulator"
@@ -93,23 +105,12 @@ fn fmod_lib() -> String {
             "os"
         };
         match &*cargo_cfg_target_os() {
-            "ios" => dylib = dylib + "_iphone" + sim,
-            "tvos" => dylib = dylib + "_appletv" + sim,
-            "visionos" => dylib = dylib + "_xr" + sim,
+            "ios" => obj = obj + "_iphone" + sim,
+            "tvos" => obj = obj + "_appletv" + sim,
+            "visionos" => obj = obj + "_xr" + sim,
             _ => {},
         }
     }
-    dylib
-}
 
-fn link_extra() {
-    if cargo_cfg_target_vendor() == "apple" {
-        match &*cargo_cfg_target_os() {
-            "ios" | "tvos" | "visionos" => {
-                rustc_link_lib_kind("framework", "AudioToolbox");
-                rustc_link_lib_kind("framework", "CoreAudio");
-            },
-            _ => {},
-        }
-    }
+    obj
 }

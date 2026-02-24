@@ -1,56 +1,56 @@
 Raw bindings to [FMOD Core](https://fmod.com/core). These are the raw
 bindings — you probably want [FMOD.rs](https://lib.rs/fmod-rs) instead.
 
-## Versioning
+## Build Requirements
 
-The bindings crate has its version derived directly from the FMOD Engine
-version, for easier pinning of a specific header version. To be specific, for
-a given FMOD version `aaaa.bb.cc` (`aaaa` = product version, `bb` = major
-version, `cc` = minor version), the bindings crate is released as version
-`bb.cc.dd+aaaa.bb.cc-BUILD`, where `BUILD` is the specific FMOD build version,
-and `dd` is an FMOD.rs-specific patch number, to allow for bindings updates if
-necessary, though these are expected to be quite rare in practice.
+On a Windows machine building for Windows, the FMOD Engine installation can be
+autodetected. On other platforms, you will need to set `$DEP_FMOD_API` to
+`$FMOD_PATH/api/core`, where `$FMOD_PATH` is the path that you extracted the
+FMOD Engine package. Or, if you have a custom setup that doesn't keep the FMOD
+Engine's default file layout, you can set `$DEP_FMOD_INC` to the folder where
+the FMOD headers are and `$DEP_FMOD_LIB` to the folder containing the FMOD
+dynamic libraries.
 
-In application use, it is recommended to pin a specific version of this crate.
-FMOD checks that the header version matches the dynamic library version, so if
-an unsupported runtime version mismatch occurs, FMOD should fail to initialize.
+## Runtime Requirements
 
-This version's vendored headers are for FMOD Engine 2.03.05 (build 148280). If
-you need a version which isn't published, open a GitHub issue requesting it.
+The main FMOD deployment model is via dynamic library. You, the user of this
+crate, are responsible for ensuring the dynamic library is available on the
+load path at program startup.
 
-## Linking
+## Logging
 
-Unless overridden, this crate will link to the logging build of FMOD when using
-a development profile, and the non-logging build for release profiles. This is
-based on whether the used profile inherits from the `dev` or `release` profile.
+If this crate is built with a debug profile, we link against the logging build
+of FMOD. If it is built with a release profile, we link against the production
+non-logging binary.
 
-If you would like to change this behavior, or are building from a host platform
-where the FMOD Engine cannot be automatically located, you can specify a [build
-script override][build-override] in a `config.toml`, such as:
+We expect the same filename decoration as in the FMOD Engine package. If you
+have a nonstandard setup or otherwise want to directly control the object name
+linked against, you can set `$DEP_FMOD_OBJ`.
 
-[build-override]: https://doc.rust-lang.org/cargo/reference/build-scripts.html#overriding-build-scripts
+## Version Compatibility
 
-```toml
-[target.x86_64-pc-windows-msvc.fmod]
-# linker configuration
-rustc-link-lib = ["fmod_vc"]
-rustc-link-search = ["C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64"]
-# library metadata
-api = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api"
-inc = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc"
-lib = "C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/lib/x64"
-version = "2.03.05"
-```
+Major FMOD version numbers 2.03 and 2.02 are both supported, although testing
+of individual minor versions is sparse. Use other versions at your own risk.
 
-The listed `version` must match this crate's vendored header version in order
-for everything to work as intended. A mismatch may result in arbitrary issues,
-up to and including unsoundness and undefined behavior.
+## Stability Disclaimer
 
-### Windows Note
+The Rust API exposed by this crate is directly generated from the FMOD headers.
+Breaking changes in this crate's API is thus entirely dependent on whether FMOD
+publishes changes which would be considered breaking in a Rust API.
 
-The Windows `.lib` files are import libraries which require the corresponding
-DLL to be present at runtime. You are required to handle this requirement, as
-Cargo does not add build-time search paths to the dynamic library search path.
+Note that the FMOD API within a major FMOD version number is only guaranteed
+stable from the perspective of the C API. Adding new optional fields to a type
+is non-API-breaking in C, but API-breaking in Rust.
 
-During development, this will probably look like having the `.dll`s in the
-folder that you invoke `cargo` from.
+## Build Metadata
+
+`$DEP_FMOD_INC`, `$DEP_FMOD_LIB`, and `$DEP_FMOD_VERSION` are provided to the
+build script of any direct dependents. The version is provided in the `2.03.99`
+string format.
+
+## Licensing
+
+The build code for this crate is licensed under [The MIT License][mit].
+The generated bindings inherit the FMOD end user license agreement (EULA).
+
+[mit]: <https://opensource.org/license/mit>
