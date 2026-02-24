@@ -1,4 +1,6 @@
 use build_rs::{input::*, output::*};
+use regex::Regex;
+use std::fs;
 
 mod transpile;
 use transpile::transpile;
@@ -43,6 +45,13 @@ fn main() {
     if cargo_cfg_target_os() == "ios" {
         transpile(&inc, "fmod_ios.h", &[]);
     }
+
+    let fmod_common = fs::read_to_string(inc + "/fmod_common.h").unwrap();
+    // 0xaaaabbcc -> aaaa = product version, bb = major version, cc = minor version.
+    let version_pat = Regex::new(r"#define FMOD_VERSION * 0x(\d{4})(\d{2})(\d{2})").unwrap();
+    let captures = version_pat.captures(&fmod_common).unwrap();
+    let version = format!("{}.{}.{}", &captures[1], &captures[2], &captures[3]);
+    metadata("version", &version);
 }
 
 fn fmod_path() -> [String; 2] {
