@@ -4,16 +4,17 @@ use {
     std::{ffi::c_void, ops::Deref},
 };
 
+#[cfg(not(feature = "unstable"))]
 impl Deref for Channel {
     type Target = ChannelControl;
     fn deref(&self) -> &Self::Target {
-        unsafe { ChannelControl::from_raw(self.as_raw() as _) }
+        self.as_ref()
     }
 }
 
 impl AsRef<ChannelControl> for Channel {
     fn as_ref(&self) -> &ChannelControl {
-        self.deref()
+        unsafe { ChannelControl::from_raw(self.as_raw() as _) }
     }
 }
 

@@ -113,7 +113,7 @@ where
 {
     /// Removes the specified DSP unit from the DSP chain.
     pub fn remove_dsp(&mut self, dsp: &Dsp) -> Result {
-        unsafe { self.as_ref().remove_dsp(dsp) }
+        unsafe { self.as_ref().as_ref().remove_dsp(dsp) }
     }
 }
 
