@@ -101,7 +101,7 @@ pub(crate) unsafe extern "system" fn pcm_setpos_callback<F: PcmCallback>(
 ///
 /// Since this callback can occur from the async thread, there are restrictions
 /// about what functions can be called during the callback. All Sound functions
-/// are safe to call, except for [`Sound::set_sound_group` and
+/// are safe to call, except for [`Sound::set_sound_group`] and
 /// [`Sound::raw_release`] (dropping a sound handle). It is also safe to call
 /// [`System::get_user_data`]. The rest of the Core API and the Studio API is
 /// not allowed. Calling a non-allowed function will return

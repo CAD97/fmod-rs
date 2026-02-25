@@ -86,18 +86,17 @@ macro_rules! opaque_type {
 #[cfg(feature = "raw")]
 macro_rules! raw {
     ($(#[$meta:meta])* pub $($tt:tt)*) => {
-        #[allow(clippy::missing_safety_doc, missing_docs)]
+        #[allow(clippy::missing_safety_doc, dead_code, missing_docs)]
         #[cfg_attr(feature = "unstable", doc(cfg(feature = "raw")))]
         $(#[$meta])* pub $($tt)*
     };
     ($mac:ident! { $(#[$meta:meta])* pub $($tt:tt)* }) => {
         $mac! {
-            #[allow(clippy::missing_safety_doc, missing_docs)]
+            #[allow(clippy::missing_safety_doc, dead_code, missing_docs)]
             #[doc(cfg(feature = "raw"))]
             $(#[$meta])* pub $($tt)*
         }
     };
-
 }
 
 #[cfg(not(feature = "raw"))]

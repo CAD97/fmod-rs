@@ -23,7 +23,7 @@ fn main() {
 fn fmodstudio_path() -> [String; 2] {
     let inc = dep_metadata("fmodstudio", "inc").unwrap_or_else(|| {
         let fmod_inc = dep_metadata("fmod", "inc").unwrap();
-        let inc = Path::new(&fmod_inc).join("../../fmodstudio/inc");
+        let inc = Path::new(&fmod_inc).join("../../studio/inc");
         if fs::exists(&inc).unwrap_or_default() {
             inc.to_str().unwrap().to_string()
         } else {
@@ -34,9 +34,9 @@ fn fmodstudio_path() -> [String; 2] {
     let lib = dep_metadata("fmodstudio", "lib").unwrap_or_else(|| {
         let fmod_lib = dep_metadata("fmod", "lib").unwrap();
         let expected_sibling = if cargo_cfg_target_vendor() == "apple" {
-            "../../fmodstudio/lib/"
+            "../../studio/lib/"
         } else {
-            "../../../fmodstudio/lib"
+            "../../../studio/lib"
         };
         let lib = Path::new(&fmod_lib)
             .join(expected_sibling)

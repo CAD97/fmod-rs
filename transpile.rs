@@ -57,15 +57,17 @@ pub fn transpile(inc: impl AsRef<Path>, header: &str, extra_fixup: &[(&str, &str
 
     // translate #define
     replace_fixpoint!(
-        r"typedef ([\w ]*) (\w+);\n(/\*.*?\*/\n)?#define (\w+) (\s*)(.*)\n",
+        r"typedef ([\w ]*) (\w+);\n(/\*.*?\*/\n)?#define +(\w+) (\s*)(.*)\n",
         "${3}pub const $4: $5$2 = $6;\ntypedef $1 $2;\n",
     );
     replace!(
-        r"^#define (\w+) (\s+)(\w+)$",
+        r"^#define +(\w+) *(0x\w+) *(?:/\*.*\*/)?$",
+        "pub const $1: c_uint = $2;"
+    );
+    replace!(
+        r"^#define +(\w+) (\s*)(\w+) *(?:/\*.*\*/)?$",
         "pub const $1: ${2}c_int = $3;",
     );
-    replace!(r"^#define (\w+) (\d+)$", "pub const $1: c_int = $2;");
-    replace!(r"^#define (\w+) *(0x\w+)$", "pub const $1: c_uint = $2;");
 
     // translate switch
     replace!(r"switch ", "match ");
@@ -99,7 +101,7 @@ pub fn transpile(inc: impl AsRef<Path>, header: &str, extra_fixup: &[(&str, &str
     // translate fn items
     replace!(
         r"([\w*]+) +FB?_API ([\w (),*]*?)\);",
-        "pub unsafe fn $2) -> $1;",
+        r#"pub unsafe fn $2) -> $1;"#,
     );
 
     // translate fn type aliases
@@ -115,12 +117,12 @@ pub fn transpile(inc: impl AsRef<Path>, header: &str, extra_fixup: &[(&str, &str
     );
     replace!(r" -> void *(;|$)", "$1");
     replace!(
-        r#"extern "system" fn \((.*) \.\.\.\)"#,
+        r#"extern "system" +fn \((.*) \.\.\.\)"#,
         r#"extern "C" fn ($1 ...)"#,
     );
 
     // make fn ptrs optional
-    replace!(r#"= (unsafe extern "system" fn.*?);"#, "= Option<$1>;");
+    replace!(r#"= (unsafe extern "system" +fn.*?);"#, "= Option<$1>;");
 
     // translate type aliases
     replace!(
@@ -185,7 +187,13 @@ pub fn transpile(inc: impl AsRef<Path>, header: &str, extra_fixup: &[(&str, &str
     replace!(r"^(\s*)#\w(.*\\\n)*.*\n", "");
 
     // translate extern block
-    replace!(r#"extern "C" *\n"#, r#"unsafe extern "system" "#);
+    replace!(r#"extern "C" *(\n|\{)"#, r#"unsafe extern "system" $1"#);
+
+    // fix typedefs incorrectly in extern block
+    replace_fixpoint!(
+        r#"\n(unsafe extern "system" \{)\n+(pub type .*)"#,
+        "\n$2\n$1\n",
+    );
 
     // mark as @generated
     replace!(r#"\A"#, "// @generated\n");

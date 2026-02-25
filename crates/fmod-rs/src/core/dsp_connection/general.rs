@@ -74,5 +74,7 @@ fmod_enum! {
         ///
         /// [DspState::sidechain_data] and [DspState::sidechain_channels] will hold the mixed result of any sidechain data flowing into it.
         SendSidechain = FMOD_DSPCONNECTION_TYPE_SEND_SIDECHAIN,
+        /// Pre-allocated connection allocated with [`System::create_dsp_connection`]`. Only used with [`Dsp::add_input`].
+        PreAllocated  = FMOD_DSPCONNECTION_TYPE_PREALLOCATED,
     }
 }
