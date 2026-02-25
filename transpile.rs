@@ -55,14 +55,22 @@ pub fn transpile(inc: impl AsRef<Path>, header: &str, extra_fixup: &[(&str, &str
     // static storage items become pub
     replace!(r"^static ", "pub ");
 
+    // #define F_CALLBACK F_CALL
+    replace!("F_CALLBACK", "F_CALL");
+    replace!("#define F_CALL F_CALL", "");
+
     // translate #define
     replace_fixpoint!(
         r"typedef ([\w ]*) (\w+);\n(/\*.*?\*/\n)?#define +(\w+) (\s*)(.*)\n",
         "${3}pub const $4: $5$2 = $6;\ntypedef $1 $2;\n",
     );
     replace!(
-        r"^#define +(\w+) *(0x\w+) *(?:/\*.*\*/)?$",
-        "pub const $1: c_uint = $2;"
+        r"^#define +(\w+) (\s*)(0x\w{1,8}) *(?:/\*.*\*/)?$",
+        "pub const $1: ${2}c_uint = $3;"
+    );
+    replace!(
+        r"^#define +(\w+) (\s*)(0x\w{9,16}) *(?:/\*.*\*/)?$",
+        "pub const $1: ${2}c_ulonglong = $3;"
     );
     replace!(
         r"^#define +(\w+) (\s*)(\w+) *(?:/\*.*\*/)?$",
