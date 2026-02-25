@@ -8,7 +8,7 @@ links = "fsbank"
 
 description = "FMOD FSBank bindings"
 repository = "https://github.com/CAD97/fmod-rs"
-keywords = ["gamedev", "audio", "sound", "fmod", "adaptive audio"]
+keywords = ["gamedev", "audio", "sound", "fmod", "adaptive-audio"]
 categories = ["external-ffi-bindings", "game-development", "multimedia::audio"]
 
 [dependencies]
