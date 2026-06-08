@@ -12,8 +12,8 @@ fn fmod_core_path_for(lib: &str) -> (String, String) {
         (Some(inc), Some(lib)) => (inc, lib),
         (inc_override, lib_override) => {
             let [inc, lib] = if let Some(api) = dep_metadata("fmod", "api") {
-                let inc = api.clone() + "/core/inc";
-                let lib = api.clone() + "/core/lib/" + fmod_arch();
+                let inc = api.clone() + "/inc";
+                let lib = api.clone() + "/lib/" + fmod_arch();
                 [inc, lib]
             } else {
                 match &*cargo_cfg_target_vendor() {
