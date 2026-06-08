@@ -52,11 +52,24 @@ macro_rules! assert_unsafe_precondition {
             _ => {{
                 #[inline]
                 #[track_caller]
-                const fn precondition_check($($name:ty),*) {
+                const fn precondition_check($($name:$ty),*) {
                     if !($e) {
-                        ::nounwind::panic_nounwind!(concat!("unsafe precondition(s) violated: ", $message,
-                            "\n\nThis indicates a bug in the program. \
-                            This Undefined Behavior check is optional, and cannot be relied on for safety."));
+                        #[cold]
+                        #[track_caller]
+                        const fn do_panic() -> ! {
+                            panic!(concat!("unsafe precondition(s) violated: ", $message,
+                                "\n\nThis indicates a bug in the program. \
+                                This Undefined Behavior check is optional, and cannot be relied on for safety."));
+                        }
+                        struct DoPanic;
+                        impl Drop for DoPanic {
+                            #[track_caller]
+                            fn drop(&mut self) {
+                                do_panic();
+                            }
+                        }
+                        let _double_panic = DoPanic;
+                        do_panic();
                     }
                 }
                 if cfg!(debug_assertions) {
