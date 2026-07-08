@@ -13,12 +13,13 @@ use {
 
 static DEBUG_LAYER_INITIALIZED: Once = Once::new();
 
-#[doc = fmod_doc!("core-api-common", "debug_initialize")]
+#[doc = fmod_doc!("core-api-common", "debug_initialize",
+    replace(r#"and delivery method"#, ""))]
 #[cfg_attr(
     feature = "log",
     doc = doc_callout!(
         "FMOD.rs automatically initializes FMOD's logs to go to the log crate.",
-        "Manually initializing FMOD debugging will override this behavior."))]
+        "This function will override this behavior."))]
 pub fn initialize(flags: DebugFlags) -> Result {
     // prevent racing System init
     let _lock = GLOBAL_SYSTEM_STATE.read();
@@ -36,29 +37,15 @@ pub fn initialize(flags: DebugFlags) -> Result {
     result
 }
 
-/// Specify the level and delivery method of log messages when using the
-/// logging version of FMOD.
-///
-/// This method initializes logs to go to call specified callback with log
-/// information.
-///
-/// This function will return [Error::Unsupported] when using the
-/// non-logging (release) versions of FMOD.
-///
-/// The logging version of FMOD can be recognized by the 'L' suffix in the
-/// library name, fmodL.dll or libfmodL.so for instance.
-///
-/// Note that:
-/// - [DebugFlags::LevelLog] produces informational, warning and error
-///   messages.
-/// - [DebugFlags::LevelWarning] produces warnings and error messages.
-/// - [DebugFlags::LevelError] produces error messages only.
-///
+#[doc = fmod_doc!("core-api-common", "debug_initialize" + "_callback",
+    replace(r#"\A(?s:.*?)\n\n"#, "Specify the level of log messages and the callback to receive them.
+
+"))]
 #[cfg_attr(
     feature = "log",
     doc = doc_callout!(
         "FMOD.rs automatically initializes FMOD's logs to go to the log crate.",
-        "Manually initializing FMOD debugging will override this behavior."))]
+        "This function will override this behavior."))]
 pub fn initialize_callback<D: DebugCallback>(flags: DebugFlags) -> Result {
     // prevent racing System init
     let _lock = GLOBAL_SYSTEM_STATE.read();
@@ -76,28 +63,15 @@ pub fn initialize_callback<D: DebugCallback>(flags: DebugFlags) -> Result {
     result
 }
 
-/// Specify the level and delivery method of log messages when using the
-/// logging version of FMOD.
-///
-/// This method initializes logs to go to write the log to the specified
-/// file path.
-///
-/// This function will return [Error::Unsupported] when using the
-/// non-logging (release) versions of FMOD.
-///
-/// The logging version of FMOD can be recognized by the 'L' suffix in the
-/// library name, fmodL.dll or libfmodL.so for instance.
-///
-/// Note that:
-/// - [DebugFlags::LevelLog] produces informational, warning and error messages.
-/// - [DebugFlags::LevelWarning] produces warnings and error messages.
-/// - [DebugFlags::LevelError] produces error messages only.
-///
+#[doc = fmod_doc!("core-api-common", "debug_initialize" + "_file",
+    replace(r#"\A(?s:.*?)\n\n"#, "Specify the level of log messages and the file to log to.
+
+"))]
 #[cfg_attr(
     feature = "log",
     doc = doc_callout!(
         "FMOD.rs automatically initializes FMOD's logs to go to the log crate.",
-        "Manually initializing FMOD debugging will override this behavior."))]
+        "This function will override this behavior."))]
 pub fn initialize_file(flags: DebugFlags, filename: &str) -> Result {
     // prevent racing System init
     let _lock = GLOBAL_SYSTEM_STATE.read();
@@ -167,19 +141,16 @@ pub(crate) unsafe fn initialize_default() {
 
 // -------------------------------------------------------------------------------------------------
 
-/// Callback for debug messages when using the logging version of FMOD.
-///
-/// This callback will fire directly from the log line, as such it can be
-/// from any thread.
+#[doc = fmod_doc!("core-api-common", "fmod_debug_callback")]
 pub trait DebugCallback {
-    /// Callback for debug messages when using the logging version of FMOD.
+    #[doc = fmod_doc!("core-api-common", "fmod_debug_callback")]
     ///
     /// <dl>
-    /// <dt>flags</dt><dd>Flags which detail the level and type of this log.</dd>
-    /// <dt>file</dt><dd>Source code file name where the message originated.</dd>
-    /// <dt>line</dt><dd>Source code line number where the message originated.</dd>
-    /// <dt>func</dt><dd>Class and function name where the message originated.</dd>
-    /// <dt>message</dt><dd>Actual debug message associated with the callback.</dd>
+    /// <dt><code>flags</code></dt><dd>Flags which detail the level and type of this log.</dd>
+    /// <dt><code>file</code></dt><dd>Source code file name where the message originated.</dd>
+    /// <dt><code>line</code></dt><dd>Source code line number where the message originated.</dd>
+    /// <dt><code>func</code></dt><dd>Class and function name where the message originated.</dd>
+    /// <dt><code>message</code></dt><dd>Actual debug message associated with the callback.</dd>
     /// </dl>
     fn log(
         flags: DebugFlags,
@@ -217,47 +188,45 @@ unsafe extern "system" fn debug_callback<C: DebugCallback>(
 
 raw! {
     fmod_enum! {
-        /// Specify the destination of log output when using the logging version of FMOD.
-        ///
-        /// TTY destination can vary depending on platform, common examples include the Visual Studio / Xcode output window, stderr and LogCat.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_mode")]
         pub enum DebugMode: FMOD_DEBUG_MODE
         where const { self <= FMOD_DEBUG_MODE_CALLBACK }
         {
-            /// Default log location per platform, i.e. Visual Studio output window, stderr, LogCat, etc.
+            #[doc = fmod_doc!("core-api-common", "fmod_debug_mode_tty")]
             Tty      = FMOD_DEBUG_MODE_TTY,
-            /// Write log to specified file path.
+            #[doc = fmod_doc!("core-api-common", "fmod_debug_mode_file")]
             File     = FMOD_DEBUG_MODE_FILE,
-            /// Call specified callback with log information.
+            #[doc = fmod_doc!("core-api-common", "fmod_debug_mode_callback")]
             Callback = FMOD_DEBUG_MODE_CALLBACK,
         }
     }
 }
 
 fmod_flags! {
-    /// Specify the requested information to be output when using the logging version of FMOD.
+    #[doc = fmod_doc!("core-api-common", "fmod_debug_flags")]
     pub struct DebugFlags: FMOD_DEBUG_FLAGS {
-        /// Disable all messages.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_level_none")]
         LevelNone          = FMOD_DEBUG_LEVEL_NONE,
-        /// Enable only error messages.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_level_error")]
         LevelError         = FMOD_DEBUG_LEVEL_ERROR,
-        /// Enable warning and error messages.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_level_warning")]
         LevelWarning       = FMOD_DEBUG_LEVEL_WARNING,
         #[default]
-        /// Enable informational, warning and error messages (default).
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_level_log")]
         LevelLog           = FMOD_DEBUG_LEVEL_LOG,
-        /// Verbose logging for memory operations, only use this if you are debugging a memory related issue.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_type_memory")]
         TypeMemory         = FMOD_DEBUG_TYPE_MEMORY,
-        /// Verbose logging for file access, only use this if you are debugging a file related issue.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_type_file")]
         TypeFile           = FMOD_DEBUG_TYPE_FILE,
-        /// Verbose logging for codec initialization, only use this if you are debugging a codec related issue.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_type_codec")]
         TypeCodec          = FMOD_DEBUG_TYPE_CODEC,
-        /// Verbose logging for internal errors, use this for tracking the origin of error codes.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_type_trace")]
         TypeTrace          = FMOD_DEBUG_TYPE_TRACE,
-        /// Display the time stamp of the log message in milliseconds.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_display_timestamps")]
         DisplayTimestamps  = FMOD_DEBUG_DISPLAY_TIMESTAMPS,
-        /// Display the source code file and line number for where the message originated.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_display_linenumbers")]
         DisplayLinenumbers = FMOD_DEBUG_DISPLAY_LINENUMBERS,
-        /// Display the thread ID of the calling function that generated the message.
+        #[doc = fmod_doc!("core-api-common", "fmod_debug_display_thread")]
         DisplayThread      = FMOD_DEBUG_DISPLAY_THREAD,
     }
 }

@@ -1,0 +1,1 @@
+Enable informational, warning and error messages (default).

@@ -1,0 +1,1 @@
+Write log to specified file path.

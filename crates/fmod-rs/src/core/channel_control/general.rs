@@ -39,12 +39,14 @@ impl ChannelControl {
 
 cfg_select! {
     feature = "unstable_trait_alias" => {
-        /// Callback for Channel and ChannelGroup notifications.
-        ///
-        /// Callbacks are called from the game thread when set from the Core API or
-        /// Studio API in synchronous mode, and from the Studio Update Thread when in
-        /// default / async mode.
-        pub trait ChannelControlCallback = ChannelCallback + ChannelGroupCallback;
+        unstable_syntax! {
+            /// Callback for Channel and ChannelGroup notifications.
+            ///
+            /// Callbacks are called from the game thread when set from the Core API or
+            /// Studio API in synchronous mode, and from the Studio Update Thread when in
+            /// default / async mode.
+            pub trait ChannelControlCallback = ChannelCallback + ChannelGroupCallback;
+        }
     }
     _ => {
         /// Callback for Channel and ChannelGroup notifications.

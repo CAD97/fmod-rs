@@ -1,0 +1,1 @@
+Call specified callback with log information.

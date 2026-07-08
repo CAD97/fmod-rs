@@ -1,0 +1,1 @@
+Enable only error messages.

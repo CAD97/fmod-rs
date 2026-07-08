@@ -1,5 +1,6 @@
 [workspace]
 members = ["crates/*", "examples", "xtask"]
+default-members = ["crates/fmod-rs"]
 resolver = "2"
 
 [workspace.package]
@@ -7,11 +8,11 @@ edition = "2024"
 rust-version = "1.98.0"
 
 [workspace.dependencies]
-fmod-build-helper = { version = "0.1.1", path = "crates/fmod-build-helper" }
+fmod-build-helper = { version = "0.1.3", path = "crates/fmod-build-helper" }
 fmod-rs = { path = "crates/fmod-rs", features = ["_ide_default"] }
-fmod-core-sys = { version = "1.0.1", path = "crates/fmod-core-sys" }
-fmod-studio-sys = { version = "1.0.1", path = "crates/fmod-studio-sys" }
-fmod-fsbank-sys = { version = "1.0.1", path = "crates/fmod-fsbank-sys" }
+fmod-core-sys = { version = "1.0.2", path = "crates/fmod-core-sys" }
+fmod-studio-sys = { version = "1.0.2", path = "crates/fmod-studio-sys" }
+fmod-fsbank-sys = { version = "1.0.2", path = "crates/fmod-fsbank-sys" }
 
 build-rs = "0.3.4"
 regex = "1.12.4"

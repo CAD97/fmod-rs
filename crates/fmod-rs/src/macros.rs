@@ -21,6 +21,10 @@ macro_rules! ix {
     };
 }
 
+macro_rules! unstable_syntax {
+    ($($tt:tt)*) => { $($tt)* }
+}
+
 macro_rules! doc_callout {
     ($text0:literal $(, $text1:literal)* $(,)?) => {
         concat!(
@@ -152,8 +156,11 @@ macro_rules! ffi {
 }
 
 macro_rules! fmod_doc {
-    ($fname:literal, $id:literal) => {
-        include_str!(concat!($id, ".md"))
+    ($fname:literal, $id:literal $(, replace($r_pat:literal, $r_rep:literal))*) => {
+        include_str!(concat!("doc/", $id, ".md"))
+    };
+    ($fname:literal, $id:literal + $suffix:literal $(, replace($r_pat:literal, $r_rep:literal))*) => {
+        include_str!(concat!("doc/", $id, $suffix, ".md"))
     };
 }
 

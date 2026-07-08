@@ -1,0 +1,1 @@
+Display the time stamp of the log message in milliseconds.
