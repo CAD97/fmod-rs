@@ -43,7 +43,7 @@
 
 use fmod::HandleExt;
 use fmod_examples::{media, sleep_ms, Buttons, Example};
-use rand::prelude::*;
+use rand::random_range;
 use std::sync::OnceLock;
 
 macro_rules! if_streams {
@@ -131,12 +131,12 @@ unsafe fn queue_next_sound(
 
     {
         let mut val = new_channel.get_frequency()?;
-        let variation = thread_rng().gen_range(-1.0..1.0f32);
+        let variation = random_range(-1.0..1.0f32);
         val *= 1.0 + variation * 0.02; // @22khz, range fluctuates from 21509 to 22491
         new_channel.set_frequency(val)?;
 
         let mut val = new_channel.get_volume()?;
-        let variation = thread_rng().gen_range(0.0..1.0f32);
+        let variation = random_range(0.0..1.0f32);
         val *= 1.0 - variation * 0.2; // 0.8 to 1.0
         new_channel.set_volume(val)?;
     }
@@ -167,16 +167,12 @@ fn main() -> anyhow::Result<()> {
 
         // Kick off the first 2 sounds.  First one is immediate, second one will be triggered to start after the first one.
         let mut channels = unsafe {
-            let channel0 = queue_next_sound(
-                output_rate,
-                None,
-                thread_rng().gen_range(0..SOUND_NAMES.len()),
-                0,
-            )?;
+            let channel0 =
+                queue_next_sound(output_rate, None, random_range(0..SOUND_NAMES.len()), 0)?;
             let channel1 = queue_next_sound(
                 output_rate,
                 Some(channel0),
-                thread_rng().gen_range(0..SOUND_NAMES.len()),
+                random_range(0..SOUND_NAMES.len()),
                 1,
             )?;
             [channel0, channel1]
@@ -213,7 +209,7 @@ fn main() -> anyhow::Result<()> {
                     channels[slot] = queue_next_sound(
                         output_rate,
                         Some(channels[1 - slot]),
-                        thread_rng().gen_range(0..SOUND_NAMES.len()),
+                        random_range(0..SOUND_NAMES.len()),
                         slot,
                     )?;
                     slot = 1 - slot; // flip
