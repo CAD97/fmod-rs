@@ -4,7 +4,7 @@ resolver = "2"
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.96.0"
+rust-version = "1.98.0"
 
 [workspace.dependencies]
 fmod-build-helper = { version = "0.1.1", path = "crates/fmod-build-helper" }
@@ -13,5 +13,5 @@ fmod-core-sys = { version = "1.0.1", path = "crates/fmod-core-sys" }
 fmod-studio-sys = { version = "1.0.1", path = "crates/fmod-studio-sys" }
 fmod-fsbank-sys = { version = "1.0.1", path = "crates/fmod-fsbank-sys" }
 
-build-rs = "0.3.3"
-regex = "1.12.3"
+build-rs = "0.3.4"
+regex = "1.12.4"

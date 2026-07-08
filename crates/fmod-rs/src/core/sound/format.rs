@@ -1,7 +1,5 @@
 use {
-    crate::utils::{
-        SmallCString, fmod_get_string, string_from_utf16be_lossy, string_from_utf16le_lossy,
-    },
+    crate::utils::{SmallCString, fmod_get_string},
     fmod::{raw::*, *},
     std::{borrow::Cow, ffi::CStr, mem, ptr, slice},
 };
@@ -183,8 +181,8 @@ impl Tag<'_> {
                 TagDataType::Float if data.len() == 4 => TagData::Float((tag.data as *const f32).read_unaligned() as _),
                 TagDataType::Float if data.len() == 8 => TagData::Float((tag.data as *const f64).read_unaligned() as _),
                 TagDataType::String | TagDataType::StringUtf8 => TagData::Str(String::from_utf8_lossy(data)),
-                TagDataType::StringUtf16 => TagData::Str(Cow::Owned(string_from_utf16le_lossy(data))),
-                TagDataType::StringUtf16be => TagData::Str(Cow::Owned(string_from_utf16be_lossy(data))),
+                TagDataType::StringUtf16 => TagData::Str(Cow::Owned(String::from_utf16le_lossy(data))),
+                TagDataType::StringUtf16be => TagData::Str(Cow::Owned(String::from_utf16be_lossy(data))),
                 r#type => {
                     whoops!(panic, "unknown {type:?} (len {}) encountered", tag.datalen);
                     yeet!(Error::RustPanicked);
