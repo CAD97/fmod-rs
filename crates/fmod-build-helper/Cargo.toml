@@ -15,4 +15,4 @@ build-rs.workspace = true
 regex.workspace = true
 
 [target.'cfg(windows)'.dependencies]
-winreg = "0.15.0" # use winapi version for faster compile
+winreg = "0.56.0"
