@@ -1,0 +1,14 @@
+prefix=/usr/local/opt
+fmod_home=${prefix}/fmodstudioapi
+api_home=${fmod_home}/api/studio
+version=2.03.14
+arch=x86_64
+
+Name: fmodstudioL
+Description: FMOD Studio API (logging version)
+Version: ${version}
+Cflags: -I${api_home}/inc
+Libs: -L${api_home}/lib/${arch} -lfmodstudioL
+Requires.private: fmodL = ${version}
+
+Conflicts: fmodstudio >= 2.00.00, fmodstudio < 3.00.00

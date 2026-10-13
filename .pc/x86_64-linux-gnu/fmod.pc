@@ -1,0 +1,13 @@
+prefix=/usr/local/opt
+fmod_home=${prefix}/fmodstudioapi
+api_home=${fmod_home}/api/core
+version=2.03.14
+arch=x86_64
+
+Name: fmod
+Description: FMOD Core API
+Version: ${version}
+Cflags: -I${api_home}/inc
+Libs: -L${api_home}/lib/${arch} -lfmod
+
+Conflicts: fmodL >= 2.00.00, fmodL < 3.00.00

@@ -1,100 +1,104 @@
-use build_rs::input::*;
-use std::{fs, path::Path};
+use build_rs::{input::*, output::rerun_if_env_changed};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
+#[cfg(target_os = "linux")]
+mod linux;
 mod transpile;
 #[cfg(windows)]
 mod win;
 
 pub use transpile::transpile;
 
-fn fmod_core_path_for(lib: &str) -> (String, String) {
-    match (dep_metadata("fmod", "inc"), dep_metadata("fmod", "lib")) {
-        (Some(inc), Some(lib)) => (inc, lib),
-        (inc_override, lib_override) => {
-            let [inc, lib] = if let Some(api) = dep_metadata("fmod", "api") {
-                let inc = api.clone() + "/inc";
-                let lib = api.clone() + "/lib/" + fmod_arch();
-                [inc, lib]
-            } else {
-                match &*cargo_cfg_target_vendor() {
-                    #[cfg(windows)]
-                    "pc" => win::find_fmod_pc(),
-                    #[cfg(windows)]
-                    "uwp" => win::find_fmod_uwp(),
-                    // TODO: look for "well-known" paths on other platforms?
-                    _ => None,
-                }
-                .unwrap_or_else(|| report_missing_fmod(lib))
-            };
-            (inc_override.unwrap_or(inc), lib_override.unwrap_or(lib))
-        },
-    }
-}
-
 pub fn fmod_core_path() -> (String, String) {
-    fmod_core_path_for("core")
+    lookup("core").unwrap_or_else(|| report_missing_fmod("core"))
+}
+pub fn fmod_studio_path() -> (String, String) {
+    lookup("fmodstudio").unwrap_or_else(|| report_missing_fmod("studio"))
 }
 
 pub fn fsbank_path() -> (String, String) {
-    let inc = dep_metadata("fsbank", "inc").unwrap_or_else(|| {
-        let fmod_inc = fmod_core_path_for("fsbank").0;
-        let inc = Path::new(&fmod_inc).join("../../fsbank/inc");
-        if fs::exists(&inc).unwrap_or_default() {
-            inc.to_str().unwrap().to_string()
-        } else {
-            fmod_inc
-        }
-    });
-
-    let lib = dep_metadata("fsbank", "lib").unwrap_or_else(|| {
-        let fmod_lib = fmod_core_path_for("fsbank").1;
-        let expected_sibling = if cargo_cfg_target_vendor() == "apple" {
-            "../../fsbank/lib"
-        } else {
-            "../../../fsbank/lib"
-        };
-        let lib = Path::new(&fmod_lib)
-            .join(expected_sibling)
-            .join(fmod_arch());
-        if fs::exists(&lib).unwrap_or_default() {
-            lib.to_str().unwrap().to_string()
-        } else {
-            fmod_lib
-        }
-    });
-
-    (inc, lib)
+    lookup("fsbank").unwrap_or_else(|| report_missing_fmod("fsbank"))
 }
 
-pub fn fmod_studio_path() -> (String, String) {
-    let inc = dep_metadata("fmodstudio", "inc").unwrap_or_else(|| {
-        let fmod_inc = fmod_core_path_for("studio").0;
-        let inc = Path::new(&fmod_inc).join("../../studio/inc");
-        if fs::exists(&inc).unwrap_or_default() {
-            inc.to_str().unwrap().to_string()
-        } else {
-            fmod_inc
-        }
-    });
+fn lookup(pkg: &str) -> Option<(String, String)> {
+    let dep_inc = dep_metadata(pkg, "inc");
+    let dep_lib = dep_metadata(pkg, "lib");
+    if let (Some(inc), Some(lib)) = (&dep_inc, &dep_lib) {
+        return Some((inc.clone(), lib.clone()));
+    }
 
-    let lib = dep_metadata("fmodstudio", "lib").unwrap_or_else(|| {
-        let fmod_lib = fmod_core_path_for("studio").1;
-        let expected_sibling = if cargo_cfg_target_vendor() == "apple" {
-            "../../studio/lib/"
-        } else {
-            "../../../studio/lib"
-        };
-        let lib = Path::new(&fmod_lib)
-            .join(expected_sibling)
-            .join(fmod_arch());
-        if fs::exists(&lib).unwrap_or_default() {
-            lib.to_str().unwrap().to_string()
-        } else {
-            fmod_lib
-        }
-    });
+    if let Some(api) = dep_metadata(pkg, "api") {
+        let inc = api.clone() + "/inc";
+        let lib = api.clone() + "/lib/" + fmod_arch();
+        return Some((dep_inc.unwrap_or(inc), dep_lib.unwrap_or(lib)));
+    }
 
-    (inc, lib)
+    #[cfg(target_os = "linux")]
+    {
+        let mut pkg = pkg.to_string();
+        if profile() == "debug" {
+            pkg += "L";
+        }
+        if let Some((inc, lib)) = linux::pkg_config(&pkg) {
+            return Some((dep_inc.unwrap_or(inc), dep_lib.unwrap_or(lib)));
+        }
+    }
+
+    if let Some(fmod_home) = find_fmod_home() {
+        return Some((
+            dep_inc.unwrap_or_else(|| {
+                fmod_home
+                    .join("api/core/inc")
+                    .to_string_lossy()
+                    .into_owned()
+            }),
+            dep_lib.unwrap_or_else(|| {
+                fmod_home
+                    .join("api/core/lib")
+                    .join(fmod_arch())
+                    .to_string_lossy()
+                    .into_owned()
+            }),
+        ));
+    }
+
+    None
+}
+
+fn find_fmod_home() -> Option<PathBuf> {
+    rerun_if_env_changed("FMOD_HOME");
+    if let Some(home) = env::var_os("FMOD_HOME") {
+        return Some(home.into());
+    }
+
+    if let Some(fmod_inc) = dep_metadata("fmod", "inc")
+        && let Some(fmod_lib) = dep_metadata("fmod", "lib")
+    {
+        let fmod_inc = Path::new(&fmod_inc);
+        let fmod_lib = Path::new(&fmod_lib);
+
+        // ex fmod_inc: FMOD_HOME/api/core/inc
+        // ex fmod_lib: FMOD_HOME/api/core/lib/x86_64
+
+        if let Some(maybe_fmod_home) = Some(fmod_inc).and_then(|p| p.parent()?.parent()?.parent())
+            && fmod_inc == maybe_fmod_home.join("api/core/inc")
+            && fmod_lib == maybe_fmod_home.join("api/core/lib").join(fmod_arch())
+        {
+            return Some(maybe_fmod_home.into());
+        }
+    }
+
+    #[cfg(windows)]
+    {
+        if let Some(fmod_home) = win::find_fmod_home() {
+            return Some(fmod_home);
+        }
+    }
+
+    None
 }
 
 pub fn fmod_arch() -> &'static str {
@@ -134,10 +138,15 @@ fn report_missing_fmod<T>(lib: &str) -> T {
         r#"
 Failed to locate FMOD Engine installation. <https://www.fmod.com/download#fmodengine>
 
-To specify the location of FMOD Engine, set the env var $DEP_FMOD_API to the
-api/core directory of the FMOD Engine package, or set both $DEP_{LIB}_INC
-and $DEP_{LIB}_LIB to the header include and binary directories for the
-{lib} library, respectively.
-"#
+To specify the location of FMOD Engine, you can:
+- set $FMOD_HOME to the root directory of the FMOD Engine package installation
+- set $DEP_{LIB}_API to the $FMOD_HOME/api/${lib} directory of the FMOD Engine package
+- set $DEP_{LIB}_INC and $DEP_{LIB}_LIB to the inc and lib directories, respectively{}
+"#,
+        if cfg!(unix) {
+            "\n- install pkg-config description files for the fmod libraries"
+        } else {
+            ""
+        }
     );
 }

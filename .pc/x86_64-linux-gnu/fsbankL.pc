@@ -1,0 +1,13 @@
+prefix=/usr/local/opt
+fmod_home=${prefix}/fmodstudioapi
+api_home=${fmod_home}/api/fsbank
+version=2.03.14
+arch=x86_64
+
+Name: fsbankL
+Description: FMOD FSBank API (logging version)
+Version: ${version}
+Cflags: -I${api_home}/inc
+Libs: -L${api_home}/lib/${arch} -lfsbankL
+
+Conflicts: fsbank >= 2.00.00, fsbank < 3.00.00
