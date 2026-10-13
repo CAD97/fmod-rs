@@ -1,5 +1,5 @@
-use build_rs::{input::*, output::*};
-use fmod_build_helper::{fsbank_path, transpile};
+use build_rs::output;
+use fmod_build_helper::{Lib, lookup, make_stub, transpile};
 
 #[rustfmt::skip]
 static HEADERS: &[(&str, &[(&str, &str)])] = &[
@@ -8,43 +8,22 @@ static HEADERS: &[(&str, &[(&str, &str)])] = &[
 ];
 
 fn main() {
-    rerun_if_changed("build.rs");
+    output::rerun_if_changed("build.rs");
 
-    rerun_if_env_changed("DOCS_RS");
-    if std::env::var("DOCS_RS").is_ok() {
-        let out_dir = out_dir();
+    output::rerun_if_env_changed("DOCS_RS");
+    if std::env::var_os("DOCS_RS").is_some() {
         for (header, _) in HEADERS {
-            std::fs::write(out_dir.join(header).with_extension("rs"), "// dummy").unwrap();
+            make_stub(header);
         }
         return;
     }
 
-    let (inc, lib) = fsbank_path();
-
-    metadata("inc", &inc);
-    metadata("lib", &lib);
-
-    rustc_link_search(&lib);
-    rerun_if_changed(&lib);
-    rustc_link_lib(&fsbank_obj());
+    let lib = lookup(Lib::FSBank);
+    lib.link();
+    output::metadata("inc", lib.include_path.to_str().unwrap());
+    output::metadata("lib", lib.link_path.to_str().unwrap());
 
     for (header, extra_fixup) in HEADERS {
-        transpile(&inc, header, extra_fixup);
+        transpile(&lib.include_path, header, extra_fixup);
     }
-}
-
-fn fsbank_obj() -> String {
-    if let Some(obj) = dep_metadata("fsbank", "obj") {
-        return obj;
-    }
-
-    let vendor = cargo_cfg_target_vendor();
-    let arch = cargo_cfg_target_arch();
-    let mut obj = "fsbank".to_string();
-
-    if vendor == "pc" && matches!(&*arch, "x86" | "x86_64") {
-        obj += "_vc";
-    }
-
-    obj
 }

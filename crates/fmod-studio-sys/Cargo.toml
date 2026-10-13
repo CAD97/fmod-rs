@@ -1,6 +1,6 @@
 [package]
 name = "fmod-studio-sys"
-version = "1.0.2"
+version = "1.0.3"
 edition.workspace = true
 rust-version.workspace = true
 license-file = "LICENSE.txt"

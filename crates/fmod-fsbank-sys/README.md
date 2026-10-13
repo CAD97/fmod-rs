@@ -3,10 +3,17 @@ bindings — you probably want [FMOD.rs](https://lib.rs/fmod-rs) instead.
 
 ## Build Requirements
 
-This crate uses the fmod-core-sys build configuration to find the FSBank files,
-looking in the sibling directory based on the standard FMOD Engine packaging,
-falling back to using the same directories if those folders don't exist. To
-override this behavior, set `$DEP_FSBANK_INC` and `$DEP_FSBANK_LIB`.
+On Windows, the FMOD Engine installation can be found automatically using the
+registry key `HKCU:\Software\FMOD Studio API Windows` set by the installer.
+
+On Linux, `pkg-config` is queried for `libfsbank` in release builds or
+`libfsbankL` in release builds.
+
+On any system, you can specify where FMOD Core can be found by setting:
+- `$DEP_FSBANK_INC` to the include path and `$DEP_FSBANK_LIB` to the link
+  search path,
+- `$DEP_FMOD_API` to the FMOD Engine `api` subdirectory, or
+- `$FMOD_HOME` to the FMOD Engine directory.
 
 ## Runtime Requirements
 
@@ -14,26 +21,24 @@ The main FMOD deployment model is via dynamic library. You, the user of this
 crate, are responsible for ensuring the dynamic library is available on the
 load path at program startup.
 
-## Linking
-
-We expect the same filename decoration as in the FMOD Engine package. If you
-have a nonstandard setup or otherwise want to directly control the object name
-linked against, you can set `$DEP_FSBANK_OBJ`.
+By default, this crate links to the logging version of FMOD in debug builds and
+the production version of FMOD in release builds, using the dylib name as in
+the unmodified FMOD Engine. This can be overriden by setting `$DEP_FMOD_OBJ`.
 
 ## Version Compatibility
 
-Major FMOD version numbers 2.03 and 2.02 are both supported, although testing
-of individual minor versions is sparse. Use other versions at your own risk.
+FMOD versions 2.02, 2.03, and 2.04 are all supported, although testing of
+individual minor versions is sparse. Use other versions at your own risk.
 
 ## Stability Disclaimer
 
 The Rust API exposed by this crate is directly generated from the FMOD headers.
-Breaking changes in this crate's API is thus entirely dependent on whether FMOD
-publishes changes which would be considered breaking in a Rust API.
+The content of the API is thus determined by which version of FMOD you use, and
+changing which version of FMOD you use will change this crate's API with it.
 
-Note that the FMOD API within a major FMOD version number is only guaranteed
-stable from the perspective of the C API. Adding new optional fields to a type
-is non-API-breaking in C, but API-breaking in Rust.
+Note that the FMOD API within a major FMOD version number is only stable from
+the perspective of the C API. For example, adding new fields to a struct can
+be non-API-breaking in C, but is API-breaking in Rust.
 
 ## Build Metadata
 

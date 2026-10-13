@@ -1,8 +1,24 @@
 export-env {
     if $env.FMOD_PATH? == null {
-        $env.FMOD_PATH = (registry query --hkcu 'Software\FMOD Studio API Windows' | get 0.value)
+        if $nu.os-info.family == 'windows' {
+            $env.FMOD_PATH = (registry query --hkcu 'Software\FMOD Studio API Windows' | get 0.value)
+        } else if ($nu.os-info.family == 'unix') {
+            let pkg_config = do { ^pkg-config fmod --variable=fmod_home } | complete
+            if $pkg_config.exit_code == 0 {
+                $env.FMOD_PATH = ($pkg_config | str trim)
+            }
+        }
     }
-    plugin add nu_plugin_query.exe
+    if $nu.os-info.family == 'windows' {
+        plugin add nu_plugin_query.exe
+    } else {
+        plugin add nu_plugin_query
+    }
+}
+
+export def main [] {
+    const self = path self
+    ^$nu.current-exe -c $"module ($self); help x"
 }
 
 const FMOD_RS_SRC = path self ./crates/fmod-rs/src
@@ -11,6 +27,7 @@ def 'html select' [
     query: string,
 ] {
     let html = $in
+    plugin use query
     $html | query web --as-html --query $query | str join
 }
 
@@ -76,4 +93,16 @@ export def docgen [] {
     }
 
     cargo docs-rs --package fmod-rs
+}
+
+export def install [
+    archive: path
+    --prefix: string
+]: nothing -> nothing {
+    if ($nu.os-info.family != 'unix') {
+        error make "FMOD installation script is only for unix systems"
+    }
+
+    mut $prefix = $prefix | default '/usr/local/opt'
+
 }

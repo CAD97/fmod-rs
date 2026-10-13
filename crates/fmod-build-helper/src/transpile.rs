@@ -1,23 +1,39 @@
-use build_rs::{input::out_dir, output::rerun_if_changed};
+use build_rs::{input, output};
 use regex::Regex;
 use std::{borrow::Cow, fs, path::Path, sync::LazyLock};
 
+/// Transpile the given FMOD header file into equivalent Rust definitions.
+///
 /// We could use bindgen to translate the C headers, but that requires libclang
 /// at build time, and the FMOD headers are straightforward and simple enough
-/// that parsing with regex is a tenable solution. As a bonus, this maintains
-/// the original header organization.
+/// that parsing with regex is a somewhat tenable solution. Even if difficult
+/// to follow. As a bonus, this maintains the original header organization.
 ///
-/// NB: The FMOD headers are the same on all platforms, so we could transpile
-/// them once and not require downstream users to transpile the headers again.
-/// However, it's important that the translated headers match the headers for
-/// the specific version of FMOD being linked against to maintain the soundness
-/// critical version verification, and the simplest way to resolve this is to
-/// just transpile the entire set of headers every time. This also allows us to
-/// avoid redistributing the FMOD headers, which is legally questionable, unlike
-/// redistributing the examples or a bindings library which links against FMOD.
+/// # But why?
+///
+/// The FMOD headers are the same on all platforms (modulo `extern "system"`),
+/// so we could theoretically transpile the headers ahead-of-time and not ask
+/// downstream users to transpile the headers on each clean build. However, it
+/// is important for the used headers exactly match the version of FMOD used:
+/// <code>[FMOD_System_Create](&system, FMOD_VERSION)</code><sub>C</sub> will
+/// check that the versions are actually compatible. By transpiling from C to
+/// Rust at build time, we ensure that the translated headers always match the
+/// version of FMOD actually being linked against.
+///
+/// Furthermore:
+///
+/// - This frees the application developer from needing to match the -sys crate
+///   version to the library version they're using. The idiomatic Rust bindings
+///   can transparently handle multiplexing between multiple FMOD versions.
+/// - A conservative reading of the FMOD Eula does not allow redistributing the
+///   SDK headers. Not distributing a transpiled version of the headers avoids
+///   that potential issue.
+///
+/// [FMOD_System_Create]: <https://www.fmod.com/docs/api/core-api-system.html#system_create>
+/// [FMOD_VERSION]: <https://www.fmod.com/docs/api/core-api-common.html#fmod_version>
 pub fn transpile(inc: impl AsRef<Path>, header: &str, extra_fixup: &[(&str, &str)]) {
     let path = inc.as_ref().join(header);
-    rerun_if_changed(&path);
+    output::rerun_if_changed(&path);
     let mut src = fs::read_to_string(&path)
         .unwrap_or_else(|_| panic!("read FMOD header file {}", path.display()));
 
@@ -150,7 +166,7 @@ pub fn transpile(inc: impl AsRef<Path>, header: &str, extra_fixup: &[(&str, &str
         r"(\(|, |^(?:    )+)([\w--\d][\w ]*?)\b *(\*[ \w*]*?)? *(\w+)(\[\w+\])?([,);])",
         "$1$4: $2$3$5$6",
     );
-    replace!(r"^(?:    )+(\w+):(.*);$", "    pub $1:$2,");
+    replace!(r"^(?:    )+(\w+):(.*); *(//.*)?$", "    pub $1:$2,$3");
     // undo collateral damage to comments
     replace!(r"Pty: Firelight Technologies", "Firelight Technologies Pty");
     replace!(r"interface: C", "C interface");
@@ -216,6 +232,12 @@ pub fn transpile(inc: impl AsRef<Path>, header: &str, extra_fixup: &[(&str, &str
             .into_owned();
     }
 
-    fs::write(out_dir().join(header.replace(".h", ".rs")), src)
+    fs::write(input::out_dir().join(header).with_extension("rs"), src)
         .unwrap_or_else(|_| panic!("write FMOD bindings for {}", header));
+}
+
+pub fn make_stub(header: &str) {
+    let src = "// @generated";
+    fs::write(input::out_dir().join(header).with_extension("rs"), src)
+        .unwrap_or_else(|_| panic!("write FMOD stub for {}", header));
 }
